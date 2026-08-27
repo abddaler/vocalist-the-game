@@ -19,6 +19,16 @@ export type LogCode =
   | 'debt.critical'
   | 'fans.left'
   | 'genre.switched'
+  | 'performance.done'
+  | 'performance.intercepted'
+  | 'career.up'
+  | 'manager.hired'
+  | 'single.recorded'
+  | 'single.fans'
+  | 'outfit.bought'
+  | 'outfit.equipped'
+  | 'event.fired'
+  | 'event.resolved'
   | 'run.over';
 
 export type LogParams = Readonly<Record<string, string | number>>;

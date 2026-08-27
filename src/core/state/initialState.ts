@@ -1,6 +1,7 @@
 import { BALANCE } from '@data/balance';
 import { Rng } from '../rng';
-import type { GameState, GenreId, VocalSkills } from '../types';
+import { NPC_IDS } from '../types';
+import type { GameState, GenreId, NpcId, NpcState, VocalSkills } from '../types';
 
 export const SAVE_VERSION = 1;
 
@@ -36,7 +37,25 @@ export function createInitialState(seed: string, genre: GenreId): GameState {
       sleptTonight: false,
     },
     economy: { pendingWages: 0, weeksPaid: 0, monthsPaid: 0 },
-    stats: { slotsUsed: 0, activityCounts: {}, missedNights: 0, blockedAttempts: 0 },
+    career: {
+      tier: 'underpass',
+      performances: 0,
+      singles: 0,
+      rivalFame: BALANCE.rival.startFame,
+      manager: false,
+    },
+    npcs: Object.fromEntries(
+      NPC_IDS.map((id) => [id, { relation: 0, met: false } satisfies NpcState]),
+    ) as Record<NpcId, NpcState>,
+    wardrobe: { owned: [], equipped: {} },
+    events: { seen: {}, pending: null, slotsSinceEvent: 0 },
+    stats: {
+      slotsUsed: 0,
+      activityCounts: {},
+      missedNights: 0,
+      blockedAttempts: 0,
+      outcomes: {},
+    },
 
     flags: {},
     log: [],

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { GENRE_IDS, SKILL_KEYS } from '@core/types';
 import { ACTIVITIES, getActivity, hasActivity } from './activities';
+import { BALANCE } from './balance';
 import { GENRES } from './genres';
+import { LOCATIONS } from './locations';
 import { parseActivities } from './schema';
+import { VENUES, getVenue, hasVenue } from './venues';
 
 describe('валидация контента', () => {
   it('пропускает корректную запись и подставляет значения по умолчанию', () => {
@@ -91,5 +94,95 @@ describe('жанры', () => {
     for (const genre of Object.values(GENRES)) {
       for (const key of Object.keys(genre.statWeights)) expect(SKILL_KEYS).toContain(key);
     }
+  });
+});
+
+describe('площадки карьерной лестницы', () => {
+  it('покрывают путь от перехода до клуба (9.5)', () => {
+    expect(VENUES.map((venue) => venue.tier)).toEqual([
+      'underpass',
+      'events',
+      'bar',
+      'club',
+    ]);
+  });
+
+  it('чем выше ступень, тем строже допуск и щедрее выплата', () => {
+    for (let i = 1; i < VENUES.length; i += 1) {
+      const prev = VENUES[i - 1]!;
+      const next = VENUES[i]!;
+      expect(next.requires.fame ?? 0).toBeGreaterThanOrEqual(prev.requires.fame ?? 0);
+      expect(next.thresholds.ok).toBeGreaterThan(prev.thresholds.ok);
+      expect(next.fameCeiling).toBeGreaterThan(prev.fameCeiling);
+    }
+  });
+
+  it('клуб открывается на славе 150, как задано разделом 8', () => {
+    expect(getVenue('club_stage').requires.fame).toBe(150);
+  });
+
+  it('пороги идут по возрастанию внутри площадки', () => {
+    for (const venue of VENUES) {
+      expect(venue.thresholds.ok).toBeLessThan(venue.thresholds.good);
+      expect(venue.thresholds.good).toBeLessThan(venue.thresholds.triumph);
+      expect(venue.setlist.min).toBeLessThanOrEqual(venue.setlist.max);
+    }
+  });
+});
+
+describe('локации района', () => {
+  it('их девять плюс сам район (раздел 8)', () => {
+    expect(LOCATIONS).toHaveLength(10);
+    expect(LOCATIONS.some((location) => location.id === 'district')).toBe(true);
+  });
+
+  it('ссылаются только на существующие действия и площадки', () => {
+    for (const location of LOCATIONS) {
+      for (const id of location.activities) expect(hasActivity(id)).toBe(true);
+      for (const id of location.venues) expect(hasVenue(id)).toBe(true);
+      expect(location.openSlots.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('каждое действие живёт хотя бы в одной локации', () => {
+    const placed = new Set(LOCATIONS.flatMap((location) => location.activities));
+    for (const activity of ACTIVITIES) expect(placed.has(activity.id)).toBe(true);
+  });
+
+  it('часы локации не спорят с часами её действий', () => {
+    for (const location of LOCATIONS) {
+      for (const id of location.activities) {
+        const slots = getActivity(id).requires.slots;
+        if (!slots) continue;
+        expect(slots.some((slot) => location.openSlots.includes(slot))).toBe(true);
+      }
+    }
+  });
+});
+
+describe('уроки студии', () => {
+  it('собраны по три уровня педагога на каждый преподаваемый стат (раздел 8)', () => {
+    const lessons = ACTIVITIES.filter((activity) => activity.id.startsWith('lesson_'));
+    expect(lessons.length % 3).toBe(0);
+    for (const level of ['junior', 'mid', 'master']) {
+      expect(lessons.filter((lesson) => lesson.id.endsWith(level)).length).toBe(lessons.length / 3);
+    }
+  });
+
+  it('дороже значит быстрее', () => {
+    const junior = getActivity('lesson_breathSupport_junior');
+    const mid = getActivity('lesson_breathSupport_mid');
+    const master = getActivity('lesson_breathSupport_master');
+
+    expect(-junior.money).toBeLessThan(-mid.money);
+    expect(-mid.money).toBeLessThan(-master.money);
+    expect(junior.skillGain.breathSupport!).toBeLessThan(mid.skillGain.breathSupport!);
+    expect(mid.skillGain.breathSupport!).toBeLessThan(master.skillGain.breathSupport!);
+  });
+
+  it('экстрим заперт жанром и опорой (5.1)', () => {
+    const extreme = getActivity('lesson_extreme_mid');
+    expect(extreme.requires.genres).toEqual(['metal']);
+    expect(extreme.requires.minSkill?.breathSupport).toBe(BALANCE.vocal.extremeUnlockSupport);
   });
 });

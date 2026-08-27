@@ -12,12 +12,14 @@ import { applyLoad, healInjury, isInjured, loadForActivity, recover } from './vo
 
 export type BlockReason =
   | 'runOver'
+  | 'eventPending'
   | 'injured'
   | 'wrongSlot'
   | 'noEnergy'
   | 'noMoney'
   | 'lowSkill'
-  | 'wrongGenre';
+  | 'wrongGenre'
+  | 'locked';
 
 /**
  * Можно ли выполнить действие прямо сейчас.
@@ -26,6 +28,8 @@ export type BlockReason =
  */
 export function checkActivity(state: GameState, def: ActivityDef): BlockReason | null {
   if (state.over) return 'runOver';
+  // Пока событие ждёт ответа, игра стоит: сначала разберись с ним.
+  if (state.events.pending) return 'eventPending';
 
   const injured = isInjured(state);
   if (injured && (def.tags.includes('vocal') || def.requires.notInjured)) return 'injured';
@@ -52,6 +56,10 @@ export function checkActivity(state: GameState, def: ActivityDef): BlockReason |
   const genres = def.requires.genres;
   if (genres && !genres.includes(state.genre)) return 'wrongGenre';
 
+  for (const flag of def.requires.flagSet ?? []) {
+    if (!(state.flags[flag] ?? 0)) return 'locked';
+  }
+
   return null;
 }
 
@@ -62,6 +70,7 @@ export function performActivity(draft: GameState, def: ActivityDef, rng: Rng): v
   applyRecovery(draft, def);
   applySkills(draft, def);
   applyEconomy(draft, def);
+  applyRelations(draft, def);
   applyTags(draft, def);
 
   draft.stats.activityCounts[def.id] = (draft.stats.activityCounts[def.id] ?? 0) + 1;
@@ -121,8 +130,20 @@ function applyEconomy(draft: GameState, def: ActivityDef): void {
   }
 }
 
+function applyRelations(draft: GameState, def: ActivityDef): void {
+  for (const [npc, delta] of Object.entries(def.relationGain)) {
+    const state = draft.npcs[npc as keyof GameState['npcs']];
+    state.relation = clamp(state.relation + (delta ?? 0), 0, 100);
+    state.met = true;
+  }
+}
+
 function applyTags(draft: GameState, def: ActivityDef): void {
   if (def.tags.includes('warmup')) draft.vocal.warmedUpOnDay = draft.day;
+  if (def.tags.includes('record')) {
+    draft.career.singles += 1;
+    pushLog(draft, 'single.recorded', { singles: draft.career.singles });
+  }
   if (def.tags.includes('sleep')) draft.vocal.sleptTonight = true;
   if (def.tags.includes('silence')) draft.vocal.silentSlotsToday += 1;
 

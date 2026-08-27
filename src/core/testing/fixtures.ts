@@ -17,6 +17,10 @@ export function makeState(
     resources: { ...base.resources, ...patch.resources },
     vocal: { ...base.vocal, ...patch.vocal },
     economy: { ...base.economy, ...patch.economy },
+    career: { ...base.career, ...patch.career },
+    npcs: { ...base.npcs, ...patch.npcs },
+    wardrobe: { ...base.wardrobe, ...patch.wardrobe },
+    events: { ...base.events, ...patch.events },
     stats: { ...base.stats, ...patch.stats },
     flags: { ...base.flags, ...patch.flags },
   } as GameState;
@@ -26,10 +30,14 @@ export function makeRng(seed = 'test-rng'): Rng {
   return new Rng(seed);
 }
 
-/** ГПСЧ, у которого кубик всегда выпадает: проверяем гарантированную травму. */
+/**
+ * ГПСЧ, у которого кубик всегда выпадает: проверяем гарантированную травму.
+ * Нулевую вероятность он всё-таки уважает — иначе «шанс 0» тоже срабатывал бы
+ * и тесты ловили не то событие, которое проверяют.
+ */
 export function alwaysRng(): Rng {
   const rng = new Rng(1);
-  rng.chance = () => true;
+  rng.chance = (probability: number) => probability > 0;
   return rng;
 }
 

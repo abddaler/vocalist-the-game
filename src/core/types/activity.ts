@@ -1,5 +1,6 @@
 import type { SkillGains } from './skills';
 import type { GenreId } from './genre';
+import type { NpcId } from './npc';
 import type { Slot } from './time';
 
 /**
@@ -19,7 +20,11 @@ export type ActivityTag =
   | 'work'
   | 'medical'
   | 'training'
-  | 'rest';
+  | 'rest'
+  /** Запись сингла: пополняет пассивный источник фанатов. */
+  | 'record'
+  /** Нетворкинг: знакомит с людьми сцены. */
+  | 'social';
 
 /**
  * Явное `| undefined` — плата за exactOptionalPropertyTypes: Zod отдаёт
@@ -34,6 +39,8 @@ export interface ActivityRequirement {
   /** Нельзя делать с травмой связок. */
   readonly notInjured?: boolean | undefined;
   readonly genres?: readonly GenreId[] | undefined;
+  /** Требуются взведённые флаги: так события открывают действия. */
+  readonly flagSet?: readonly string[] | undefined;
 }
 
 export interface ActivityDef {
@@ -56,6 +63,8 @@ export interface ActivityDef {
   /** Прямое восстановление связок (сон, чай, фониатр). */
   readonly vocalHealth: number;
   readonly skillGain: Readonly<SkillGains>;
+  /** Прибавка к отношениям с NPC (9.3). */
+  readonly relationGain: Readonly<Partial<Record<NpcId, number>>>;
   readonly fame: number;
   readonly fans: number;
   readonly reputation: number;

@@ -1,5 +1,8 @@
 import { GENRES } from '@data/genres';
+import { hasActivity, getActivity } from '@data/activities';
+import { hasVenue, getVenue } from '@data/venues';
 import { healthTier } from '@core/systems/vocal';
+import { imageLevel } from '@core/systems/outfit';
 import { SKILL_KEYS } from '@core/types';
 import type { GameState, GenreId, SkillKey } from '@core/types';
 import { formatLogEntry } from '@ui/log';
@@ -26,6 +29,10 @@ const strategy = getStrategy(arg('strategy', 'support'));
 
 /** Заметные события: рутину «сделал действие» в дневник не тащим. */
 const NOTABLE = new Set([
+  'career.up',
+  'event.fired',
+  'performance.intercepted',
+  'manager.hired',
   'injury.start',
   'injury.healed',
   'injury.over',
@@ -38,9 +45,11 @@ const NOTABLE = new Set([
   'run.over',
 ]);
 
-/** restaurant_shift -> restaurantShift, чтобы попасть в ключ словаря. */
-function toKey(id: string): string {
-  return id.replace(/_(\w)/g, (_, letter: string) => letter.toUpperCase());
+/** Счётчики слотов держат вперемешку действия и площадки. */
+function labelOf(id: string): string {
+  if (hasActivity(id)) return t(getActivity(id).nameKey);
+  if (hasVenue(id)) return t(getVenue(id).nameKey);
+  return id;
 }
 
 function printDay(state: GameState): void {
@@ -72,7 +81,17 @@ function printSummary(state: GameState): void {
   );
   console.log(`  травм за прогон   ${state.vocal.injuryCount}`);
   console.log(`  бессонных ночей   ${state.stats.missedNights}`);
-  console.log(`  слава / фанаты    ${state.resources.fame} / ${state.resources.fans}`);
+  console.log(
+    `  слава / фанаты    ${Math.round(state.resources.fame)} / ${state.resources.fans}`,
+  );
+  console.log(`  ступень карьеры   ${t(`tier.${state.career.tier}`)}`);
+  console.log(`  выступлений       ${state.career.performances}`);
+  console.log(
+    `  исходы            ${Object.entries(state.stats.outcomes)
+      .map(([outcome, count]) => `${t(`outcome.${outcome}`)} ${count}`)
+      .join(', ') || '—'}`,
+  );
+  console.log(`  имидж             ${imageLevel(state)}`);
 
   console.log(bold('\nНавыки'));
   for (const key of SKILL_KEYS) {
@@ -86,7 +105,7 @@ function printSummary(state: GameState): void {
   for (const [id, count] of Object.entries(state.stats.activityCounts).sort(
     (a, b) => b[1] - a[1],
   )) {
-    console.log(`  ${pad(t(`activity.${toKey(id)}`), 26)}${String(count).padStart(3)}`);
+    console.log(`  ${pad(labelOf(id), 30)}${String(count).padStart(3)}`);
   }
 
   console.log(dim(`\nдругие стратегии: ${STRATEGIES.map((s) => s.id).join(', ')}\n`));

@@ -4,6 +4,7 @@ import { pushLog } from '../state/log';
 import { clamp, round2 } from '../util/num';
 import { SLOTS_PER_DAY } from '../types';
 import type { GameState } from '../types';
+import { growRival, monthlySingleFans } from './career';
 import { monthlyFanDecay } from './fans';
 import { isDebtCritical, monthlySettlement, weeklySettlement } from './money';
 import { recover } from './vocal';
@@ -30,6 +31,7 @@ function endOfDay(draft: GameState, _rng: Rng): void {
   settleSleep(draft);
   settleSilence(draft);
   tickInjury(draft);
+  growRival(draft);
 
   if (draft.day % T.daysPerWeek === 0) settleWeek(draft);
   if (draft.day % T.daysPerMonth === 0) settleMonth(draft);
@@ -86,6 +88,8 @@ function settleMonth(draft: GameState): void {
   draft.resources.money = money;
   draft.economy.monthsPaid += 1;
   pushLog(draft, 'month.bills', { rent, bills, money });
+
+  monthlySingleFans(draft);
 
   const { fans, left } = monthlyFanDecay(draft);
   if (left > 0) {

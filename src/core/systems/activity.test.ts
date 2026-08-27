@@ -19,13 +19,13 @@ const blockOf = (state: GameState, id: string): BlockReason | null =>
 
 describe('допуск к действию', () => {
   it('пускает урок утром и не пускает ночью', () => {
-    expect(blockOf(makeState({ slotIndex: 0 }), 'lesson_breath')).toBeNull();
-    expect(blockOf(makeState({ slotIndex: 3 }), 'lesson_breath')).toBe('wrongSlot');
+    expect(blockOf(makeState({ slotIndex: 0 }), 'lesson_breathSupport_mid')).toBeNull();
+    expect(blockOf(makeState({ slotIndex: 3 }), 'lesson_breathSupport_mid')).toBe('wrongSlot');
   });
 
   it('не даёт петь с травмой, но лечиться разрешает', () => {
     const injured = makeState({ slotIndex: 0, vocal: { injuryDaysLeft: 4 } });
-    expect(blockOf(injured, 'lesson_breath')).toBe('injured');
+    expect(blockOf(injured, 'lesson_breathSupport_mid')).toBe('injured');
     expect(blockOf(injured, 'practice_free')).toBe('injured');
     expect(blockOf(injured, 'doctor_visit')).toBeNull();
     expect(blockOf(injured, 'vocal_rest')).toBeNull();
@@ -40,8 +40,8 @@ describe('допуск к действию', () => {
 
   it('требование денег выводится из цены и упирается в лимит долга', () => {
     const broke = makeState({ slotIndex: 0, resources: { money: BALANCE.money.debtLimit } });
-    expect(blockOf(broke, 'lesson_breath')).toBe('noMoney');
-    expect(blockOf(makeState({ slotIndex: 0, resources: { money: 0 } }), 'lesson_breath'))
+    expect(blockOf(broke, 'lesson_breathSupport_mid')).toBe('noMoney');
+    expect(blockOf(makeState({ slotIndex: 0, resources: { money: 0 } }), 'lesson_breathSupport_mid'))
       .toBeNull();
   });
 
@@ -60,7 +60,7 @@ describe('применение действия', () => {
 
   it('урок списывает деньги и энергию и двигает время на слот', () => {
     const before = makeState({ slotIndex: 0 });
-    const after = perform(before, 'lesson_breath');
+    const after = perform(before, 'lesson_breathSupport_mid');
     expect(after.resources.money).toBe(before.resources.money - 1800);
     expect(after.resources.energy).toBe(before.resources.energy - 20);
     expect(after.slotIndex).toBe(1);
@@ -69,7 +69,7 @@ describe('применение действия', () => {
 
   it('вокальное действие изнашивает связки, невокальное — нет', () => {
     const before = makeState({ slotIndex: 0 });
-    expect(perform(before, 'lesson_breath').resources.vocalHealth).toBeLessThan(
+    expect(perform(before, 'lesson_breathSupport_mid').resources.vocalHealth).toBeLessThan(
       before.resources.vocalHealth,
     );
     expect(perform(before, 'gym').resources.vocalHealth).toBe(before.resources.vocalHealth);

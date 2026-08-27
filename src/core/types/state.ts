@@ -1,6 +1,9 @@
 import type { RngState } from '../rng';
+import type { CareerTier } from './career';
 import type { GenreId } from './genre';
 import type { LogEntry } from './log';
+import type { NpcId, NpcState } from './npc';
+import type { Wardrobe } from './outfit';
 import type { VocalSkills } from './skills';
 
 export interface Resources {
@@ -40,11 +43,39 @@ export interface Economy {
   monthsPaid: number;
 }
 
+export interface Career {
+  tier: CareerTier;
+  /** Сколько выступлений отыграно за прогон. */
+  performances: number;
+  /** Записанные синглы приносят фанатов пассивно (раздел 8, локация 6). */
+  singles: number;
+  /** Слава конкурента: чем сильнее оторвался, тем чаще перехватывает концерты. */
+  rivalFame: number;
+  /** Нанят ли менеджер (9.3). */
+  manager: boolean;
+}
+
+export interface WardrobeState {
+  owned: string[];
+  equipped: Wardrobe;
+}
+
+export interface EventsState {
+  /** id -> сколько раз выпадало. */
+  seen: Record<string, number>;
+  /** Событие, ждущее выбора игрока. Пока висит — другие действия закрыты. */
+  pending: string | null;
+  /** Слотов с последнего события: не сыпем их подряд. */
+  slotsSinceEvent: number;
+}
+
 export interface RunStats {
   slotsUsed: number;
   activityCounts: Record<string, number>;
   missedNights: number;
   blockedAttempts: number;
+  /** Итоги выступлений по исходам — для отчётов симулятора (раздел 10). */
+  outcomes: Record<string, number>;
 }
 
 export interface GameState {
@@ -66,6 +97,10 @@ export interface GameState {
   resources: Resources;
   vocal: VocalCondition;
   economy: Economy;
+  career: Career;
+  npcs: Record<NpcId, NpcState>;
+  wardrobe: WardrobeState;
+  events: EventsState;
   stats: RunStats;
 
   /** Произвольные отметки: сюжетные вехи, разовые события. */

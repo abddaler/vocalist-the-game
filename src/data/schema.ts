@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GENRE_IDS, SKILL_KEYS, SLOTS } from '@core/types';
+import { GENRE_IDS, NPC_IDS, SKILL_KEYS, SLOTS } from '@core/types';
 
 /** Карта навык -> число. Ключи проверяем явно, чтобы опечатка падала при старте. */
 const skillMap = z
@@ -9,12 +9,20 @@ const skillMap = z
     { message: `ключ навыка должен быть одним из: ${SKILL_KEYS.join(', ')}` },
   );
 
+const relationMap = z
+  .record(z.string(), z.number())
+  .refine(
+    (map) => Object.keys(map).every((key) => (NPC_IDS as readonly string[]).includes(key)),
+    { message: `ключ NPC должен быть одним из: ${NPC_IDS.join(', ')}` },
+  );
+
 const requirementSchema = z
   .object({
     slots: z.array(z.enum(SLOTS)).optional(),
     minEnergy: z.number().optional(),
     minMoney: z.number().optional(),
     minSkill: skillMap.optional(),
+    flagSet: z.array(z.string()).optional(),
     notInjured: z.boolean().optional(),
     genres: z.array(z.enum(GENRE_IDS)).optional(),
   })
@@ -35,6 +43,8 @@ export const activitySchema = z.object({
         'medical',
         'training',
         'rest',
+        'record',
+        'social',
       ]),
     )
     .default([]),
@@ -47,6 +57,7 @@ export const activitySchema = z.object({
   mood: z.number().default(0),
   vocalHealth: z.number().default(0),
   skillGain: skillMap.default({}),
+  relationGain: relationMap.default({}),
   fame: z.number().default(0),
   fans: z.number().default(0),
   reputation: z.number().default(0),

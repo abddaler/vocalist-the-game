@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '@data/balance';
 import { ACTIVITIES } from '@data/activities';
-import { doActivity, newGame, switchGenre } from './actions';
+import { doActivity, newGame, resolveEventChoice, switchGenre } from './actions';
 import { createInitialState } from './initialState';
 import { reduce } from './reducer';
 import { Store } from './store';
 import type { GameState } from '../types';
 
+/** События подвешивают ход: сценарий отвечает на них первым вариантом. */
 const play = (state: GameState, ids: readonly string[]): GameState =>
-  ids.reduce((acc, id) => reduce(acc, doActivity(id)), state);
+  ids.reduce((acc, id) => {
+    const settled = acc.events.pending ? reduce(acc, resolveEventChoice(0)) : acc;
+    return reduce(settled, doActivity(id));
+  }, state);
 
 /** Один игровой день по расписанию «утро-день-вечер-ночь». */
-const A_DAY = ['lesson_breath', 'practice_free', 'restaurant_shift', 'sleep'] as const;
+const A_DAY = ['lesson_breathSupport_mid', 'practice_free', 'restaurant_shift', 'sleep'] as const;
 
 describe('детерминизм', () => {
   it('один сид и одни действия дают побайтово одинаковый прогон', () => {
@@ -39,7 +43,7 @@ describe('неизменяемость', () => {
   it('редьюсер не трогает переданное состояние', () => {
     const before = createInitialState('immutable', 'pop');
     const snapshot = structuredClone(before);
-    reduce(before, doActivity('lesson_breath'));
+    reduce(before, doActivity('lesson_breathSupport_mid'));
     expect(before).toEqual(snapshot);
   });
 });
@@ -88,8 +92,12 @@ describe('Store', () => {
     const seen: string[] = [];
     const unsubscribe = store.subscribe((_, action) => seen.push(action.type));
 
-    store.dispatch(doActivity('lesson_breath'));
+    store.dispatch(doActivity('lesson_breathSupport_mid'));
+    expect(store.getState().slotIndex).toBe(1);
+
     unsubscribe();
+    // После действия могло подвеситься событие: разбираем его и идём дальше.
+    if (store.getState().events.pending) store.dispatch(resolveEventChoice(0));
     store.dispatch(doActivity('practice_free'));
 
     expect(seen).toEqual(['DO_ACTIVITY']);
@@ -105,7 +113,7 @@ describe('прогон целиком', () => {
    * никогда, так что сутки всегда сдвигаются.
    */
   const PREFERENCES = [
-    'lesson_breath',
+    'lesson_breathSupport_mid',
     'practice_free',
     'restaurant_shift',
     'vocal_rest',
@@ -114,8 +122,12 @@ describe('прогон целиком', () => {
 
   function runSlice(seed: string): GameState {
     let state = createInitialState(seed, 'pop');
-    for (let guard = 0; guard < 60 * 4 + 10 && !state.over; guard += 1) {
+    for (let guard = 0; guard < 60 * 8 + 40 && !state.over; guard += 1) {
       const before = state;
+      if (before.events.pending) {
+        state = reduce(before, resolveEventChoice(0));
+        continue;
+      }
       for (const id of PREFERENCES) {
         const next = reduce(before, doActivity(id));
         if (next.stats.blockedAttempts === before.stats.blockedAttempts) {

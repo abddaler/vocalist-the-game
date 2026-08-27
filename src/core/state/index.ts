@@ -1,4 +1,5 @@
 export * from './actions';
+export type { Action } from './actions';
 export { cloneState } from './clone';
 export { createInitialState, SAVE_VERSION } from './initialState';
 export { pushLog, slotOf } from './log';
