@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '@platform/config';
+import { attachIntegerScaling } from '@platform/display';
 import { BootScene } from '@game/scenes/BootScene';
 
 /**
- * Внутреннее разрешение фиксировано 480x270 и масштабируется под окно
- * (раздел 2, ограничение 3). Реальный размер экрана игре не виден.
+ * Внутреннее разрешение фиксировано 480x270 (раздел 2, ограничение 3).
+ * Режим NONE + ручной целочисленный зум: см. platform/display.ts.
  */
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   width: INTERNAL_WIDTH,
@@ -15,9 +16,12 @@ new Phaser.Game({
   roundPixels: true,
   backgroundColor: '#14161c',
   scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    autoRound: true,
+    // Центрирование отдано CSS-гриду в index.html: autoCenter Phaser'а
+    // добавляет свои отступы поверх и уводит канвас вниз.
+    mode: Phaser.Scale.NONE,
+    autoCenter: Phaser.Scale.NO_CENTER,
   },
   scene: [BootScene],
 });
+
+attachIntegerScaling(game);
