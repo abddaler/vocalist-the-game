@@ -114,7 +114,8 @@ export function resolveEvent(draft: GameState, choiceIndex: number, rng: Rng): b
   pushLog(draft, 'event.resolved', {
     id,
     choice: choice.textKey,
-    outcome: risked ? choice.risk!.textKey : choice.textKey,
+    // Ключ последствия отличается от выбора только когда сработал риск.
+    result: risked ? choice.risk!.textKey : choice.textKey,
   });
   return true;
 }

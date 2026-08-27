@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '@platform/config';
 import { attachIntegerScaling } from '@platform/display';
 import { BootScene } from '@game/scenes/BootScene';
+import { GameScene } from '@game/scenes/GameScene';
 
 /**
  * Внутреннее разрешение фиксировано 480x270 (раздел 2, ограничение 3).
@@ -21,7 +22,7 @@ const game = new Phaser.Game({
     mode: Phaser.Scale.NONE,
     autoCenter: Phaser.Scale.NO_CENTER,
   },
-  scene: [BootScene],
+  scene: [BootScene, GameScene],
 });
 
 attachIntegerScaling(game);

@@ -10,7 +10,6 @@ import { t } from '@ui/i18n';
  */
 export class BootScene extends Phaser.Scene {
   private input$!: InputController;
-  private hint!: Phaser.GameObjects.Text;
 
   constructor() {
     super('boot');
@@ -29,7 +28,7 @@ export class BootScene extends Phaser.Scene {
     this.add
       .text(cx, INTERNAL_HEIGHT / 2 - 6, t('app.subtitle'), { fontSize: '10px', color: '#8fbf7f' })
       .setOrigin(0.5);
-    this.hint = this.add
+    this.add
       .text(cx, INTERNAL_HEIGHT / 2 + 20, t('boot.hint'), { fontSize: '8px', color: '#7a7a7a' })
       .setOrigin(0.5);
 
@@ -38,11 +37,10 @@ export class BootScene extends Phaser.Scene {
 
   override update(): void {
     this.input$.update();
-    // Доказательство, что слой ввода живой: и тап, и клавиши доходят до сцены.
-    const tap = this.input$.consumeTap();
-    if (tap) this.hint.setText(`tap ${Math.round(tap.x)}:${Math.round(tap.y)}`);
-    else if (this.input$.move.x !== 0 || this.input$.move.y !== 0) {
-      this.hint.setText(`move ${this.input$.move.x}:${this.input$.move.y}`);
+    // Любой тап или нажатие начинают игру: экран старта и выбор жанра
+    // приедут на вехе 6, пока просто пропускаем заставку.
+    if (this.input$.consumeTap() || this.input$.justPressed('confirm')) {
+      this.scene.start('game');
     }
   }
 }

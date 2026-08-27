@@ -10,4 +10,6 @@ export interface LocationDef {
   readonly activities: readonly string[];
   /** Площадки для выступлений, если они здесь есть. */
   readonly venues: readonly string[];
+  /** Здесь торгуют одеждой: локация открывает гардероб (9.2). */
+  readonly shop?: boolean | undefined;
 }

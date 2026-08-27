@@ -50,6 +50,26 @@ export default tseslint.config(
     },
   },
   {
+    /**
+     * ui/i18n и ui/log читает headless-прогон в sim/. Затащить сюда Phaser
+     * значит сломать `npm run sim` — поэтому эти два файла остаются чистыми.
+     */
+    files: ['src/ui/i18n.ts', 'src/ui/log.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['phaser', 'phaser/*'],
+              message: 'Эти модули читает headless-симулятор: Phaser здесь запрещён.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // data/ — декларативный контент, тоже не должен тянуть движок.
     files: ['src/data/**/*.ts'],
     rules: {

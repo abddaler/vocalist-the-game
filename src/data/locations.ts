@@ -62,6 +62,7 @@ export const LOCATIONS: readonly LocationDef[] = [
     openSlots: ['day', 'evening'],
     activities: ['shopping'],
     venues: [],
+    shop: true,
   },
   {
     id: 'phoniatrist',

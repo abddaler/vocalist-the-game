@@ -24,6 +24,9 @@ export function formatLogEntry(entry: LogEntry): string {
     params.venue = t(getVenue(params.venue).nameKey);
   }
   if (typeof params.outcome === 'string') params.outcome = t(`outcome.${params.outcome}`);
+  // Тексты события приходят ключами: словарь их знает, шаблон — нет.
+  if (typeof params.choice === 'string') params.choice = t(params.choice);
+  if (typeof params.result === 'string') params.result = t(params.result);
   if (typeof params.tier === 'string') params.tier = t(`tier.${params.tier}`);
   if (typeof params.item === 'string') params.item = t(`outfit.${toCamel(params.item)}`);
   if (typeof params.reason === 'string') {
