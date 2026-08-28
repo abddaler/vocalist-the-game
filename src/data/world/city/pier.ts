@@ -1,25 +1,36 @@
 import type { DistrictDef } from '@core/types';
-import { STREET, curbs, decor, fill, gateLeft, house } from './plan';
+import { band, curbs, decor, fill, gateLeft, house, stairs } from './plan';
 
 const WIDTH = 640;
+const HEIGHT = 192;
 
 /**
  * Ocean Drive: набережная. Репетируют и пишутся здесь же, в бывших
  * ангарах у самой воды, поэтому дневная работа соседствует с пляжем.
  *
- * Это единственный район, где за домами не город, а океан, и земля не
- * асфальт, а доски настила и песок. Ради этого контраста он и сделан:
- * четыре одинаково устроенные улицы — не город, а один длинный коридор.
+ * Ради этого района вся земля и разбита на плиты: улица наверху, за
+ * парапетом обрыв, ниже настил, песок и прибой. Спуститься можно только
+ * по двум лестницам — и от этого набережная читается как берег, а не как
+ * ещё одна полоса асфальта.
  */
 export const PIER: DistrictDef = {
   id: 'pier',
   nameKey: 'district.pier',
-  ground: 'boardwalk',
-  kerb: 86,
   map: { x: 4, y: 48, w: 54, h: 26 },
   width: WIDTH,
-  height: STREET.height,
-  spawn: { x: 300, y: 86 },
+  height: HEIGHT,
+  spawn: { x: 300, y: 80 },
+
+  terrain: [
+    band('pavement', 66, 20, WIDTH),
+    band('road', 86, 24, WIDTH),
+    band('pavement', 110, 12, WIDTH, 10),
+    stairs(120, 122, 26, 10),
+    stairs(430, 122, 26, 10),
+    band('boardwalk', 132, 26, WIDTH),
+    band('sand', 158, 22, WIDTH),
+    band('water', 180, 12, WIDTH),
+  ],
 
   buildings: [
     house('rehearsal_base', 'warehouse', 108, 92, 0x8fb0c0),
@@ -35,42 +46,60 @@ export const PIER: DistrictDef = {
   ],
 
   decor: [
-    decor('palm', 8, 78, 2),
-    decor('palm', 96, 76, 1),
-    decor('palm', 196, 78, 2),
-    decor('palm', 288, 76, 0),
-    decor('palm', 388, 78, 1),
-    decor('palm', 486, 76, 2),
-    decor('palm', 570, 78, 0),
-    decor('palm', 632, 77, 1),
-    decor('lifeguard', 466, 101),
-    decor('deckchair', 56, 99, 0),
-    decor('deckchair', 82, 102, 1),
-    decor('umbrella', 70, 100, 0),
-    decor('deckchair', 146, 102, 2),
-    decor('umbrella', 418, 100, 1),
-    decor('deckchair', 450, 102, 0),
-    decor('surfboard', 172, 74, 0),
-    decor('surfboard', 182, 74, 2),
-    decor('boat', 244, 101, 0),
-    decor('crate', 62, 76, 0),
-    decor('crate', 84, 78, 1),
-    decor('bollard', 330, 97),
-    decor('bollard', 366, 97),
-    decor('bollard', 402, 97),
+    // Улица у ангаров.
+    decor('palm', 8, 80, 2),
+    decor('palm', 96, 78, 1),
+    decor('palm', 196, 80, 2),
+    decor('palm', 288, 78, 0),
+    decor('palm', 388, 80, 1),
+    decor('palm', 486, 78, 2),
+    decor('palm', 570, 80, 0),
+    decor('palm', 632, 79, 1),
+    decor('crate', 62, 82),
+    decor('crate', 84, 84, 1),
+    decor('surfboard', 172, 80, 0),
+    decor('surfboard', 182, 80, 2),
+    decor('lamp', 148, 82),
+    decor('lamp', 356, 82),
+    decor('lamp', 556, 82),
+    decor('car', 240, 104, 1),
+    decor('car', 520, 106, 0),
+
+    // Парапет над набережной.
+    decor('bollard', 60, 120),
+    decor('bollard', 330, 120),
+    decor('bollard', 366, 120),
+    decor('bollard', 402, 120),
+    decor('bin', 268, 120),
+    decor('bench', 200, 120),
+    decor('bike', 484, 120),
+
+    // Настил: скамьи, чайки, велосипеды.
+    decor('bench', 236, 146),
+    decor('bench', 512, 146),
+    decor('bin', 452, 146),
+    decor('palm', 60, 144, 1),
+    decor('palm', 300, 144, 2),
+    decor('palm', 560, 144, 0),
+    decor('dog', 306, 150, 1),
+    decor('newsbox', 396, 146),
+
+    // Пляж.
+    decor('lifeguard', 466, 172),
+    decor('deckchair', 56, 170, 0),
+    decor('deckchair', 82, 174, 1),
+    decor('umbrella', 70, 172, 0),
+    decor('deckchair', 146, 174, 2),
+    decor('umbrella', 418, 172, 1),
+    decor('deckchair', 450, 174, 0),
+    decor('boat', 244, 176, 0),
+    decor('surfboard', 350, 170, 1),
     decor('gull', 200, 12, 0),
     decor('gull', 340, 6, 1),
     decor('gull', 448, 16, 0),
-    decor('lamp', 148, 74),
-    decor('lamp', 356, 74),
-    decor('lamp', 556, 74),
-    decor('bin', 452, 97),
-    decor('bike', 520, 97),
-    decor('dog', 306, 97, 1),
-    decor('bench', 236, 97),
   ],
 
-  gates: [gateLeft('boulevard')],
+  gates: [gateLeft('boulevard', 90)],
   solids: curbs(WIDTH),
   points: [],
 };

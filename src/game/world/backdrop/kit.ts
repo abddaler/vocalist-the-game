@@ -1,4 +1,3 @@
-import type { GroundKind } from '@core/types';
 import type { Rect } from '@ui/widgets/Hotspots';
 
 /**
@@ -9,15 +8,12 @@ import type { Rect } from '@ui/widgets/Hotspots';
 export interface Backdrop {
   /** Полоса неба в экранных координатах. */
   readonly sky: Rect;
-  /** Всё, что ниже неба: тротуар и проезжая часть. */
+  /** Всё, что ниже неба: земля района. */
   readonly road: Rect;
-  /** Граница тротуара и мостовой, в экранных координатах. */
-  readonly kerbY: number;
   /** Сдвиг камеры: нужен дальнему плану. */
   readonly cameraX: number;
   readonly worldWidth: number;
   /** Во сколько раз мир крупнее экранного пикселя. */
   readonly unit: number;
-  readonly ground: GroundKind;
 }
 

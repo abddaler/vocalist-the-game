@@ -43,10 +43,6 @@ export function drawFarSide(
     };
   };
 
-  if (district === 'pier') {
-    drawOcean(painter, area, ambience);
-    return;
-  }
   SKYLINE[district](plan(0.18, 0.72, 0, 1), plan(0.4, 0.34, 30, 0.82));
 }
 
@@ -90,62 +86,17 @@ const SKYLINE: Readonly<Record<DistrictId, (far: Silhouette, near: Silhouette) =
       }
     }
   },
+  // Океан у набережной лежит в кадре снизу, поэтому за домами тут не
+  // вода, а город в дымке: низкие отели и пальмы над их крышами.
   pier: (far, near) => {
     for (let i = 0; i < 12; i += 1) far.bar(i * 90 - 20, 74, 7 + ((i * 3) % 3) * 3);
-    for (let i = 0; i < 9; i += 1) {
-      const x = i * 124 - 20;
-      near.bar(x, 84, 8);
-      // Портовый кран: мачта, длинная стрела и трос с крюком.
-      near.bar(x + 40, 4, 24);
-      near.bar(x + 12, 56, 3);
-      near.bar(x + 16, 3, 18);
+    for (let i = 0; i < 10; i += 1) {
+      const x = i * 112 - 30;
+      near.bar(x, 74, 9 + ((i * 5) % 3) * 3);
+      // Пальма над крышей: ствол и крона в три мазка.
+      near.bar(x + 84, 2, 16);
+      near.bar(x + 80, 10, 3);
+      near.bar(x + 82, 6, 5);
     }
   },
 };
-
-/**
- * Океан за домами набережной: линия горизонта, полосы воды к берегу,
- * блик от солнца и пара парусов. Ради этого вида район и сделан — на
- * четвёртой одинаковой улице город кончается.
- */
-function drawOcean(painter: Painter, area: Backdrop, ambience: Ambience): void {
-  const { sky } = area;
-  const horizon = sky.y + Math.round(sky.h * 0.52);
-  const deep = mix(ambience.far, 0x1c4f7a, 0.75);
-  const shallow = mix(deep, ambience.skyLow, 0.45);
-  const bands = 7;
-  const bandH = Math.ceil((sky.y + sky.h - horizon) / bands) + 1;
-
-  for (let i = 0; i < bands; i += 1) {
-    painter.fill(
-      { x: sky.x, y: horizon + i * (bandH - 1), w: sky.w, h: bandH },
-      mix(deep, shallow, i / (bands - 1)),
-    );
-  }
-  painter.fill({ x: sky.x, y: horizon, w: sky.w, h: 1 }, mix(shallow, 0xffffff, 0.35));
-
-  // Дорожка света под солнцем и барашки: без них вода — просто заливка.
-  const sunX = Math.round(sky.x + sky.w * 0.74);
-  for (let i = 0; i < bands; i += 1) {
-    const y = horizon + 2 + i * (bandH - 1);
-    const w = 6 + i * 4;
-    painter.fill({ x: sunX - w / 2, y, w, h: 1 }, mix(shallow, 0xffffff, 0.6), 0.5);
-  }
-  const shift = -area.cameraX * 0.24;
-  for (let i = 0; i < 26; i += 1) {
-    const x = Math.round(sky.x + ((i * 97) % 1100) + shift);
-    const y = horizon + 3 + ((i * 7) % (bands - 1)) * (bandH - 1);
-    if (x < sky.x || x > sky.x + sky.w) continue;
-    painter.fill({ x, y, w: 4 + (i % 3) * 2, h: 1 }, mix(shallow, 0xffffff, 0.55), 0.55);
-  }
-
-  // Пара парусов у горизонта.
-  for (const [dx, dy] of [[0.24, 3], [0.58, 6]] as const) {
-    const x = Math.round(sky.x + sky.w * dx + shift * 0.5);
-    if (x < sky.x - 10 || x > sky.x + sky.w) continue;
-    painter.fill({ x, y: horizon + dy, w: 5, h: 1 }, 0xf0f4f8);
-    painter.fill({ x: x + 2, y: horizon + dy - 5, w: 1, h: 5 }, 0xf0f4f8);
-    painter.fill({ x: x + 3, y: horizon + dy - 4, w: 3, h: 4 }, 0xe8eef4);
-  }
-}
-

@@ -47,6 +47,23 @@ export interface Bounds {
 }
 
 /**
+ * Есть ли под ногами земля. Проверяются середина и оба края подошвы:
+ * иначе человек наполовину повисает над водой и краем настила, и берег
+ * перестаёт читаться как берег.
+ */
+export type Ground = (point: WorldPoint) => boolean;
+
+const grounded = (position: WorldPoint, ground: Ground | undefined): boolean => {
+  if (!ground) return true;
+  const edge = ACTOR.w / 2 - 1;
+  return (
+    ground(position) &&
+    ground({ x: position.x - edge, y: position.y }) &&
+    ground({ x: position.x + edge, y: position.y })
+  );
+};
+
+/**
  * Двигает персонажа на dx/dy, разбирая оси по отдельности: так он
  * скользит вдоль стены вместо того, чтобы залипать в неё углом.
  */
@@ -56,16 +73,19 @@ export function step(
   dy: number,
   solids: readonly WorldRect[],
   bounds: Bounds,
+  ground?: Ground,
 ): WorldPoint {
   let { x, y } = position;
+  const free = (point: WorldPoint): boolean =>
+    !blocked(point, solids) && grounded(point, ground);
 
   if (dx !== 0) {
     const next = clamp(x + dx, ACTOR.w / 2, bounds.width - ACTOR.w / 2);
-    if (!blocked({ x: next, y }, solids)) x = next;
+    if (free({ x: next, y })) x = next;
   }
   if (dy !== 0) {
     const next = clamp(y + dy, ACTOR.h, bounds.height);
-    if (!blocked({ x, y: next }, solids)) y = next;
+    if (free({ x, y: next })) y = next;
   }
 
   return { x, y };
@@ -78,6 +98,7 @@ export function stepToward(
   distance: number,
   solids: readonly WorldRect[],
   bounds: Bounds,
+  ground?: Ground,
 ): { position: WorldPoint; arrived: boolean } {
   const dx = target.x - position.x;
   const dy = target.y - position.y;
@@ -85,7 +106,7 @@ export function stepToward(
   if (length <= ARRIVE_EPSILON) return { position, arrived: true };
 
   const scale = Math.min(distance, length) / length;
-  const moved = step(position, dx * scale, dy * scale, solids, bounds);
+  const moved = step(position, dx * scale, dy * scale, solids, bounds, ground);
 
   /*
    * Цель за стеной считается достигнутой, когда шаг перестал к ней

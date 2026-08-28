@@ -122,26 +122,41 @@ export interface GateDef {
 }
 
 /**
- * Что видно за крышами и по чему ходят. Улица, набережная и площадь
- * различаются землёй и дальним планом, а не только цветом домов.
+ * По чему ходят. Земля района собирается из плит разных покрытий, а не
+ * красится одной полосой: тротуар, мостовая, газон, настил и песок
+ * рядом — это и есть ландшафт, ради которого район стал выше кадра.
  */
-export type GroundKind = 'street' | 'boardwalk' | 'plaza';
+export type SurfaceKind =
+  | 'road'
+  | 'pavement'
+  | 'plaza'
+  | 'boardwalk'
+  | 'sand'
+  | 'grass'
+  | 'carpet'
+  | 'water'
+  | 'steps';
+
+/**
+ * Плита земли. Плиты кладутся в порядке списка, снизу вверх по слоям,
+ * и вместе задают проходимую часть района: где плиты нет — там не ходят.
+ */
+export interface TerrainDef {
+  readonly rect: WorldRect;
+  readonly surface: SurfaceKind;
+  /**
+   * Обрыв по нижней кромке плиты: подпорная стенка такой высоты. Через
+   * неё не пройти — только по лестнице, которая её и разрывает. Отсюда
+   * многоуровневость: набережная лежит ниже улицы, а не рядом с ней.
+   */
+  readonly riser?: number | undefined;
+}
 
 export interface DistrictDef {
   readonly id: DistrictId;
   readonly nameKey: string;
-  readonly ground: GroundKind;
-  /**
-   * Полоса вдоль тротуара: газон с деревьями, песок, красная дорожка.
-   * Ландшафт из одной серой полосы читается как коридор.
-   */
-  readonly strip?: { readonly y: number; readonly h: number; readonly kind: 'grass' | 'sand' | 'carpet' } | undefined;
-  /**
-   * Где кончается мощёная часть и начинается кромка кадра. По умолчанию
-   * совпадает с краем тротуара; на набережной поднята, чтобы под настилом
-   * осталась полоса песка, по которой тоже ходят.
-   */
-  readonly kerb?: number | undefined;
+  /** Земля района: плиты покрытий и обрывы между уровнями. */
+  readonly terrain: readonly TerrainDef[];
   /** Место на карте города, в её собственных координатах. */
   readonly map: WorldRect;
   readonly width: number;
@@ -151,7 +166,7 @@ export interface DistrictDef {
   readonly scenery: readonly SceneryDef[];
   readonly decor: readonly DecorDef[];
   readonly gates: readonly GateDef[];
-  /** Непроходимые куски улицы: бордюры, ограды. */
+  /** Непроходимые куски улицы сверх обрывов: ограды, стены домов. */
   readonly solids: readonly WorldRect[];
   /** Площадки прямо на улице — переход и заказы. */
   readonly points: readonly RoomPointDef[];

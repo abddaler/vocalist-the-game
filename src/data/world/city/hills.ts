@@ -1,22 +1,35 @@
 import type { DistrictDef } from '@core/types';
-import { STREET, curbs, decor, fill, gateRight, house } from './plan';
+import { band, curbs, decor, fill, gateRight, house, patch, stairs } from './plan';
 
 const WIDTH = 700;
+const HEIGHT = 156;
 
 /**
  * Sunset Hills: жилой склон над городом. Здесь игрок живёт и держит себя
  * в форме, поэтому район самый спокойный — светлая штукатурка, черепица,
- * газон с деревьями вдоль тротуара, ни одной вывески в неоне.
+ * газон с деревьями, ни одной вывески в неоне.
+ *
+ * Дома стоят на террасе над улицей: от подъезда к тротуару спускаются
+ * две лестницы, и это первое место, где видно, что район не полоса.
  */
 export const HILLS: DistrictDef = {
   id: 'hills',
   nameKey: 'district.hills',
-  ground: 'street',
-  strip: { y: 68, h: 9, kind: 'grass' },
   map: { x: 30, y: 2, w: 84, h: 30 },
   width: WIDTH,
-  height: STREET.height,
-  spawn: { x: 300, y: 86 },
+  height: HEIGHT,
+  spawn: { x: 300, y: 84 },
+
+  terrain: [
+    band('plaza', 66, 22, WIDTH, 6),
+    // Палисадник у самых стен: деревья растут в земле, а не в плитке.
+    patch('grass', 0, 66, WIDTH, 9),
+    stairs(176, 88, 24, 6),
+    stairs(468, 88, 24, 6),
+    band('pavement', 94, 18, WIDTH),
+    band('road', 112, 30, WIDTH),
+    band('grass', 142, 14, WIDTH),
+  ],
 
   buildings: [
     house('apartment', 'apartment', 20, 86, 0x8494c4),
@@ -32,43 +45,56 @@ export const HILLS: DistrictDef = {
   ],
 
   decor: [
-    decor('palm', 12, 78, 2),
-    decor('tree', 106, 76, 0),
-    decor('palm', 202, 78, 1),
-    decor('tree', 300, 76, 1),
-    decor('palm', 386, 78, 2),
-    decor('tree', 478, 76, 2),
-    decor('palm', 570, 78, 0),
-    decor('tree', 668, 76, 0),
-    decor('bush', 60, 77),
-    decor('bush', 154, 77),
-    decor('bush', 250, 77),
-    decor('bush', 344, 77),
-    decor('bush', 438, 77),
-    decor('bush', 528, 77),
-    decor('bush', 624, 77),
-    decor('flowerbed', 172, 76),
-    decor('flowerbed', 424, 76),
-    decor('lamp', 64, 74),
-    decor('lamp', 264, 74),
-    decor('lamp', 462, 74),
-    decor('lamp', 646, 74),
-    decor('bench', 156, 97),
-    decor('bench', 440, 97),
-    decor('dog', 190, 97, 0),
-    decor('mailbox', 96, 74),
-    decor('bike', 340, 97),
-    decor('surfboard', 542, 74, 1),
-    decor('planter', 60, 97),
-    decor('planter', 366, 97),
-    decor('hydrant', 244, 97),
-    decor('bin', 520, 97),
-    decor('car', 96, 99, 0),
-    decor('car', 300, 99, 3),
-    decor('car', 610, 99, 1),
+    // Палисадник на террасе.
+    decor('palm', 12, 75, 2),
+    decor('tree', 106, 74, 0),
+    decor('palm', 202, 75, 1),
+    decor('tree', 300, 74, 1),
+    decor('palm', 386, 75, 2),
+    decor('tree', 478, 74, 2),
+    decor('palm', 570, 75, 0),
+    decor('tree', 668, 74, 0),
+    decor('bush', 60, 74),
+    decor('bush', 154, 74),
+    decor('bush', 250, 74),
+    decor('bush', 344, 74),
+    decor('bush', 438, 74),
+    decor('bush', 528, 74),
+    decor('bush', 624, 74),
+    decor('flowerbed', 132, 75),
+    decor('flowerbed', 424, 75),
+    decor('mailbox', 96, 86),
+    decor('bench', 116, 86),
+    decor('bench', 512, 86),
+    decor('planter', 250, 87),
+    decor('planter', 396, 87),
+    decor('lamp', 64, 87),
+    decor('lamp', 264, 87),
+    decor('lamp', 462, 87),
+    decor('lamp', 646, 87),
+
+    // Тротуар под террасой.
+    decor('hydrant', 244, 108),
+    decor('bin', 520, 108),
+    decor('newsbox', 348, 108),
+    decor('dog', 190, 109, 0),
+    decor('bike', 340, 110),
+    decor('bench', 596, 108),
+
+    // Мостовая и газон у нижнего края.
+    decor('car', 96, 136, 0),
+    decor('car', 300, 138, 3),
+    decor('car', 610, 134, 1),
+    decor('tree', 60, 154, 1),
+    decor('tree', 214, 155, 0),
+    decor('tree', 388, 154, 2),
+    decor('tree', 556, 155, 1),
+    decor('bush', 148, 152),
+    decor('bush', 470, 152),
+    decor('bush', 650, 153),
   ],
 
-  gates: [gateRight('downtown', WIDTH)],
+  gates: [gateRight('downtown', WIDTH, 96)],
   solids: curbs(WIDTH),
   points: [],
 };

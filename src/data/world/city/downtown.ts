@@ -1,21 +1,33 @@
 import type { DistrictDef } from '@core/types';
-import { STREET, curbs, decor, fill, gateLeft, gateRight, house } from './plan';
+import { band, curbs, decor, fill, gateLeft, gateRight, house, stairs } from './plan';
 
 const WIDTH = 660;
+const HEIGHT = 156;
 
 /**
  * Downtown: конторы, стекло и подземный переход, в котором начинается
  * карьера. Своих дверей тут мало — весь район работает на то, чтобы
  * первый заработок случился под ногами у людей, которым не до тебя.
+ *
+ * Перед башнями поднятая площадь со ступенями вниз, к тротуару: контора
+ * в Лос-Анджелесе стоит на стилобате, а не открывается прямо в поток.
  */
 export const DOWNTOWN: DistrictDef = {
   id: 'downtown',
   nameKey: 'district.downtown',
-  ground: 'plaza',
   map: { x: 136, y: 10, w: 60, h: 44 },
   width: WIDTH,
-  height: STREET.height,
-  spawn: { x: 320, y: 86 },
+  height: HEIGHT,
+  spawn: { x: 320, y: 84 },
+
+  terrain: [
+    band('plaza', 66, 24, WIDTH, 7),
+    stairs(150, 90, 28, 7),
+    stairs(438, 90, 28, 7),
+    band('pavement', 97, 20, WIDTH),
+    band('road', 117, 26, WIDTH),
+    band('pavement', 143, 13, WIDTH),
+  ],
 
   buildings: [house('vocal_studio', 'studio', 104, 88, 0xa88fd0)],
 
@@ -29,39 +41,51 @@ export const DOWNTOWN: DistrictDef = {
   ],
 
   decor: [
-    decor('lamp', 96, 74),
-    decor('lamp', 200, 74),
-    decor('lamp', 284, 74),
-    decor('lamp', 362, 74),
-    decor('lamp', 462, 74),
-    decor('lamp', 554, 74),
-    decor('tree', 68, 76, 1),
-    decor('tree', 250, 76, 2),
-    decor('tree', 440, 76, 1),
-    decor('tree', 636, 76, 0),
-    decor('flowerbed', 330, 76),
-    decor('newsbox', 70, 97),
-    decor('trafficLight', 364, 74),
-    decor('mailbox', 226, 97),
-    decor('bike', 404, 97),
-    decor('bin', 250, 97),
-    decor('hydrant', 420, 97),
-    decor('busStop', 160, 99),
-    decor('bollard', 348, 98),
-    decor('bollard', 372, 98),
-    decor('car', 470, 99, 1),
-    decor('car', 600, 99, 2),
-    decor('billboard', 286, 74, 1),
+    // Площадь у башен.
+    decor('tree', 68, 86, 1),
+    decor('tree', 250, 86, 2),
+    decor('tree', 440, 86, 1),
+    decor('tree', 636, 86, 0),
+    decor('flowerbed', 348, 87),
+    decor('planter', 92, 88),
+    decor('planter', 596, 88),
+    decor('bench', 120, 88),
+    decor('bench', 396, 88),
+    decor('bin', 268, 88),
+    decor('lamp', 200, 88),
+    decor('lamp', 284, 88),
+    decor('lamp', 554, 88),
+    decor('billboard', 226, 74, 1),
     decor('billboard', 556, 74, 0),
+
+    // Тротуар под площадью.
+    decor('newsbox', 70, 113),
+    decor('busStop', 246, 115),
+    decor('mailbox', 116, 113),
+    decor('bike', 404, 114),
+    decor('hydrant', 496, 113),
+    decor('trafficLight', 364, 112),
+    decor('bollard', 348, 115),
+    decor('bollard', 372, 115),
+
+    // Мостовая и дальний тротуар.
+    decor('car', 132, 138, 1),
+    decor('car', 470, 140, 1),
+    decor('car', 600, 136, 2),
+    decor('lamp', 84, 152),
+    decor('lamp', 320, 152),
+    decor('lamp', 588, 152),
+    decor('bin', 210, 154),
+    decor('bench', 452, 154),
   ],
 
-  gates: [gateLeft('hills'), gateRight('boulevard', WIDTH)],
+  gates: [gateLeft('hills', 99), gateRight('boulevard', WIDTH, 99)],
   solids: curbs(WIDTH),
   points: [
     {
       id: 'underpass_stairs',
       nameKey: 'venue.underpass',
-      rect: { x: 302, y: 74, w: 36, h: 20 },
+      rect: { x: 302, y: 70, w: 36, h: 20 },
       color: 0x4a5270,
       prop: 'stairs',
       activities: [],

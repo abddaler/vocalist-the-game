@@ -4,28 +4,28 @@ import type {
   DecorDef,
   GateDef,
   SceneryDef,
+  SurfaceKind,
+  TerrainDef,
   WorldRect,
 } from '@core/types';
 
 /**
- * Разметка улицы. Камера стоит близко (мир рисуется вдвое крупнее
+ * Разметка района. Камера стоит близко (мир рисуется вдвое крупнее
  * экранных пикселей), поэтому в кадр помещается 240 на 105 единиц мира —
- * два-три дома и человек ростом в треть здания. Дальше отходить нельзя:
- * весь смысл этого вида в том, что видно лица и витрины.
+ * два-три дома и человек ростом в треть здания.
  *
- * Ряд домов один. Второй ряд при такой крупности пришлось бы обрезать
- * по нижнему краю, и улица превратилась бы в щель между стенами.
+ * Район выше кадра: по нему ходят не только вбок, но и от домов вглубь,
+ * к воде или к площади. Ради этого земля и собирается из плит: тротуар,
+ * мостовая, настил, песок — и разрывы между ними, через которые ведут
+ * только лестницы.
  */
 export const STREET = {
-  /** Ровно во весь кадр: район прокручивается только вбок. */
-  height: 105,
   /** Полоса неба над крышами: по ней читается время суток. */
   skyH: 24,
   rowY: 24,
   rowH: 42,
-  /** Тротуар, по которому ходят. */
-  walkTop: 66,
-  walkBottom: 100,
+  /** Низ фасадов: отсюда начинается земля. */
+  frontY: 66,
   doorW: 18,
   doorH: 14,
   /** Створ перехода в соседний район. */
@@ -74,22 +74,51 @@ export const decor = (kind: DecorDef['kind'], x: number, y: number, variant?: nu
   ...(variant === undefined ? {} : { variant }),
 });
 
-/** Створы по краям улицы: налево и направо от района. */
-export function gateLeft(to: GateDef['to']): GateDef {
-  return { to, rect: { x: 0, y: 70, w: STREET.gateW, h: 26 } };
+/**
+ * Плита земли во всю ширину района: полосы вдоль улицы и есть основной
+ * рельеф. `riser` — высота обрыва по нижней кромке; сразу под ним земли
+ * нет, и следующая плита начинается ниже на эту же величину.
+ */
+export function band(
+  surface: SurfaceKind,
+  y: number,
+  h: number,
+  width: number,
+  riser?: number,
+): TerrainDef {
+  return { rect: { x: 0, y, w: width, h }, surface, ...(riser === undefined ? {} : { riser }) };
 }
 
-export function gateRight(to: GateDef['to'], width: number): GateDef {
-  return { to, rect: { x: width - STREET.gateW, y: 70, w: STREET.gateW, h: 26 } };
+/** Кусок другого покрытия поверх полосы: дорожка у входа, островок травы. */
+export function patch(
+  surface: SurfaceKind,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): TerrainDef {
+  return { rect: { x, y, w, h }, surface };
+}
+
+/** Лестница через обрыв: перекрывает разрыв между плитами. */
+export function stairs(x: number, y: number, w: number, h: number): TerrainDef {
+  return { rect: { x, y, w, h }, surface: 'steps' };
+}
+
+/** Створы по краям улицы: налево и направо от района. */
+export function gateLeft(to: GateDef['to'], y: number): GateDef {
+  return { to, rect: { x: 0, y, w: STREET.gateW, h: 22 } };
+}
+
+export function gateRight(to: GateDef['to'], width: number, y: number): GateDef {
+  return { to, rect: { x: width - STREET.gateW, y, w: STREET.gateW, h: 22 } };
 }
 
 /**
- * Невидимые границы улицы: небо сверху и обрез снизу. Рисовать их нельзя
- * — небо тогда закрасится, — поэтому они и отделены от домов.
+ * Небо над крышами: сквозь него не ходят, а нарисовать его домом нельзя —
+ * закрасится закат. Низ района держат сами плиты: где земли нет, там и
+ * ходьбы нет.
  */
 export function curbs(width: number): readonly WorldRect[] {
-  return [
-    { x: 0, y: 0, w: width, h: STREET.rowY },
-    { x: 0, y: STREET.walkBottom, w: width, h: STREET.height - STREET.walkBottom },
-  ];
+  return [{ x: 0, y: 0, w: width, h: STREET.rowY }];
 }

@@ -26,6 +26,9 @@ export class Painter {
   private readonly shapes: Phaser.GameObjects.Graphics;
   private readonly texts: Phaser.GameObjects.BitmapText[] = [];
   private readonly images: Phaser.GameObjects.Image[] = [];
+  /** Окно, за которое заливка не выходит. Нужен небу: силуэт за крышами
+   * растёт вверх и без окна залезал бы на панель ресурсов. */
+  private clipRect: Rect | null = null;
 
   /**
    * Весь текст ложится поверх общей Graphics внутри одного контейнера,
@@ -47,7 +50,13 @@ export class Painter {
     this.texts.length = 0;
     for (const image of this.images) image.destroy();
     this.images.length = 0;
+    this.clipRect = null;
     this.layer.bringToTop(this.shapes);
+  }
+
+  /** Ограничить заливку прямоугольником; null снимает ограничение. */
+  clip(rect: Rect | null): void {
+    this.clipRect = rect;
   }
 
   /** Спрайт с привязкой к нижнему центру: персонаж стоит ногами в точке. */
@@ -61,8 +70,10 @@ export class Painter {
   }
 
   fill(rect: Rect, color: number, alpha: number = 1): void {
+    const box = this.clipRect ? intersect(rect, this.clipRect) : rect;
+    if (!box) return;
     this.shapes.fillStyle(color, alpha);
-    this.shapes.fillRect(rect.x, rect.y, rect.w, rect.h);
+    this.shapes.fillRect(box.x, box.y, box.w, box.h);
   }
 
   stroke(rect: Rect, color: number): void {
@@ -178,4 +189,13 @@ export class Painter {
     this.clear();
     this.shapes.destroy();
   }
+}
+
+/** Пересечение прямоугольников или null, если его нет. */
+function intersect(a: Rect, b: Rect): Rect | null {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const w = Math.min(a.x + a.w, b.x + b.w) - x;
+  const h = Math.min(a.y + a.h, b.y + b.h) - y;
+  return w > 0 && h > 0 ? { x, y, w, h } : null;
 }

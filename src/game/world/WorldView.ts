@@ -6,7 +6,7 @@ import type { Hotspots, Rect } from '@ui/widgets/Hotspots';
 import type { Painter } from '@ui/widgets/Painter';
 import { ambienceOf, mix, scale } from './ambience';
 import type { Ambience } from './ambience';
-import { drawFarSide, drawGround, drawSky, drawStrip, drawWash } from './backdrop';
+import { drawFarSide, drawSky, drawTerrain, drawWash } from './backdrop';
 import type { Backdrop } from './backdrop';
 import { drawInhabitants } from './inhabitants';
 import type { WorldCanvas } from './WorldCanvas';
@@ -126,10 +126,6 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
  * а не экрана, поэтому камеры здесь нет вовсе.
  */
 function paintStatic(painter: Painter, layer: Layer, ambience: Ambience): void {
-  const size = {
-    w: Math.round(layer.bounds.width * WORLD_ZOOM),
-    h: Math.round(layer.bounds.height * WORLD_ZOOM),
-  };
   const toTexture = (rect: WorldRect): Rect => ({
     x: Math.round(rect.x * WORLD_ZOOM),
     y: Math.round(rect.y * WORLD_ZOOM),
@@ -139,24 +135,7 @@ function paintStatic(painter: Painter, layer: Layer, ambience: Ambience): void {
 
   const outdoors = layer.district !== null;
   if (outdoors) {
-    const skyH = Math.round(STREET.skyH * WORLD_ZOOM);
-    const area: Backdrop = {
-      sky: { x: 0, y: 0, w: size.w, h: skyH },
-      road: { x: 0, y: skyH, w: size.w, h: size.h - skyH },
-      kerbY: layer.kerb * WORLD_ZOOM,
-      cameraX: 0,
-      worldWidth: size.w,
-      unit: WORLD_ZOOM,
-      ground: layer.ground,
-    };
-    drawGround(painter, area, ambience);
-    if (layer.strip) {
-      drawStrip(painter, area, ambience, {
-        y: layer.strip.y * WORLD_ZOOM,
-        h: layer.strip.h * WORLD_ZOOM,
-        kind: layer.strip.kind,
-      });
-    }
+    drawTerrain(painter, { plates: layer.terrain, unit: WORLD_ZOOM, ambience });
   } else {
     const room = { x: 0, y: 0, w: layer.bounds.width, h: layer.bounds.height };
     drawRoom(painter, toTexture(room), layer.floor, ambience, layer.slot);
@@ -204,25 +183,30 @@ function drawOutside(
   district: DistrictId,
 ): void {
   // Небо кончается там, где начинаются крыши: полоса считается из мира,
-  // а не из доли экрана, иначе она разъезжается с домами.
+  // а не из доли экрана, иначе она разъезжается с домами. Спустившись к
+  // воде, игрок уводит небо за верхний край — тогда рисовать нечего.
   const skyHeight = Math.round((STREET.skyH - camera.y) * WORLD_ZOOM);
+  if (skyHeight <= 0) return;
+
   const area: Backdrop = {
-    sky: { x: 0, y: CONTENT.y, w: CONTENT.width, h: Math.max(0, skyHeight) },
+    sky: { x: 0, y: CONTENT.y, w: CONTENT.width, h: skyHeight },
     road: {
       x: 0,
-      y: CONTENT.y + Math.max(0, skyHeight),
+      y: CONTENT.y + skyHeight,
       w: CONTENT.width,
-      h: CONTENT.height - Math.max(0, skyHeight),
+      h: CONTENT.height - skyHeight,
     },
-    kerbY: CONTENT.y + (layer.kerb - camera.y) * WORLD_ZOOM,
     cameraX: camera.x * WORLD_ZOOM,
     worldWidth: layer.bounds.width * WORLD_ZOOM,
     unit: WORLD_ZOOM,
-    ground: layer.ground,
   };
 
+  // Силуэт за крышами растёт вверх от линии крыш: без окна он налезал бы
+  // на панель ресурсов, как только район прокрутится вниз.
+  painter.clip({ x: 0, y: CONTENT.y, w: CONTENT.width, h: skyHeight });
   drawSky(painter, area, ambience);
   drawFarSide(painter, area, ambience, district);
+  painter.clip(null);
 }
 
 function drawTarget(

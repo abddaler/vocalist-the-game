@@ -72,16 +72,16 @@ export const CROWD: readonly CrowdMember[] = [
   ], 2000, 18),
 
   walker('hills_7', 'hills', 'passer_11', [
-    { x: 420, y: 74 },
-    { x: 560, y: 92 },
-    { x: 380, y: 96 },
+    { x: 420, y: 82 },
+    { x: 560, y: 86 },
+    { x: 380, y: 80 },
   ], 1100, 30),
-  stander('hills_8', 'hills', 'staff_apron', { x: 486, y: 76 }),
+  stander('hills_8', 'hills', 'staff_apron', { x: 486, y: 84 }),
   walker('hills_9', 'hills', 'passer_12', [
-    { x: 640, y: 92 },
-    { x: 460, y: 88 },
+    { x: 640, y: 100 },
+    { x: 460, y: 104 },
   ], 1900, 22),
-  stander('hills_10', 'hills', 'passer_8', { x: 214, y: 94 }),
+  stander('hills_10', 'hills', 'passer_8', { x: 214, y: 98 }),
 
   // — Даунтаун: поток служащих, у перехода всегда кто-то стоит —
   walker('dt_1', 'downtown', 'passer_7', [
@@ -109,15 +109,15 @@ export const CROWD: readonly CrowdMember[] = [
   ], 1600, 22),
 
   walker('dt_8', 'downtown', 'passer_6', [
-    { x: 90, y: 96 },
-    { x: 300, y: 90 },
-    { x: 520, y: 94 },
+    { x: 90, y: 104 },
+    { x: 300, y: 100 },
+    { x: 520, y: 108 },
   ], 500, 34),
-  stander('dt_9', 'downtown', 'passer_12', { x: 152, y: 92 }),
-  stander('dt_10', 'downtown', 'passer_11', { x: 440, y: 76 }),
+  stander('dt_9', 'downtown', 'passer_12', { x: 152, y: 86 }),
+  stander('dt_10', 'downtown', 'passer_11', { x: 440, y: 82 }),
   walker('dt_11', 'downtown', 'passer_3', [
-    { x: 600, y: 74 },
-    { x: 600, y: 96 },
+    { x: 600, y: 82 },
+    { x: 600, y: 88 },
   ], 1500, 24),
 
   // — Бульвар: очередь в клуб, гуляющие, кто-то курит у входа —
@@ -147,11 +147,11 @@ export const CROWD: readonly CrowdMember[] = [
   stander('blvd_9', 'boulevard', 'passer_9', { x: 268, y: 88 }),
   stander('blvd_10', 'boulevard', 'passer_12', { x: 306, y: 88 }),
   walker('blvd_11', 'boulevard', 'passer_11', [
-    { x: 660, y: 74 },
+    { x: 660, y: 80 },
     { x: 480, y: 94 },
     { x: 620, y: 96 },
   ], 900, 28),
-  stander('blvd_12', 'boulevard', 'staff_apron', { x: 226, y: 76 }),
+  stander('blvd_12', 'boulevard', 'staff_apron', { x: 226, y: 82 }),
 
   // — Причал: грузчики, курьер, чайки и их люди —
   walker('pier_1', 'pier', 'passer_9', [
@@ -166,16 +166,16 @@ export const CROWD: readonly CrowdMember[] = [
   stander('pier_4', 'pier', 'passer_7', { x: 182, y: 120 }),
   walker('pier_5', 'pier', 'passer_1', [
     { x: 560, y: 138 },
-    { x: 300, y: 132 },
-    { x: 540, y: 124 },
+    { x: 300, y: 134 },
+    { x: 540, y: 150 },
   ], 900, 28),
 
   walker('pier_6', 'pier', 'passer_12', [
     { x: 60, y: 94 },
     { x: 240, y: 90 },
   ], 2100, 20),
-  stander('pier_7', 'pier', 'passer_11', { x: 470, y: 76 }),
-  stander('pier_8', 'pier', 'passer_6', { x: 486, y: 82 }),
+  stander('pier_7', 'pier', 'passer_11', { x: 470, y: 80 }),
+  stander('pier_8', 'pier', 'passer_6', { x: 486, y: 86 }),
 
   // — квартира: соседка за стеной не нужна, дом должен быть пустым —
 

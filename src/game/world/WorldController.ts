@@ -12,9 +12,10 @@ import { spawnCrowd, updateCrowd } from './Crowd';
 import type { CrowdActor } from './Crowd';
 import { facingFrom } from './actorSprite';
 import type { Facing } from './actorSprite';
-import { districtLayer, doorOf, roomLayer, solidsOf } from './layers';
+import { districtLayer, doorOf, groundOf, roomLayer, solidsOf } from './layers';
 import type { Layer } from './layers';
-import { WALK_SPEED, centerOf, step, stepToward } from './movement';
+import { ACTOR, WALK_SPEED, centerOf, step, stepToward } from './movement';
+import { groundBelow, stairRoute } from './terrain';
 import { withinReach } from './targets';
 import type { WorldTarget } from './targets';
 import { screenToWorld } from './WorldView';
@@ -129,6 +130,7 @@ export class WorldController {
   private walk(delta: number, input: InputController): void {
     const layer = this.layer();
     const solids = solidsOf(layer);
+    const ground = groundOf(layer);
     const distance = (WALK_SPEED * delta) / 1000;
     const before = this.position;
 
@@ -144,9 +146,10 @@ export class WorldController {
         (y / length) * distance,
         solids,
         layer.bounds,
+        ground,
       );
     } else if (this.route.length > 0) {
-      const result = stepToward(before, this.route[0]!, distance, solids, layer.bounds);
+      const result = stepToward(before, this.route[0]!, distance, solids, layer.bounds, ground);
       this.position = result.position;
       if (result.arrived) {
         this.route.shift();
@@ -168,7 +171,9 @@ export class WorldController {
 
   /** Тап по пустому месту — приказ идти туда. */
   walkTo(tap: WorldPoint): void {
-    this.route = [screenToWorld(tap, this.position, this.layer())];
+    const layer = this.layer();
+    const goal = screenToWorld(tap, this.position, layer);
+    this.route = [...stairRoute(layer.terrain, this.position, goal), goal];
     this.pendingTarget = null;
   }
 
@@ -181,10 +186,14 @@ export class WorldController {
       this.enter(target);
       return;
     }
-    // Сначала вдоль улицы до нужной колонки, потом поперёк к самой цели:
-    // проезжая часть свободна, а поперёк идти всего пару шагов.
+    // Сначала спуск или подъём по ближайшей лестнице, если цель на другом
+    // ярусе; потом вдоль улицы до нужной колонки и только потом поперёк к
+    // самой цели — иначе путь упирается в угол соседнего дома.
+    const layer = this.layer();
     const center = centerOf(target.rect);
-    this.route = [{ x: center.x, y: this.position.y }, center];
+    const legs = stairRoute(layer.terrain, this.position, center);
+    const from = legs.at(-1) ?? this.position;
+    this.route = [...legs, { x: center.x, y: from.y }, center];
     this.pendingTarget = target;
   }
 
@@ -209,9 +218,13 @@ export class WorldController {
       const district = districtOfLocation(target.id) ?? getDistrict(this.districtId);
       const door = doorOf(district, target.id);
       const at = door ? centerOf(door) : district.spawn;
+      // Вышедший встаёт на первую плиту под дверью, а не на глазок ниже:
+      // под дверью может быть обрыв, и тогда он окажется в воздухе.
+      const below = door ? door.y + door.h + ACTOR.h : district.spawn.y;
+      const feet = groundBelow(district.terrain, at.x, below, district.height);
       this.transition(() => {
         this.districtId = district.id;
-        this.position = { x: at.x, y: Math.min(district.height - 6, at.y + 30) };
+        this.position = { x: at.x, y: feet ?? district.spawn.y };
         this.route = [];
         this.facing = 'down';
         this.crowd = spawnCrowd(district.id);
@@ -262,5 +275,7 @@ function arrival(district: ReturnType<typeof getDistrict>, from: DistrictId): Wo
   if (!back) return { ...district.spawn };
   const center = centerOf(back.rect);
   const inward = center.x < district.width / 2 ? 22 : -22;
-  return { x: center.x + inward, y: center.y };
+  const x = center.x + inward;
+  const feet = groundBelow(district.terrain, x, center.y, district.height);
+  return { x, y: feet ?? district.spawn.y };
 }

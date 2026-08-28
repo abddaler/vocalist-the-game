@@ -1,18 +1,22 @@
-import { STREET, getDistrict } from '@data/world';
+import { getDistrict } from '@data/world';
 import { getLocation } from '@data/locations';
 import { SLOTS } from '@core/types';
 import type {
   BuildingKind,
   DecorDef,
-  GroundKind,
   DistrictDef,
   DistrictId,
   GameState,
   RoomDef,
   Slot,
+  TerrainDef,
+  WorldPoint,
   WorldRect,
 } from '@core/types';
 import { footprintOf } from './decor';
+import { standable } from './terrain';
+import { contains } from './movement';
+import type { Ground } from './movement';
 import type { WorldTarget } from './targets';
 
 /**
@@ -41,12 +45,10 @@ export interface Layer {
   readonly targets: readonly WorldTarget[];
   readonly pointColors: ReadonlyMap<string, number>;
   readonly decor: readonly DecorDef[];
-  /** Под открытым небом: район задаёт небо и мостовую, комната — нет. */
+  /** Под открытым небом: район задаёт небо и землю, комната — нет. */
   readonly district: DistrictId | null;
-  readonly ground: GroundKind;
-  readonly strip: DistrictDef['strip'];
-  /** Мировая координата кромки мощёной части. */
-  readonly kerb: number;
+  /** Плиты земли: по ним ходят и из них же берутся обрывы. */
+  readonly terrain: readonly TerrainDef[];
   readonly slot: Slot;
 }
 
@@ -100,9 +102,7 @@ export function districtLayer(state: GameState, districtId: DistrictId): Layer {
     pointColors: new Map(district.points.map((point) => [point.id, point.color])),
     decor: district.decor,
     district: district.id,
-    ground: district.ground,
-    strip: district.strip,
-    kerb: district.kerb ?? STREET.walkBottom,
+    terrain: district.terrain,
     slot,
   };
 }
@@ -127,25 +127,37 @@ export function roomLayer(room: RoomDef, slot: Slot): Layer {
     pointColors: new Map(room.points.map((point) => [point.id, point.color])),
     decor: room.decor,
     district: null,
-    ground: 'street',
-    strip: undefined,
-    kerb: STREET.walkBottom,
+    // У комнаты пол сплошной: плиты ей не нужны, границы задают стены.
+    terrain: [],
     slot,
   };
 }
 
 /**
- * Твёрдые препятствия слоя: по ним считаются столкновения. Мелочь тоже
- * считается — сквозь скамейку и машину проходить нельзя, иначе улица
- * ощущается нарисованной, а не построенной.
+ * Стены слоя: дома и небо над крышами. С ними сверяется всё тело — в
+ * стену нельзя войти даже головой.
  */
 export function solidsOf(layer: Layer): WorldRect[] {
-  const solids: WorldRect[] = [...layer.blocks.map((block) => block.rect), ...layer.walls];
-  for (const item of layer.decor) {
-    const rect = footprintOf(item);
-    if (rect) solids.push(rect);
-  }
-  return solids;
+  return [...layer.blocks.map((block) => block.rect), ...layer.walls];
+}
+
+/**
+ * Что под ногами: есть ли там земля и не занято ли место мелочью.
+ *
+ * Скамейка и машина проверяются по подошве, а не по всему телу: полосы
+ * земли бывают всего в рост человека, и предмет, отбирающий целую высоту
+ * тела, запирал бы проход целиком. По следу на земле его можно обойти,
+ * а пройти насквозь — нет.
+ */
+export function groundOf(layer: Layer): Ground {
+  const footprints = layer.decor
+    .map(footprintOf)
+    .filter((rect): rect is WorldRect => rect !== null);
+  const { terrain } = layer;
+  return (point: WorldPoint): boolean => {
+    if (terrain.length > 0 && !standable(terrain, point)) return false;
+    return !footprints.some((rect) => contains(rect, point));
+  };
 }
 
 /** Где на улице стоит дверь этой локации. */
