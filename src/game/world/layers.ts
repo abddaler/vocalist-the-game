@@ -12,6 +12,7 @@ import type {
   Slot,
   WorldRect,
 } from '@core/types';
+import { footprintOf } from './decor';
 import type { WorldTarget } from './targets';
 
 /**
@@ -133,9 +134,18 @@ export function roomLayer(room: RoomDef, slot: Slot): Layer {
   };
 }
 
-/** Твёрдые препятствия слоя: по ним считаются столкновения. */
+/**
+ * Твёрдые препятствия слоя: по ним считаются столкновения. Мелочь тоже
+ * считается — сквозь скамейку и машину проходить нельзя, иначе улица
+ * ощущается нарисованной, а не построенной.
+ */
 export function solidsOf(layer: Layer): WorldRect[] {
-  return [...layer.blocks.map((block) => block.rect), ...layer.walls];
+  const solids: WorldRect[] = [...layer.blocks.map((block) => block.rect), ...layer.walls];
+  for (const item of layer.decor) {
+    const rect = footprintOf(item);
+    if (rect) solids.push(rect);
+  }
+  return solids;
 }
 
 /** Где на улице стоит дверь этой локации. */

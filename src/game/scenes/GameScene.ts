@@ -207,6 +207,10 @@ export class GameScene extends Phaser.Scene {
     this.worldPainter.clear();
     this.painter.clear();
     this.hotspots.clear();
+    // Запечённая подложка живёт в собственном слое и кистью не стирается:
+    // без этого улица просвечивала сквозь экраны персонажа и журнала, и
+    // статистика читалась поверх домов. Мир сам покажет её обратно.
+    this.canvas.hide();
 
     const state = this.store.getState();
     // Фон — в самом нижнем слое: из верхнего он закрасил бы весь мир.
