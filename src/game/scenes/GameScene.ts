@@ -1,16 +1,18 @@
 import Phaser from 'phaser';
 import { Store, createInitialState } from '@core/state';
 import type { Action } from '@core/state';
-import type { RoomDef, WorldPoint } from '@core/types';
+import type { GameState, GenreId, RoomDef, WorldPoint } from '@core/types';
 import { DISTRICT, getRoom, hasRoom } from '@data/world';
 import { CompositeInput, KeyboardInput, PointerInput } from '@platform/input';
 import type { InputController } from '@platform/input';
-import { t } from '@ui/i18n';
+import { saveGame } from '@platform/saveGame';
+import type { SaveAdapter } from '@platform/SaveAdapter';
 import { COLORS, SCREEN } from '@ui/theme';
 import { Hotspots } from '@ui/widgets/Hotspots';
 import { Painter } from '@ui/widgets/Painter';
 import { renderCharacter } from '@ui/screens/CharacterScreen';
 import { renderEventDialog } from '@ui/screens/EventDialog';
+import { renderFinale } from '@ui/screens/FinaleScreen';
 import { renderGig } from '@ui/screens/GigScreen';
 import { renderHud } from '@ui/screens/Hud';
 import { renderJournal } from '@ui/screens/JournalScreen';
@@ -53,12 +55,26 @@ export class GameScene extends Phaser.Scene {
   private dirty = true;
   private axis = { x: 0, y: 0 };
 
+  private start: { state?: GameState; seed?: string; genre?: GenreId } = {};
+
   constructor() {
     super('game');
   }
 
+  init(data: { state?: GameState; seed?: string; genre?: GenreId }): void {
+    this.start = data ?? {};
+    this.ui = initialUiState();
+    this.position = { ...DISTRICT.spawn };
+    this.walkTarget = null;
+    this.pendingTarget = null;
+    this.dirty = true;
+  }
+
   create(): void {
-    this.store = new Store(createInitialState(`run-${Date.now()}`, 'pop'));
+    this.store = new Store(
+      this.start.state ??
+        createInitialState(this.start.seed ?? `run-${Date.now()}`, this.start.genre ?? 'pop'),
+    );
 
     const sources: InputController[] = [new PointerInput(this.input)];
     if (this.input.keyboard) sources.push(new KeyboardInput(this.input.keyboard));
@@ -72,14 +88,21 @@ export class GameScene extends Phaser.Scene {
     this.painter = new Painter(this, uiLayer);
     this.hotspots = new Hotspots();
 
-    this.store.subscribe(() => {
+    this.store.subscribe((state) => {
       this.dirty = true;
+      // Автосохранение после каждого действия: прогон на шестьдесят дней
+      // нельзя терять из-за закрытой вкладки.
+      void saveGame(this.registry.get('save') as SaveAdapter, state);
     });
 
     // Смена зума меняет разрешение, в котором рендерится текст,
     // поэтому поворот телефона требует полной перерисовки.
     this.scale.on(Phaser.Scale.Events.RESIZE, this.markDirty);
     this.game.events.on(Phaser.Core.Events.RESUME, this.markDirty);
+
+    // Пишем сразу: иначе «Продолжить» не появится, пока игрок не сделает
+    // первое действие, и начатый прогон потеряется от закрытой вкладки.
+    void saveGame(this.registry.get('save') as SaveAdapter, this.store.getState());
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.markDirty);
@@ -251,6 +274,11 @@ export class GameScene extends Phaser.Scene {
       go: this.go,
     };
 
+    if (state.over) {
+      renderFinale(ctx, () => this.scene.start('menu'));
+      return;
+    }
+
     renderHud(this.painter, state);
 
     // Пока событие ждёт ответа, редьюсер блокирует всё остальное — значит
@@ -263,10 +291,6 @@ export class GameScene extends Phaser.Scene {
     this.renderScreen(ctx);
     renderNav(this.painter, this.hotspots, this.ui, this.go);
 
-    if (state.over) {
-      this.painter.label({ x: 0, y: SCREEN.height / 2 - 6, w: SCREEN.width, h: 12 },
-        t('ui.runOver'), { align: 'center', size: 'normal', color: COLORS.accent });
-    }
   }
 
   private renderScreen(ctx: RenderContext): void {

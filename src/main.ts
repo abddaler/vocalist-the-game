@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '@platform/config';
 import { attachDisplay } from '@platform/display';
-import { BootScene } from '@game/scenes/BootScene';
+import { LocalStorageSaveAdapter } from '@platform/SaveAdapter';
+import { MenuScene } from '@game/scenes/MenuScene';
 import { GameScene } from '@game/scenes/GameScene';
 import { t } from '@ui/i18n';
 
@@ -24,8 +25,11 @@ const game = new Phaser.Game({
     autoCenter: Phaser.Scale.NO_CENTER,
   },
   input: { activePointers: 2 },
-  scene: [BootScene, GameScene],
+  scene: [MenuScene, GameScene],
 });
+
+// Адаптер сохранений живёт в реестре: сцены не знают, где лежат данные.
+game.registry.set('save', new LocalStorageSaveAdapter());
 
 const rotateHint = document.getElementById('rotate');
 if (rotateHint) rotateHint.textContent = t('ui.rotate');
