@@ -1,41 +1,45 @@
 import { getActivity } from '@data/activities';
-import { getLocation } from '@data/locations';
+import { getRoom, hasRoom } from '@data/world';
 import { getVenue } from '@data/venues';
 import { checkActivity } from '@core/systems/activity';
 import { checkPerformance } from '@core/systems/performance';
 import { imageLevel } from '@core/systems/outfit';
 import { doActivity } from '@core/state';
-import type { ActivityDef, VenueDef } from '@core/types';
+import { DISTRICT } from '@data/world';
+import type { ActivityDef, RoomPointDef, VenueDef } from '@core/types';
 import { t } from '../i18n';
 import { CONTENT, LAYOUT } from '../theme';
 import { renderList } from '../widgets/List';
 import type { ListRow } from '../widgets/List';
-import type { RenderContext } from './types';
+import type { RenderContext, ScreenId } from './types';
 
-/** Что можно сделать внутри локации: дела и сцены. */
-export function renderLocation(ctx: RenderContext): void {
+/** Дела одной точки взаимодействия: у кровати спят, у зеркала распеваются. */
+export function renderPoint(ctx: RenderContext): void {
   const { painter, hotspots, ui } = ctx;
-  const location = getLocation(ui.locationId ?? 'apartment');
+  const point = findPoint(ui.locationId, ui.pointId);
+  const back: ScreenId = ui.locationId ? 'room' : 'world';
 
   const header = { x: 0, y: CONTENT.y, w: CONTENT.width, h: 18 };
   painter.label({ x: LAYOUT.padding + 60, y: header.y, w: header.w - 130, h: header.h },
-    t(location.nameKey), { align: 'center' });
+    point ? t(point.nameKey) : '', { align: 'center' });
 
   const backRect = { x: LAYOUT.padding, y: CONTENT.y + 1, w: 52, h: LAYOUT.minTap };
-  const back = {
+  const backSpot = {
     rect: backRect,
     label: 'ui.back',
     enabled: true,
-    onActivate: () => ctx.go({ screen: 'district', locationId: null, page: 0 }),
+    onActivate: () => ctx.go({ screen: back, pointId: null, page: 0 }),
   };
-  hotspots.add(back);
-  painter.button(backRect, t('ui.back'), { enabled: true, focused: hotspots.isFocused(back) });
+  hotspots.add(backSpot);
+  painter.button(backRect, t('ui.back'), { enabled: true, focused: hotspots.isFocused(backSpot) });
 
-  const rows: ListRow[] = [
-    ...location.venues.map((id) => venueRow(ctx, getVenue(id))),
-    ...(location.shop ? [wardrobeRow(ctx)] : []),
-    ...location.activities.map((id) => activityRow(ctx, getActivity(id))),
-  ];
+  const rows: ListRow[] = point
+    ? [
+        ...point.venues.map((id) => venueRow(ctx, getVenue(id))),
+        ...(point.opensShop ? [wardrobeRow(ctx)] : []),
+        ...point.activities.map((id) => activityRow(ctx, getActivity(id))),
+      ]
+    : [];
 
   renderList(painter, hotspots, rows, ui.page, (page) => ctx.go({ page }), {
     x: 0,
@@ -46,6 +50,14 @@ export function renderLocation(ctx: RenderContext): void {
 }
 
 /** Вход в гардероб. Слотов не тратит: примерка — не действие дня. */
+/** Точка ищется в комнате локации, а для улицы — среди точек района. */
+function findPoint(locationId: string | null, pointId: string | null): RoomPointDef | undefined {
+  if (!pointId) return undefined;
+  const source =
+    locationId && hasRoom(locationId) ? getRoom(locationId).points : DISTRICT.points;
+  return source.find((point) => point.id === pointId);
+}
+
 function wardrobeRow(ctx: RenderContext): ListRow {
   return {
     key: 'wardrobe',

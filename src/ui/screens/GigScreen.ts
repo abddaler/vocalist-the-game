@@ -35,7 +35,7 @@ function header(ctx: RenderContext, venue: VenueDef): void {
     rect: backRect,
     label: 'ui.back',
     enabled: true,
-    onActivate: () => ctx.go({ screen: 'location', venueId: null }),
+    onActivate: () => ctx.go({ screen: 'point', venueId: null }),
   };
   hotspots.add(back);
   painter.button(backRect, t('ui.back'), { enabled: true, focused: hotspots.isFocused(back) });
@@ -146,7 +146,7 @@ function performButton(ctx: RenderContext, venue: VenueDef, songs: number): void
     enabled: !blocked,
     onActivate: () => {
       ctx.dispatch(perform(venue.id, songs));
-      ctx.go({ screen: 'location', venueId: null });
+      ctx.go({ screen: 'point', venueId: null });
     },
   };
   hotspots.add(hotspot);

@@ -57,14 +57,22 @@ export class Hotspots {
     return this.items[this.focus] === hotspot;
   }
 
-  /** Возвращает true, если что-то сработало и экран надо перерисовать. */
-  handle(input: InputController): boolean {
+  /**
+   * Возвращает true, если что-то сработало и экран надо перерисовать.
+   * onMiss получает тап, не попавший ни в одну зону: на экране мира это
+   * приказ идти в указанное место.
+   */
+  handle(input: InputController, onMiss?: (tap: TapPoint) => void): boolean {
     const tap = input.consumeTap();
     if (tap) {
       const hit = this.items.find((item) => item.enabled && contains(item.rect, tap));
       if (hit) {
         this.focus = this.items.indexOf(hit);
         hit.onActivate();
+        return true;
+      }
+      if (onMiss) {
+        onMiss(tap);
         return true;
       }
       return false;

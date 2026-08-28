@@ -9,3 +9,4 @@ export * from './outfit';
 export * from './skills';
 export * from './state';
 export * from './time';
+export * from './world';

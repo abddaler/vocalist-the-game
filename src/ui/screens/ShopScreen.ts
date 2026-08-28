@@ -17,7 +17,7 @@ export function renderShop(ctx: RenderContext): void {
     rect: backRect,
     label: 'ui.back',
     enabled: true,
-    onActivate: () => ctx.go({ screen: ui.venueId ? 'gig' : 'location', page: 0 }),
+    onActivate: () => ctx.go({ screen: ui.venueId ? 'gig' : 'point', page: 0 }),
   };
   hotspots.add(back);
   painter.button(backRect, t('ui.back'), { enabled: true, focused: hotspots.isFocused(back) });

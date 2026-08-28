@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { Store, createInitialState } from '@core/state';
 import type { Action } from '@core/state';
+import type { RoomDef, WorldPoint } from '@core/types';
+import { DISTRICT, getRoom, hasRoom } from '@data/world';
 import { CompositeInput, KeyboardInput, PointerInput } from '@platform/input';
 import type { InputController } from '@platform/input';
 import { t } from '@ui/i18n';
@@ -8,31 +10,46 @@ import { COLORS, SCREEN } from '@ui/theme';
 import { Hotspots } from '@ui/widgets/Hotspots';
 import { Painter } from '@ui/widgets/Painter';
 import { renderCharacter } from '@ui/screens/CharacterScreen';
-import { renderDistrict } from '@ui/screens/DistrictScreen';
 import { renderEventDialog } from '@ui/screens/EventDialog';
 import { renderGig } from '@ui/screens/GigScreen';
 import { renderHud } from '@ui/screens/Hud';
 import { renderJournal } from '@ui/screens/JournalScreen';
-import { renderLocation } from '@ui/screens/LocationScreen';
 import { renderNav } from '@ui/screens/Nav';
+import { renderPoint } from '@ui/screens/PointScreen';
 import { renderShop } from '@ui/screens/ShopScreen';
 import { initialUiState } from '@ui/screens/types';
 import type { RenderContext, UiState } from '@ui/screens/types';
+import { WALK_SPEED, centerOf, step, stepToward } from '../world/movement';
+import {
+  districtLayer,
+  renderWorld,
+  roomLayer,
+  screenToWorld,
+  solidsOf,
+  withinReach,
+} from '../world/WorldView';
+import type { WorldTarget } from '../world/WorldView';
 
 /**
- * Игровая сцена вехи 4: интерфейс поверх ядра, мира пока нет.
+ * Игровая сцена: мир сверху, экраны интерфейса поверх него.
  *
- * Интерфейс собран на примитивах Phaser, а не на DOM-элементах.
- * DOM не участвует в целочисленном зуме — ему пришлось бы отдельно
- * знать реальный размер окна, что запрещено ограничением 2.3, а его
- * субпиксельное сглаживание дерётся с pixelArt.
+ * Интерфейс собран на примитивах Phaser, а не на DOM-элементах: DOM не
+ * участвует в зуме и потребовал бы знания о реальном размере окна, что
+ * запрещено ограничением 2.3, а его сглаживание дерётся с pixelArt.
  */
 export class GameScene extends Phaser.Scene {
   private store!: Store;
   private input$!: InputController;
   private painter!: Painter;
+  /** Мир рисуется отдельным слоем: его обрезает маска игрового поля. */
+  private worldPainter!: Painter;
   private hotspots!: Hotspots;
+
   private ui: UiState = initialUiState();
+  private position: WorldPoint = { ...DISTRICT.spawn };
+  private walkTarget: WorldPoint | null = null;
+  /** Цель, к которой идём по тапу: дойдя, срабатываем сами. */
+  private pendingTarget: WorldTarget | null = null;
   private dirty = true;
   private axis = { x: 0, y: 0 };
 
@@ -47,8 +64,12 @@ export class GameScene extends Phaser.Scene {
     if (this.input.keyboard) sources.push(new KeyboardInput(this.input.keyboard));
     this.input$ = new CompositeInput(sources);
 
-    const layer = this.add.container(0, 0);
-    this.painter = new Painter(this, layer);
+    // Два слоя: мир снизу, интерфейс сверху. Внутри одного контейнера
+    // порядок не разделить — все Text ложатся поверх общей Graphics.
+    const worldLayer = this.add.container(0, 0);
+    const uiLayer = this.add.container(0, 0);
+    this.worldPainter = new Painter(this, worldLayer);
+    this.painter = new Painter(this, uiLayer);
     this.hotspots = new Hotspots();
 
     this.store.subscribe(() => {
@@ -57,19 +78,112 @@ export class GameScene extends Phaser.Scene {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input$.destroy();
+      this.worldPainter.destroy();
       this.painter.destroy();
     });
   }
 
-  override update(): void {
+  override update(_time: number, delta: number): void {
     this.input$.update();
-    this.handleFocusKeys();
-    if (this.hotspots.handle(this.input$)) this.dirty = true;
+
+    const inWorld = this.ui.screen === 'world' || this.ui.screen === 'room';
+    if (inWorld && !this.store.getState().events.pending) this.walk(delta);
+    else this.handleFocusKeys();
+
+    const onMiss = inWorld ? (tap: WorldPoint) => this.setWalkTarget(tap) : undefined;
+    if (this.hotspots.handle(this.input$, onMiss)) this.dirty = true;
     if (this.input$.justPressed('cancel')) this.goBack();
     if (this.dirty) this.render();
   }
 
-  /** Стрелки двигают фокус — то же, что делается тапом (ограничение 2.2). */
+  // — мир —
+
+  private get room(): RoomDef | null {
+    const id = this.ui.locationId;
+    return id && hasRoom(id) ? getRoom(id) : null;
+  }
+
+  private layer() {
+    const room = this.room;
+    return room ? roomLayer(room) : districtLayer(this.store.getState());
+  }
+
+  /**
+   * Ходьба не тратит слоты (раздел 4) — она только меняет положение
+   * персонажа, поэтому живёт целиком в сцене и симуляции не касается.
+   */
+  private walk(delta: number): void {
+    const layer = this.layer();
+    const solids = solidsOf(layer);
+    const distance = (WALK_SPEED * delta) / 1000;
+    const before = this.position;
+
+    const { x, y } = this.input$.move;
+    if (x !== 0 || y !== 0) {
+      // Клавиши отменяют цель, поставленную тапом.
+      this.walkTarget = null;
+      const length = Math.hypot(x, y) || 1;
+      this.position = step(before, (x / length) * distance, (y / length) * distance, solids, layer.bounds);
+    } else if (this.walkTarget) {
+      const result = stepToward(before, this.walkTarget, distance, solids, layer.bounds);
+      this.position = result.position;
+      if (result.arrived) {
+        this.walkTarget = null;
+        const target = this.pendingTarget;
+        this.pendingTarget = null;
+        // Дошли — открываем. Если упёрлись и всё равно далеко, просто стоим.
+        if (target && withinReach(this.position, target.rect)) this.enter(target);
+      }
+    }
+
+    if (this.position !== before) this.dirty = true;
+  }
+
+  private setWalkTarget(tap: WorldPoint): void {
+    this.walkTarget = screenToWorld(tap, this.position, this.layer());
+    this.pendingTarget = null;
+  }
+
+  /**
+   * Тап по двери с другого конца улицы — это приказ дойти, а не телепорт:
+   * иначе экран района снова превращается в меню.
+   */
+  private activate(target: WorldTarget): void {
+    if (withinReach(this.position, target.rect)) {
+      this.enter(target);
+      return;
+    }
+    this.walkTarget = centerOf(target.rect);
+    this.pendingTarget = target;
+  }
+
+  private enter(target: WorldTarget): void {
+    // Часы работы запирают дверь по-настоящему, а не только красят её.
+    if (target.locked) return;
+
+    if (target.kind === 'door') {
+      const room = hasRoom(target.id) ? getRoom(target.id) : null;
+      if (!room) return;
+      this.position = { ...room.spawn };
+      this.walkTarget = null;
+      this.go({ screen: 'room', locationId: target.id, pointId: null, page: 0 });
+      return;
+    }
+
+    if (target.kind === 'exit') {
+      const building = DISTRICT.buildings.find((b) => b.locationId === target.id);
+      const door = building ? centerOf(building.door) : DISTRICT.spawn;
+      this.position = { x: door.x, y: Math.min(DISTRICT.height, door.y + 30) };
+      this.walkTarget = null;
+      this.go({ screen: 'world', locationId: null, pointId: null, page: 0 });
+      return;
+    }
+
+    this.go({ screen: 'point', pointId: target.id, page: 0 });
+  }
+
+  // — интерфейс —
+
   private handleFocusKeys(): void {
     const { x, y } = this.input$.move;
     const stepY = y !== 0 && this.axis.y === 0 ? Math.sign(y) : 0;
@@ -84,11 +198,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   private goBack(): void {
-    const back: Partial<UiState> =
-      this.ui.screen === 'gig' || this.ui.screen === 'shop'
-        ? { screen: 'location', venueId: null, page: 0 }
-        : { screen: 'district', locationId: null, page: 0 };
-    this.go(back);
+    switch (this.ui.screen) {
+      case 'gig':
+      case 'shop':
+        return this.go({ screen: 'point', venueId: null, page: 0 });
+      case 'point':
+        return this.go({ screen: this.ui.locationId ? 'room' : 'world', pointId: null, page: 0 });
+      case 'character':
+      case 'journal':
+        return this.go({ screen: this.ui.locationId ? 'room' : 'world', page: 0 });
+      default:
+        return;
+    }
   }
 
   private go = (patch: Partial<UiState>): void => {
@@ -102,11 +223,13 @@ export class GameScene extends Phaser.Scene {
 
   private render(): void {
     this.dirty = false;
+    this.worldPainter.clear();
     this.painter.clear();
     this.hotspots.clear();
 
     const state = this.store.getState();
-    this.painter.fill({ x: 0, y: 0, w: SCREEN.width, h: SCREEN.height }, COLORS.bg);
+    // Фон — в нижнем слое: из верхнего он закрасил бы весь мир.
+    this.worldPainter.fill({ x: 0, y: 0, w: SCREEN.width, h: SCREEN.height }, COLORS.bg);
 
     const ctx: RenderContext = {
       painter: this.painter,
@@ -120,9 +243,7 @@ export class GameScene extends Phaser.Scene {
     renderHud(this.painter, state);
 
     // Пока событие ждёт ответа, редьюсер блокирует всё остальное — значит
-    // и рисовать под ним нечего. Заодно снимает вопрос порядка слоёв:
-    // все Text ложатся поверх общей Graphics, и затемнение фона под ними
-    // было бы не видно.
+    // и рисовать под ним нечего.
     if (state.events.pending) {
       renderEventDialog(ctx);
       return;
@@ -139,10 +260,21 @@ export class GameScene extends Phaser.Scene {
 
   private renderScreen(ctx: RenderContext): void {
     switch (this.ui.screen) {
-      case 'district':
-        return renderDistrict(ctx);
-      case 'location':
-        return renderLocation(ctx);
+      case 'world':
+      case 'room':
+        return renderWorld(
+          {
+            painter: this.worldPainter,
+            hotspots: this.hotspots,
+            state: ctx.state,
+            position: this.position,
+            onActivate: (target) => this.activate(target),
+            onWalk: (point) => (this.walkTarget = point),
+          },
+          this.layer(),
+        );
+      case 'point':
+        return renderPoint(ctx);
       case 'gig':
         return renderGig(ctx);
       case 'shop':

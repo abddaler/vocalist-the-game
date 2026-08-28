@@ -5,7 +5,7 @@ import type { Painter } from '../widgets/Painter';
 import type { ScreenId, UiState } from './types';
 
 const TABS: readonly { screen: ScreenId; key: string }[] = [
-  { screen: 'district', key: 'ui.district' },
+  { screen: 'world', key: 'ui.district' },
   { screen: 'character', key: 'ui.character' },
   { screen: 'journal', key: 'ui.journal' },
 ];
@@ -23,12 +23,15 @@ export function renderNav(
   const width = Math.floor(SCREEN.width / TABS.length);
   TABS.forEach((tab, index) => {
     const rect = { x: index * width + 2, y: y + 2, w: width - 4, h: LAYOUT.navHeight - 4 };
-    const active = ui.screen === tab.screen || (tab.screen === 'district' && isDistrictish(ui.screen));
+    const active = ui.screen === tab.screen || (tab.screen === 'world' && isWorldish(ui.screen));
+    // «Район» возвращает туда, где игрок стоит: на улицу или в комнату.
+    const destination: ScreenId =
+      tab.screen === 'world' && ui.locationId ? 'room' : tab.screen;
     const hotspot = {
       rect,
       label: tab.key,
       enabled: true,
-      onActivate: () => go({ screen: tab.screen, locationId: null, venueId: null, page: 0 }),
+      onActivate: () => go({ screen: destination, venueId: null, pointId: null, page: 0 }),
     };
     hotspots.add(hotspot);
     painter.button(rect, t(tab.key), {
@@ -39,5 +42,5 @@ export function renderNav(
   });
 }
 
-const isDistrictish = (screen: ScreenId): boolean =>
-  screen === 'location' || screen === 'gig' || screen === 'shop';
+const isWorldish = (screen: ScreenId): boolean =>
+  screen === 'room' || screen === 'point' || screen === 'gig' || screen === 'shop';

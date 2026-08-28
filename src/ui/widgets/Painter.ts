@@ -18,6 +18,12 @@ export class Painter {
   private readonly shapes: Phaser.GameObjects.Graphics;
   private readonly texts: Phaser.GameObjects.Text[] = [];
 
+  /**
+   * Все Text ложатся поверх общей Graphics внутри одного контейнера,
+   * поэтому порядок вызовов слои не разделяет. Разделяют контейнеры:
+   * мир и интерфейс рисуются разными Painter'ами.
+   */
+
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly layer: Phaser.GameObjects.Container,
