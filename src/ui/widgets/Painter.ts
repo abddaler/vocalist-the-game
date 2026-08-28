@@ -17,6 +17,7 @@ export interface TextStyle {
 export class Painter {
   private readonly shapes: Phaser.GameObjects.Graphics;
   private readonly texts: Phaser.GameObjects.Text[] = [];
+  private readonly images: Phaser.GameObjects.Image[] = [];
 
   /**
    * Все Text ложатся поверх общей Graphics внутри одного контейнера,
@@ -36,7 +37,18 @@ export class Painter {
     this.shapes.clear();
     for (const text of this.texts) text.destroy();
     this.texts.length = 0;
+    for (const image of this.images) image.destroy();
+    this.images.length = 0;
     this.layer.bringToTop(this.shapes);
+  }
+
+  /** Спрайт с привязкой к нижнему центру: персонаж стоит ногами в точке. */
+  sprite(x: number, y: number, key: string, flipX = false): void {
+    const image = this.scene.add.image(Math.round(x), Math.round(y), key);
+    image.setOrigin(0.5, 1);
+    image.setFlipX(flipX);
+    this.layer.add(image);
+    this.images.push(image);
   }
 
   fill(rect: Rect, color: number, alpha: number = 1): void {

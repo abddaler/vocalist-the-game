@@ -21,6 +21,11 @@ import { renderPoint } from '@ui/screens/PointScreen';
 import { renderShop } from '@ui/screens/ShopScreen';
 import { initialUiState } from '@ui/screens/types';
 import type { RenderContext, UiState } from '@ui/screens/types';
+import { buildActorTextures } from '../art';
+import { spawnCrowd, updateCrowd } from '../world/Crowd';
+import type { CrowdActor } from '../world/Crowd';
+import { facingFrom } from '../world/actorSprite';
+import type { Facing } from '../world/actorSprite';
 import { WALK_SPEED, centerOf, step, stepToward } from '../world/movement';
 import {
   districtLayer,
@@ -52,6 +57,21 @@ export class GameScene extends Phaser.Scene {
   private walkTarget: WorldPoint | null = null;
   /** Цель, к которой идём по тапу: дойдя, срабатываем сами. */
   private pendingTarget: WorldTarget | null = null;
+
+  /**
+   * Затемнение на входе и выходе. Мгновенная подмена картинки читается
+   * как сбой; полсекунды темноты — как дверь.
+   */
+  private fade: { alpha: number; phase: 'idle' | 'out' | 'in'; action: (() => void) | null } = {
+    alpha: 0,
+    phase: 'idle',
+    action: null,
+  };
+
+  private facing: Facing = 'down';
+  private walked = 0;
+  private moving = false;
+  private crowd: CrowdActor[] = [];
   private dirty = true;
   private axis = { x: 0, y: 0 };
 
@@ -82,6 +102,9 @@ export class GameScene extends Phaser.Scene {
 
     // Два слоя: мир снизу, интерфейс сверху. Внутри одного контейнера
     // порядок не разделить — все Text ложатся поверх общей Graphics.
+    buildActorTextures(this);
+    this.crowd = spawnCrowd('district');
+
     const worldLayer = this.add.container(0, 0);
     const uiLayer = this.add.container(0, 0);
     this.worldPainter = new Painter(this, worldLayer);
@@ -116,7 +139,20 @@ export class GameScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     this.input$.update();
 
+    if (this.fade.phase !== 'idle') {
+      this.tickFade(delta);
+      updateCrowd(this.crowd, delta);
+      this.render();
+      return;
+    }
+
     const inWorld = this.ui.screen === 'world' || this.ui.screen === 'room';
+    if (inWorld) {
+      // Жизнь локации идёт и пока игрок читает событие: замирающая
+      // комната мгновенно выдаёт декорацию.
+      updateCrowd(this.crowd, delta);
+      this.dirty = true;
+    }
     if (inWorld && !this.store.getState().events.pending) this.walk(delta);
     else this.handleFocusKeys();
 
@@ -166,7 +202,12 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    if (this.position !== before) this.dirty = true;
+    this.moving = this.position !== before;
+    if (this.moving) {
+      this.facing = facingFrom(before, this.position, this.facing);
+      this.walked += Math.hypot(this.position.x - before.x, this.position.y - before.y);
+      this.dirty = true;
+    }
   }
 
   private setWalkTarget(tap: WorldPoint): void {
@@ -194,18 +235,26 @@ export class GameScene extends Phaser.Scene {
     if (target.kind === 'door') {
       const room = hasRoom(target.id) ? getRoom(target.id) : null;
       if (!room) return;
-      this.position = { ...room.spawn };
-      this.walkTarget = null;
-      this.go({ screen: 'room', locationId: target.id, pointId: null, page: 0 });
+      this.transition(() => {
+        this.position = { ...room.spawn };
+        this.walkTarget = null;
+        this.facing = 'up';
+        this.crowd = spawnCrowd(target.id);
+        this.go({ screen: 'room', locationId: target.id, pointId: null, page: 0 });
+      });
       return;
     }
 
     if (target.kind === 'exit') {
       const building = DISTRICT.buildings.find((b) => b.locationId === target.id);
       const door = building ? centerOf(building.door) : DISTRICT.spawn;
-      this.position = { x: door.x, y: Math.min(DISTRICT.height, door.y + 30) };
-      this.walkTarget = null;
-      this.go({ screen: 'world', locationId: null, pointId: null, page: 0 });
+      this.transition(() => {
+        this.position = { x: door.x, y: Math.min(DISTRICT.height, door.y + 30) };
+        this.walkTarget = null;
+        this.facing = 'down';
+        this.crowd = spawnCrowd('district');
+        this.go({ screen: 'world', locationId: null, pointId: null, page: 0 });
+      });
       return;
     }
 
@@ -240,6 +289,28 @@ export class GameScene extends Phaser.Scene {
       default:
         return;
     }
+  }
+
+  private tickFade(delta: number): void {
+    const speed = delta / 190;
+
+    if (this.fade.phase === 'out') {
+      this.fade.alpha = Math.min(1, this.fade.alpha + speed);
+      if (this.fade.alpha >= 1) {
+        this.fade.action?.();
+        this.fade.action = null;
+        this.fade.phase = 'in';
+      }
+      return;
+    }
+
+    this.fade.alpha = Math.max(0, this.fade.alpha - speed);
+    if (this.fade.alpha <= 0) this.fade.phase = 'idle';
+  }
+
+  /** Смена локации всегда идёт через темноту. */
+  private transition(action: () => void): void {
+    this.fade = { alpha: 0, phase: 'out', action };
   }
 
   private markDirty = (): void => {
@@ -279,6 +350,13 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    if (this.fade.alpha > 0) {
+      this.renderScreen(ctx);
+      renderHud(this.painter, state);
+      this.painter.fill({ x: 0, y: 0, w: SCREEN.width, h: SCREEN.height }, 0x000000, this.fade.alpha);
+      return;
+    }
+
     renderHud(this.painter, state);
 
     // Пока событие ждёт ответа, редьюсер блокирует всё остальное — значит
@@ -303,6 +381,10 @@ export class GameScene extends Phaser.Scene {
             hotspots: this.hotspots,
             state: ctx.state,
             position: this.position,
+            facing: this.facing,
+            walked: this.walked,
+            moving: this.moving,
+            crowd: this.crowd,
             onActivate: (target) => this.activate(target),
             onWalk: (point) => (this.walkTarget = point),
           },
