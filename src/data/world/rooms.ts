@@ -6,9 +6,9 @@ import type { DecorDef, RoomDef, RoomPointDef } from '@core/types';
  * местам: спать — у кровати, распеваться — у зеркала. Прямоугольники —
  * заглушки вехи 5; тайлмапы придут с артом на вехе 7.
  */
-const ROOM_W = 420;
-const ROOM_H = 196;
-const EXIT = { x: ROOM_W / 2 - 22, y: ROOM_H - 10, w: 44, h: 10 };
+const ROOM_W = 240;
+const ROOM_H = 105;
+const EXIT = { x: ROOM_W / 2 - 14, y: ROOM_H - 7, w: 28, h: 7 };
 
 const lessonsOf = (level: string): string[] =>
   ACTIVITIES.filter((a) => a.id.startsWith('lesson_') && a.id.endsWith(level)).map((a) => a.id);
@@ -39,7 +39,7 @@ const room = (
   locationId,
   width: ROOM_W,
   height: ROOM_H,
-  spawn: { x: ROOM_W / 2, y: ROOM_H - 16 },
+  spawn: { x: ROOM_W / 2, y: ROOM_H - 12 },
   floor,
   solids: [],
   points,
@@ -49,53 +49,53 @@ const room = (
 
 export const ROOMS: readonly RoomDef[] = [
   room('apartment', 0x2b3040, [
-    point('bed', 'point.bed', { x: 32, y: 42, w: 62, h: 34 }, 0x4a5570, 'bed', ['sleep']),
-    point('mirror', 'point.mirror', { x: 168, y: 36, w: 35, h: 39 }, 0x6d7a94, 'mirror', ['warmup', 'vocal_rest']),
-    point('kitchen', 'point.kitchen', { x: 266, y: 39, w: 59, h: 36 }, 0x5a4f3d, 'kitchen', ['tea_regimen']),
-    point('sofa', 'point.sofa', { x: 154, y: 127, w: 73, h: 29 }, 0x4c4258, 'sofa', ['home_rest']),
-  ], [decor('planter', 380, 118), decor('bin', 40, 176), decor('bench', 320, 186)]),
+    point('bed', 'point.bed', { x: 18, y: 23, w: 35, h: 18 }, 0x4a5570, 'bed', ['sleep']),
+    point('mirror', 'point.mirror', { x: 96, y: 19, w: 20, h: 21 }, 0x6d7a94, 'mirror', ['warmup', 'vocal_rest']),
+    point('kitchen', 'point.kitchen', { x: 152, y: 21, w: 34, h: 19 }, 0x5a4f3d, 'kitchen', ['tea_regimen']),
+    point('sofa', 'point.sofa', { x: 88, y: 68, w: 42, h: 16 }, 0x4c4258, 'sofa', ['home_rest']),
+  ], [decor('planter', 217, 63), decor('bin', 23, 94), decor('bench', 183, 100), decor('rug', 58, 94, 0), decor('poster', 70, 24, 1), decor('shelf', 210, 24)]),
 
   room('vocal_studio', 0x33293f, [
-    point('teacher_junior', 'point.teacherJunior', { x: 35, y: 47, w: 65, h: 36 }, 0x584a6b, 'piano', lessonsOf('junior')),
-    point('teacher_mid', 'point.teacherMid', { x: 168, y: 42, w: 65, h: 42 }, 0x6b5a80, 'piano', lessonsOf('mid')),
-    point('teacher_master', 'point.teacherMaster', { x: 301, y: 47, w: 65, h: 36 }, 0x8a6ea3, 'piano', lessonsOf('master')),
-  ], [decor('planter', 46, 178), decor('bench', 250, 182), decor('planter', 392, 120)]),
+    point('teacher_junior', 'point.teacherJunior', { x: 20, y: 25, w: 37, h: 19 }, 0x584a6b, 'piano', lessonsOf('junior')),
+    point('teacher_mid', 'point.teacherMid', { x: 96, y: 23, w: 37, h: 23 }, 0x6b5a80, 'piano', lessonsOf('mid')),
+    point('teacher_master', 'point.teacherMaster', { x: 172, y: 25, w: 37, h: 19 }, 0x8a6ea3, 'piano', lessonsOf('master')),
+  ], [decor('planter', 26, 95), decor('bench', 143, 98), decor('planter', 224, 64), decor('rug', 120, 94, 1), decor('poster', 24, 24, 0), decor('poster', 214, 24, 3)]),
 
   room('rehearsal_base', 0x25343a, [
-    point('mic_stand', 'point.micStand', { x: 105, y: 52, w: 35, h: 44 }, 0x557080, 'mic', ['practice_free']),
-    point('band_corner', 'point.bandCorner', { x: 245, y: 47, w: 81, h: 49 }, 0x466070, 'drums', ['band_rehearsal']),
-  ], [decor('crate', 44, 176, 0), decor('crate', 70, 178, 1), decor('bin', 388, 172), decor('bench', 300, 186)]),
+    point('mic_stand', 'point.micStand', { x: 60, y: 28, w: 20, h: 24 }, 0x557080, 'mic', ['practice_free']),
+    point('band_corner', 'point.bandCorner', { x: 140, y: 25, w: 46, h: 26 }, 0x466070, 'drums', ['band_rehearsal']),
+  ], [decor('crate', 25, 94, 0), decor('crate', 40, 95, 1), decor('bin', 222, 92), decor('bench', 171, 100), decor('rug', 130, 94, 2), decor('poster', 40, 24, 2), decor('shelf', 220, 24)]),
 
   room('restaurant', 0x3d2f24, [
-    point('small_stage', 'point.smallStage', { x: 147, y: 44, w: 97, h: 42 }, 0x6b543c, 'stage', ['restaurant_shift']),
-  ], [decor('parasol', 92, 186), decor('parasol', 330, 186), decor('planter', 46, 130), decor('planter', 386, 130)]),
+    point('small_stage', 'point.smallStage', { x: 84, y: 24, w: 55, h: 23 }, 0x6b543c, 'stage', ['restaurant_shift']),
+  ], [decor('parasol', 53, 100), decor('parasol', 188, 100), decor('planter', 26, 70), decor('planter', 220, 70), decor('rug', 120, 94, 0), decor('poster', 30, 24, 3)]),
 
   room('club_vertigo', 0x35223d, [
-    point('bar_counter', 'point.barCounter', { x: 32, y: 127, w: 89, h: 29 }, 0x5c3a68, 'bar', ['networking']),
-    point('open_mic', 'point.openMic', { x: 52, y: 42, w: 84, h: 44 }, 0x74468a, 'stage', [], { venues: ['bar_stage'] }),
-    point('main_stage', 'point.mainStage', { x: 224, y: 36, w: 124, h: 52 }, 0x9a4fb8, 'stage', [], { venues: ['club_stage'] }),
-  ], [decor('bin', 396, 178), decor('bench', 300, 190), decor('bollard', 60, 178)]),
+    point('bar_counter', 'point.barCounter', { x: 18, y: 68, w: 51, h: 16 }, 0x5c3a68, 'bar', ['networking']),
+    point('open_mic', 'point.openMic', { x: 30, y: 23, w: 48, h: 24 }, 0x74468a, 'stage', [], { venues: ['bar_stage'] }),
+    point('main_stage', 'point.mainStage', { x: 128, y: 19, w: 71, h: 28 }, 0x9a4fb8, 'stage', [], { venues: ['club_stage'] }),
+  ], [decor('bin', 226, 95), decor('bench', 171, 102), decor('bollard', 34, 95), decor('poster', 26, 24, 0), decor('poster', 214, 24, 1)]),
 
   room('record_studio', 0x243440, [
-    point('booth', 'point.booth', { x: 116, y: 42, w: 81, h: 52 }, 0x3f5f78, 'booth', ['record_single']),
-    point('console', 'point.console', { x: 262, y: 52, w: 84, h: 34 }, 0x50708a, 'console', []),
-  ], [decor('crate', 44, 180, 1), decor('planter', 384, 126), decor('bench', 120, 190)]),
+    point('booth', 'point.booth', { x: 66, y: 23, w: 46, h: 28 }, 0x3f5f78, 'booth', ['record_single']),
+    point('console', 'point.console', { x: 150, y: 28, w: 48, h: 18 }, 0x50708a, 'console', []),
+  ], [decor('crate', 25, 96, 1), decor('planter', 219, 68), decor('bench', 69, 102), decor('rug', 120, 94, 1), decor('shelf', 30, 24), decor('poster', 216, 24, 2)]),
 
   room('clothes_shop', 0x3d3524, [
-    point('rack', 'point.rack', { x: 60, y: 42, w: 94, h: 42 }, 0x7a6a45, 'rack', ['shopping']),
-    point('fitting_room', 'point.fittingRoom', { x: 245, y: 39, w: 70, h: 47 }, 0x8a7a55, 'curtain', [], {
+    point('rack', 'point.rack', { x: 34, y: 23, w: 54, h: 23 }, 0x7a6a45, 'rack', ['shopping']),
+    point('fitting_room', 'point.fittingRoom', { x: 140, y: 21, w: 40, h: 25 }, 0x8a7a55, 'curtain', [], {
       opensShop: true,
     }),
-  ], [decor('planter', 48, 176), decor('bench', 250, 188), decor('planter', 388, 176)]),
+  ], [decor('planter', 27, 94), decor('bench', 143, 101), decor('planter', 222, 94), decor('rug', 120, 94, 2), decor('poster', 214, 24, 0), decor('shelf', 26, 24)]),
 
   room('phoniatrist', 0x27392f, [
-    point('exam_chair', 'point.examChair', { x: 91, y: 44, w: 73, h: 44 }, 0x477a5c, 'chair', ['doctor_visit']),
-    point('prevention', 'point.prevention', { x: 245, y: 47, w: 76, h: 39 }, 0x3f6b52, 'chair', ['checkup']),
-  ], [decor('bench', 96, 186), decor('bench', 300, 186), decor('planter', 386, 122)]),
+    point('exam_chair', 'point.examChair', { x: 52, y: 24, w: 42, h: 24 }, 0x477a5c, 'chair', ['doctor_visit']),
+    point('prevention', 'point.prevention', { x: 140, y: 25, w: 43, h: 21 }, 0x3f6b52, 'chair', ['checkup']),
+  ], [decor('bench', 55, 100), decor('bench', 171, 100), decor('planter', 220, 65), decor('rug', 120, 94, 1), decor('shelf', 216, 24), decor('poster', 26, 24, 1)]),
 
   room('gym', 0x3a2828, [
-    point('treadmill', 'point.treadmill', { x: 126, y: 42, w: 122, h: 49 }, 0x7a4a4a, 'treadmill', ['gym']),
-  ], [decor('bin', 44, 176), decor('bench', 120, 188), decor('bench', 300, 188), decor('bollard', 384, 178)]),
+    point('treadmill', 'point.treadmill', { x: 72, y: 23, w: 70, h: 26 }, 0x7a4a4a, 'treadmill', ['gym']),
+  ], [decor('bin', 25, 94), decor('bench', 69, 101), decor('bench', 171, 101), decor('bollard', 219, 95), decor('rug', 120, 94, 2), decor('poster', 30, 24, 3), decor('poster', 212, 24, 0)]),
 ];
 
 const BY_LOCATION = new Map(ROOMS.map((r) => [r.locationId, r]));

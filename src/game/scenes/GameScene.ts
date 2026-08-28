@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 import { Store, createInitialState } from '@core/state';
+import { getActivity } from '@data/activities';
+import { getLocation } from '@data/locations';
+import { getDistrict } from '@data/world';
 import type { Action } from '@core/state';
 import type { GameState, GenreId, WorldPoint } from '@core/types';
 import { CompositeInput, KeyboardInput, PointerInput } from '@platform/input';
@@ -16,6 +19,9 @@ import { renderGig } from '@ui/screens/GigScreen';
 import { renderHud } from '@ui/screens/Hud';
 import { renderJournal } from '@ui/screens/JournalScreen';
 import { renderMap } from '@ui/screens/MapScreen';
+import { ACTIVITY_MS, moteOf, renderActivity } from '@ui/screens/ActivityScene';
+import type { Mote } from '@ui/screens/ActivityScene';
+import { PLAYER_LOOK, actorTexture } from '../art';
 import { renderNav } from '@ui/screens/Nav';
 import { renderPoint } from '@ui/screens/PointScreen';
 import { renderShop } from '@ui/screens/ShopScreen';
@@ -41,6 +47,9 @@ export class GameScene extends Phaser.Scene {
   private hotspots!: Hotspots;
   private world!: WorldController;
 
+  /** Идущее дело: пока оно не кончится, состояние не меняется. */
+  private busy: { nameKey: string; mote: Mote; elapsed: number; action: Action } | null = null;
+
   private ui: UiState = initialUiState();
   private dirty = true;
   private axis = { x: 0, y: 0 };
@@ -53,6 +62,7 @@ export class GameScene extends Phaser.Scene {
   init(data: { state?: GameState; seed?: string; genre?: GenreId }): void {
     this.start = data ?? {};
     this.ui = initialUiState();
+    this.busy = null;
     this.dirty = true;
   }
 
@@ -109,6 +119,12 @@ export class GameScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     this.input$.update();
 
+    if (this.busy) {
+      this.tickActivity(delta);
+      this.render();
+      return;
+    }
+
     const inWorld = this.ui.screen === 'world' || this.ui.screen === 'room';
     if (inWorld) {
       this.world.tick(delta, this.input$, !this.store.getState().events.pending);
@@ -124,6 +140,21 @@ export class GameScene extends Phaser.Scene {
     if (this.hotspots.handle(this.input$, onMiss)) this.dirty = true;
     if (this.input$.justPressed('cancel')) this.goBack();
     if (this.dirty) this.render();
+  }
+
+  /**
+   * Сцена занятия. Действие уходит в редьюсер только в конце: иначе
+   * результат появился бы под анимацией, и она превратилась бы в
+   * бессмысленную задержку поверх уже случившегося.
+   */
+  private tickActivity(delta: number): void {
+    const busy = this.busy;
+    if (!busy) return;
+    busy.elapsed += delta;
+    if (busy.elapsed < ACTIVITY_MS) return;
+
+    this.busy = null;
+    this.store.dispatch(busy.action);
   }
 
   /** Стрелки двигают фокус — то же, что делается тапом (ограничение 2.2). */
@@ -169,6 +200,16 @@ export class GameScene extends Phaser.Scene {
     this.store.dispatch(action);
   };
 
+  private perform = (activityId: string, action: Action): void => {
+    this.busy = {
+      nameKey: getActivity(activityId).nameKey,
+      mote: moteOf(activityId),
+      elapsed: 0,
+      action,
+    };
+    this.dirty = true;
+  };
+
   private render(): void {
     this.dirty = false;
     this.worldPainter.clear();
@@ -185,6 +226,7 @@ export class GameScene extends Phaser.Scene {
       state,
       ui: this.ui,
       dispatch: this.dispatch,
+      perform: this.perform,
       go: this.go,
     };
 
@@ -195,7 +237,7 @@ export class GameScene extends Phaser.Scene {
 
     if (this.world.fadeAlpha > 0) {
       this.renderScreen(ctx);
-      renderHud(this.painter, state);
+      renderHud(this.painter, state, this.placeKey());
       this.painter.fill(
         { x: 0, y: 0, w: SCREEN.width, h: SCREEN.height },
         0x000000,
@@ -204,7 +246,21 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    renderHud(this.painter, state);
+    renderHud(this.painter, state, this.placeKey());
+
+    if (this.busy) {
+      // Под сценой занятия видна комната, а не список дел: список рисует
+      // текст, а текст ложится поверх затемнения и спорит с карточкой.
+      this.renderWorldLayer(ctx.state);
+      renderActivity(this.painter, state, {
+        nameKey: this.busy.nameKey,
+        mote: this.busy.mote,
+        progress: Math.min(1, this.busy.elapsed / ACTIVITY_MS),
+        elapsed: this.busy.elapsed,
+        actorTexture: actorTexture(PLAYER_LOOK, this.busy.elapsed % 500 < 250 ? 'downA' : 'downB'),
+      });
+      return;
+    }
 
     // Пока событие ждёт ответа, редьюсер блокирует всё остальное — значит
     // и рисовать под ним нечего.
@@ -217,25 +273,36 @@ export class GameScene extends Phaser.Scene {
     renderNav(this.painter, this.hotspots, this.ui, this.go);
   }
 
+  /** Что написать в средней табличке панели: комната или район. */
+  private placeKey(): string {
+    const location = this.ui.locationId;
+    return location ? getLocation(location).nameKey : getDistrict(this.world.districtId).nameKey;
+  }
+
+  /** Мир в нижнем слое: он же фон для экранов, которые рисуются поверх. */
+  private renderWorldLayer(state: GameState): void {
+    renderWorld(
+      {
+        painter: this.worldPainter,
+        hotspots: this.hotspots,
+        state,
+        position: this.world.position,
+        facing: this.world.facing,
+        walked: this.world.walked,
+        moving: this.world.moving,
+        crowd: this.world.crowd,
+        onActivate: (target) => this.world.activate(target),
+        onWalk: (point) => this.world.walkTo(point),
+      },
+      this.world.layer(),
+    );
+  }
+
   private renderScreen(ctx: RenderContext): void {
     switch (this.ui.screen) {
       case 'world':
       case 'room':
-        return renderWorld(
-          {
-            painter: this.worldPainter,
-            hotspots: this.hotspots,
-            state: ctx.state,
-            position: this.world.position,
-            facing: this.world.facing,
-            walked: this.world.walked,
-            moving: this.world.moving,
-            crowd: this.world.crowd,
-            onActivate: (target) => this.world.activate(target),
-            onWalk: (point) => this.world.walkTo(point),
-          },
-          this.world.layer(),
-        );
+        return this.renderWorldLayer(ctx.state);
       case 'point':
         return renderPoint(ctx);
       case 'gig':

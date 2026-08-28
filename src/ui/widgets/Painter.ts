@@ -51,10 +51,11 @@ export class Painter {
   }
 
   /** Спрайт с привязкой к нижнему центру: персонаж стоит ногами в точке. */
-  sprite(x: number, y: number, key: string, flipX = false): void {
+  sprite(x: number, y: number, key: string, flipX = false, scale = 1): void {
     const image = this.scene.add.image(Math.round(x), Math.round(y), key);
     image.setOrigin(0.5, 1);
     image.setFlipX(flipX);
+    if (scale !== 1) image.setScale(scale);
     this.layer.add(image);
     this.images.push(image);
   }
@@ -74,12 +75,43 @@ export class Painter {
     this.stroke(rect, border);
   }
 
-  /** Полоска ресурса. Пустая часть рисуется приглушённо, а не пропадает. */
+  /**
+   * Табличка со скошенными углами. Прямые углы на такой палитре выглядят
+   * веб-страницей; срезанный пиксель на каждом углу — примета аркадного
+   * интерфейса и стоит четыре вызова заливки.
+   */
+  plate(rect: Rect, fill: number, border: number, glow = false): void {
+    const { x, y, w, h } = rect;
+    this.fill({ x: x + 2, y, w: w - 4, h }, fill);
+    this.fill({ x, y: y + 2, w, h: h - 4 }, fill);
+    this.fill({ x: x + 1, y: y + 1, w: w - 2, h: h - 2 }, fill);
+
+    this.fill({ x: x + 2, y, w: w - 4, h: 1 }, border);
+    this.fill({ x: x + 2, y: y + h - 1, w: w - 4, h: 1 }, border);
+    this.fill({ x, y: y + 2, w: 1, h: h - 4 }, border);
+    this.fill({ x: x + w - 1, y: y + 2, w: 1, h: h - 4 }, border);
+    this.fill({ x: x + 1, y: y + 1, w: 1, h: 1 }, border);
+    this.fill({ x: x + w - 2, y: y + 1, w: 1, h: 1 }, border);
+    this.fill({ x: x + 1, y: y + h - 2, w: 1, h: 1 }, border);
+    this.fill({ x: x + w - 2, y: y + h - 2, w: 1, h: 1 }, border);
+
+    // Отсвет вокруг рамки: подсвеченная кнопка должна светиться, а не
+    // просто менять цвет обводки.
+    if (glow) this.fill({ x: x - 1, y: y - 1, w: w + 2, h: h + 2 }, border, 0.18);
+  }
+
+  /**
+   * Полоска ресурса. Пустая часть приглушена, заполненная — с бликом
+   * сверху и тенью снизу: плоский прямоугольник на этой палитре теряется.
+   */
   bar(rect: Rect, value: number, max: number, color: number): void {
-    this.fill(rect, COLORS.disabled);
+    this.fill(rect, COLORS.panelDeep);
     const ratio = max <= 0 ? 0 : Math.max(0, Math.min(1, value / max));
     if (ratio > 0) {
-      this.fill({ ...rect, w: Math.max(1, Math.round(rect.w * ratio)) }, color);
+      const filled = { ...rect, w: Math.max(2, Math.round(rect.w * ratio)) };
+      this.fill(filled, color);
+      this.fill({ ...filled, h: 1 }, 0xffffff, 0.45);
+      this.fill({ ...filled, y: filled.y + filled.h - 1, h: 1 }, 0x000000, 0.28);
     }
     this.stroke(rect, COLORS.border);
   }
@@ -126,8 +158,12 @@ export class Painter {
       ? COLORS.disabled
       : state.focused
         ? COLORS.borderFocus
-        : COLORS.border;
-    this.panel(rect, state.focused ? COLORS.panelAlt : COLORS.panel, border);
+        : state.accent
+          ? COLORS.accent
+          : COLORS.border;
+    this.plate(rect, state.focused ? COLORS.panelAlt : COLORS.panel, border, state.focused);
+    // Блик по верхней кромке: кнопка должна выглядеть выпуклой.
+    this.fill({ x: rect.x + 2, y: rect.y + 1, w: rect.w - 4, h: 1 }, 0xffffff, 0.1);
     this.label(
       { x: rect.x + 4, y: rect.y, w: rect.w - 8, h: rect.h },
       label,

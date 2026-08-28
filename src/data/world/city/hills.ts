@@ -1,12 +1,12 @@
 import type { DistrictDef } from '@core/types';
-import { STREET, curbs, decor, fillLower, fillUpper, gateRight, lower, upper } from './plan';
+import { STREET, curbs, decor, fill, gateRight, house } from './plan';
 
-const WIDTH = 680;
+const WIDTH = 660;
 
 /**
- * Холмы: жилой склон над городом. Здесь игрок живёт и держит себя в
- * форме, поэтому район сделан самым спокойным — светлая штукатурка,
- * пальмы вдоль тротуара, ни одной вывески в неоне.
+ * Sunset Hills: жилой склон над городом. Здесь игрок живёт и держит себя
+ * в форме, поэтому район самый спокойный — светлая штукатурка, пальмы
+ * вдоль тротуара, ни одной вывески в неоне.
  */
 export const HILLS: DistrictDef = {
   id: 'hills',
@@ -14,39 +14,44 @@ export const HILLS: DistrictDef = {
   map: { x: 30, y: 2, w: 84, h: 30 },
   width: WIDTH,
   height: STREET.height,
-  spawn: { x: 300, y: 126 },
+  spawn: { x: 300, y: 84 },
 
   buildings: [
-    upper('apartment', 34, 132, 0x6f7fa8),
-    upper('phoniatrist', 356, 132, 0x7fa894),
-    lower('gym', 92, 130, 0xa87f7f),
+    house('apartment', 20, 86, 0x7f8fc0),
+    house('gym', 206, 80, 0xc08a8a),
+    house('phoniatrist', 378, 84, 0x8fc0a8),
   ],
 
   scenery: [
-    fillUpper(190, 140, 0x8f86b8, 'sign.villa'),
-    fillUpper(514, 130, 0xb89b7a, 'sign.terrace'),
-    fillLower(248, 120, 0x8ba0b8, 'sign.laundry'),
-    fillLower(392, 140, 0xb8a877, 'sign.coffee'),
-    fillLower(556, 110, 0x9bb888, 'sign.florist'),
+    fill(118, 74, 0xa08fd0, 'sign.villa'),
+    fill(298, 66, 0x8fb0d0, 'sign.laundry'),
+    fill(474, 74, 0xd0b888, 'sign.coffee'),
+    fill(560, 82, 0xa8d098, 'sign.florist'),
   ],
 
   decor: [
-    decor('palm', 24, 102, 2),
-    decor('palm', 176, 100, 1),
-    decor('palm', 330, 102, 2),
-    decor('palm', 496, 100, 0),
-    decor('palm', 648, 102, 1),
-    decor('lamp', 108, 101),
-    decor('lamp', 410, 101),
-    decor('lamp', 268, 148),
-    decor('lamp', 604, 148),
-    decor('bench', 232, 148),
-    decor('bench', 546, 148),
-    decor('planter', 70, 148),
-    decor('planter', 368, 148),
-    decor('hydrant', 300, 101),
-    decor('car', 150, 147, 0),
-    decor('car', 470, 147, 3),
+    decor('palm', 12, 74, 2),
+    decor('palm', 108, 72, 1),
+    decor('palm', 200, 74, 2),
+    decor('palm', 292, 72, 0),
+    decor('palm', 372, 74, 1),
+    decor('palm', 468, 72, 2),
+    decor('palm', 556, 74, 0),
+    decor('palm', 648, 73, 1),
+    decor('lamp', 64, 71),
+    decor('lamp', 250, 71),
+    decor('lamp', 430, 71),
+    decor('lamp', 604, 71),
+    decor('bench', 156, 97),
+    decor('bench', 420, 97),
+    decor('planter', 60, 97),
+    decor('planter', 344, 97),
+    decor('planter', 524, 97),
+    decor('hydrant', 232, 97),
+    decor('bin', 500, 97),
+    decor('car', 96, 99, 0),
+    decor('car', 290, 99, 3),
+    decor('car', 592, 99, 1),
   ],
 
   gates: [gateRight('downtown', WIDTH)],

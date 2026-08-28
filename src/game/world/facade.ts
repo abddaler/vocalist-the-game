@@ -142,10 +142,12 @@ export function sign(
   color: number,
   ambience: Ambience,
 ): void {
-  painter.fill({ x: rect.x, y: rect.y, w: rect.w, h: rect.h }, 0x0e1016, 0.82);
-  const border = ambience.lampsOn ? scale(color, 1.7) : scale(color, ambience.light * 1.25);
-  painter.stroke(rect, border);
+  const border = ambience.lampsOn ? scale(color, 1.9) : scale(color, ambience.light * 1.3);
+  painter.plate(rect, 0x1a1030, border, ambience.lampsOn);
+  // Трубка неона внутри рамки: вечером вывеска должна гореть, а не
+  // просто быть светлее.
   if (ambience.lampsOn) {
-    painter.fill({ x: rect.x - 2, y: rect.y - 2, w: rect.w + 4, h: rect.h + 4 }, border, 0.16);
+    painter.fill({ x: rect.x + 3, y: rect.y + 1, w: rect.w - 6, h: 1 }, border, 0.7);
+    painter.fill({ x: rect.x + 3, y: rect.y + rect.h - 2, w: rect.w - 6, h: 1 }, border, 0.7);
   }
 }

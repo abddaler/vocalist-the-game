@@ -19,13 +19,20 @@ export interface DecorContext {
   readonly x: number;
   readonly y: number;
   readonly variant: number;
+  /** Во сколько раз мир крупнее экранного пикселя. */
+  readonly unit: number;
 }
 
 type Draw = (ctx: DecorContext) => void;
 
 const box = (ctx: DecorContext, dx: number, dy: number, w: number, h: number, color: number, alpha = 1): void =>
   ctx.painter.fill(
-    { x: Math.round(ctx.x + dx), y: Math.round(ctx.y + dy), w, h },
+    {
+      x: Math.round(ctx.x + dx * ctx.unit),
+      y: Math.round(ctx.y + dy * ctx.unit),
+      w: Math.max(1, Math.round(w * ctx.unit)),
+      h: Math.max(1, Math.round(h * ctx.unit)),
+    },
     color,
     alpha,
   );
@@ -112,19 +119,19 @@ const BILLBOARD_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f];
 
 const billboard: Draw = (ctx) => {
   const post = tone(ctx, 0x4a4450);
-  box(ctx, -2, -18, 3, 18, post);
-  box(ctx, 4, -18, 3, 18, post);
+  box(ctx, -2, -14, 2, 14, post);
+  box(ctx, 3, -14, 2, 14, post);
 
-  const w = 40;
-  const h = 26;
+  const w = 26;
+  const h = 17;
   const frame = tone(ctx, 0x2e3240);
-  box(ctx, -w / 2 + 2, -18 - h, w, h, frame);
+  box(ctx, -w / 2 + 2, -14 - h, w, h, frame);
   const art = BILLBOARD_ART[ctx.variant % BILLBOARD_ART.length]!;
-  box(ctx, -w / 2 + 4, -16 - h, w - 4, h - 4, ctx.ambience.lampsOn ? art : tone(ctx, art));
+  box(ctx, -w / 2 + 3, -13 - h, w - 2, h - 3, ctx.ambience.lampsOn ? art : tone(ctx, art));
   // Пара полос вместо текста: надпись в 4 пикселя всё равно не прочесть.
-  box(ctx, -w / 2 + 7, -10 - h, w - 14, 3, 0xffffff, 0.55);
-  box(ctx, -w / 2 + 7, -5 - h, w - 22, 2, 0xffffff, 0.35);
-  if (ctx.ambience.lampsOn) box(ctx, -w / 2 + 2, -18 - h, w, h, art, 0.14);
+  box(ctx, -w / 2 + 6, -9 - h, w - 12, 2, 0xffffff, 0.6);
+  box(ctx, -w / 2 + 6, -5 - h, w - 16, 2, 0xffffff, 0.4);
+  if (ctx.ambience.lampsOn) box(ctx, -w / 2 + 1, -15 - h, w + 2, h + 2, art, 0.18);
 };
 
 const hydrant: Draw = (ctx) => {
@@ -211,6 +218,41 @@ const gull: Draw = (ctx) => {
   box(ctx, -1, 0, 2, 1, body);
 };
 
+const RUG_COLORS = [0x6f3a4c, 0x3a5a6f, 0x6f6238];
+
+/** Ковёр: пятно цвета на полу, от которого комната перестаёт быть коробкой. */
+const rug: Draw = (ctx) => {
+  const base = tone(ctx, RUG_COLORS[ctx.variant % RUG_COLORS.length]!);
+  box(ctx, -26, -9, 52, 18, base);
+  box(ctx, -24, -7, 48, 14, scale(base, 1.2));
+  box(ctx, -20, -5, 40, 10, base);
+  box(ctx, -14, -3, 28, 6, scale(base, 1.35));
+};
+
+const POSTER_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f, 0x8f5fe8];
+
+/** Афиша на стене: у певицы дома должны висеть чужие концерты. */
+const poster: Draw = (ctx) => {
+  const art = tone(ctx, POSTER_ART[ctx.variant % POSTER_ART.length]!);
+  box(ctx, -9, -22, 18, 22, tone(ctx, 0x2a2430));
+  box(ctx, -8, -21, 16, 20, art);
+  box(ctx, -6, -18, 12, 8, 0x000000, 0.28);
+  box(ctx, -6, -8, 12, 2, 0xffffff, 0.45);
+  box(ctx, -6, -5, 8, 2, 0xffffff, 0.3);
+};
+
+/** Полка: пара досок с мелочью, чтобы стена не была пустой. */
+const shelf: Draw = (ctx) => {
+  const wood = tone(ctx, 0x8a6a44);
+  box(ctx, -14, -14, 28, 3, wood);
+  box(ctx, -14, -4, 28, 3, wood);
+  box(ctx, -11, -20, 4, 6, tone(ctx, 0xc95f5f));
+  box(ctx, -6, -19, 3, 5, tone(ctx, 0x5fa8c9));
+  box(ctx, 2, -21, 5, 7, tone(ctx, 0xc9a85f));
+  box(ctx, -10, -10, 6, 6, tone(ctx, 0x6a8f5f));
+  box(ctx, 3, -9, 8, 5, tone(ctx, 0xa88fc9));
+};
+
 const DRAW: Readonly<Record<DecorKind, Draw>> = {
   palm,
   lamp,
@@ -226,6 +268,9 @@ const DRAW: Readonly<Record<DecorKind, Draw>> = {
   newsbox,
   parasol,
   gull,
+  rug,
+  poster,
+  shelf,
 };
 
 /** Насколько широкую тень отбрасывает предмет. Ноль — тени нет. */
@@ -234,7 +279,7 @@ const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
   lamp: 6,
   bench: 22,
   car: 34,
-  billboard: 12,
+  billboard: 9,
   hydrant: 8,
   planter: 14,
   bin: 11,
@@ -244,6 +289,9 @@ const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
   newsbox: 12,
   parasol: 24,
   gull: 0,
+  rug: 0,
+  poster: 0,
+  shelf: 0,
 };
 
 export function drawDecor(
@@ -252,8 +300,16 @@ export function drawDecor(
   screenX: number,
   screenY: number,
   ambience: Ambience,
+  unit = 1,
 ): void {
-  DRAW[item.kind]({ painter, ambience, x: screenX, y: screenY, variant: item.variant ?? 0 });
+  DRAW[item.kind]({
+    painter,
+    ambience,
+    x: screenX,
+    y: screenY,
+    variant: item.variant ?? 0,
+    unit,
+  });
 }
 
 export const shadowWidth = (kind: DecorKind): number => SHADOW_WIDTH[kind];

@@ -15,6 +15,13 @@ export const LAYOUT = {
   minTap: 16,
 } as const;
 
+/**
+ * Во сколько раз мир крупнее экранного пикселя. Камера стоит близко:
+ * человек ростом сорок пикселей и витрина во весь экран читаются, а
+ * улица целиком — нет, и ради этого масштаб зафиксирован здесь.
+ */
+export const WORLD_ZOOM = 2;
+
 export const CONTENT = {
   x: 0,
   y: LAYOUT.hudHeight,
@@ -22,30 +29,37 @@ export const CONTENT = {
   height: SCREEN.height - LAYOUT.hudHeight - LAYOUT.navHeight,
 } as const;
 
+/**
+ * Палитра. Город южный и ночной, поэтому и интерфейс такой: фиолетовая
+ * основа, золото на деньгах, бирюза на действии, малиновый на настроении.
+ * Серый нейтральный интерфейс поверх такой картинки читался как чужой.
+ */
 export const COLORS = {
-  bg: 0x14161c,
-  panel: 0x1c1f28,
-  panelAlt: 0x232733,
-  border: 0x333949,
-  borderFocus: 0x8fbf7f,
+  bg: 0x1a1030,
+  panel: 0x2b1c4e,
+  panelAlt: 0x3a2568,
+  panelDeep: 0x211640,
+  border: 0x5c3f9c,
+  borderFocus: 0xffd34d,
 
-  text: 0xf2f2f2,
-  textDim: 0x8a90a2,
-  textMuted: 0x5d6377,
+  text: 0xfff2ff,
+  textDim: 0xbba4e8,
+  textMuted: 0x8672bc,
 
-  accent: 0x8fbf7f,
-  money: 0xe8c46a,
-  energy: 0x6aa9e8,
-  mood: 0xc79ae8,
+  accent: 0x2ee6c8,
+  accentDeep: 0x159a86,
+  money: 0xffd34d,
+  energy: 0x4fc3ff,
+  mood: 0xff77d9,
 
   /** Здоровье связок выделено цветом — требование 9.6. */
-  healthGood: 0x6fcf72,
-  healthTired: 0xe8c46a,
-  healthHoarse: 0xe89a4a,
-  healthCritical: 0xe25555,
+  healthGood: 0x5df08a,
+  healthTired: 0xffd34d,
+  healthHoarse: 0xff9a3d,
+  healthCritical: 0xff4d6a,
 
-  danger: 0xe25555,
-  disabled: 0x3a3f4d,
+  danger: 0xff4d6a,
+  disabled: 0x453466,
 } as const;
 
 /**

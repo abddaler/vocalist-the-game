@@ -1,11 +1,11 @@
 import type { DistrictDef } from '@core/types';
-import { STREET, curbs, decor, fillLower, fillUpper, gateLeft, upper } from './plan';
+import { STREET, curbs, decor, fill, gateLeft, house } from './plan';
 
-const WIDTH = 620;
+const WIDTH = 580;
 
 /**
- * Причал: склады, в которых репетируют и пишутся. Работа тут дневная и
- * грязноватая, поэтому и палитра выцветшая — бетон, ржавчина, вода.
+ * Harbor Pier: склады, в которых репетируют и пишутся. Работа тут дневная
+ * и грязноватая, поэтому и палитра выцветшая — бетон, ржавчина, вода.
  */
 export const PIER: DistrictDef = {
   id: 'pier',
@@ -13,38 +13,40 @@ export const PIER: DistrictDef = {
   map: { x: 4, y: 48, w: 54, h: 26 },
   width: WIDTH,
   height: STREET.height,
-  spawn: { x: 300, y: 126 },
+  spawn: { x: 290, y: 84 },
 
   buildings: [
-    upper('rehearsal_base', 46, 146, 0x7f9ba8),
-    upper('record_studio', 226, 146, 0x8fa87f),
+    house('rehearsal_base', 102, 88, 0x8fb0c0),
+    house('record_studio', 284, 88, 0xa0c090),
   ],
 
   scenery: [
-    fillUpper(406, 140, 0xa89a7f, 'sign.warehouse'),
-    fillLower(28, 128, 0x8a8f96, 'sign.garage'),
-    fillLower(186, 118, 0xa8927f, 'sign.hangar'),
-    fillLower(336, 152, 0x7fa8a0, 'sign.market'),
-    fillLower(512, 96, 0x96a87f, 'sign.icehouse'),
+    fill(14, 78, 0xa8aab0, 'sign.garage'),
+    fill(202, 70, 0xc0a890, 'sign.hangar'),
+    fill(384, 78, 0xc0b490, 'sign.warehouse'),
+    fill(474, 86, 0x90c0b8, 'sign.market'),
   ],
 
   decor: [
-    decor('crate', 22, 102, 0),
-    decor('crate', 40, 103, 1),
-    decor('crate', 194, 101, 1),
-    decor('crate', 574, 102, 0),
-    decor('bollard', 116, 148),
-    decor('bollard', 168, 148),
-    decor('bollard', 220, 148),
-    decor('bollard', 272, 148),
-    decor('gull', 380, 26, 0),
-    decor('gull', 452, 18, 1),
-    decor('gull', 508, 30, 0),
-    decor('lamp', 100, 101),
-    decor('lamp', 350, 101),
-    decor('lamp', 528, 101),
-    decor('bin', 480, 148),
-    decor('car', 420, 147, 3),
+    decor('crate', 12, 76, 0),
+    decor('crate', 34, 78, 1),
+    decor('crate', 196, 76, 1),
+    decor('crate', 376, 77, 0),
+    decor('bollard', 84, 98),
+    decor('bollard', 124, 98),
+    decor('bollard', 164, 98),
+    decor('bollard', 204, 98),
+    decor('bollard', 244, 98),
+    decor('gull', 200, 14, 0),
+    decor('gull', 330, 8, 1),
+    decor('gull', 430, 18, 0),
+    decor('lamp', 92, 71),
+    decor('lamp', 272, 71),
+    decor('lamp', 466, 71),
+    decor('bin', 356, 97),
+    decor('bench', 440, 97),
+    decor('car', 322, 99, 3),
+    decor('car', 542, 99, 0),
   ],
 
   gates: [gateLeft('boulevard')],

@@ -4,7 +4,7 @@ import { LOCATIONS } from '../locations';
 import { hasVenue } from '../venues';
 import { CITY, HOME_DISTRICT, STREET, getDistrict } from './city';
 import { ROOMS, getRoom, hasRoom } from './rooms';
-import { CONTENT } from '../../ui/theme';
+import { CONTENT, WORLD_ZOOM } from '../../ui/theme';
 import { overlaps } from '../../game/world/movement';
 
 const inside = (outer: { width: number; height: number }, rect: { x: number; y: number; w: number; h: number }) =>
@@ -16,7 +16,9 @@ const onPavement = (y: number): boolean => y >= STREET.walkTop && y <= STREET.wa
 describe('город', () => {
   it('каждый район ровно по высоте игрового поля: вертикально он не прокручивается', () => {
     // Иначе улица уезжает под верхнюю панель — так и было до правки.
-    for (const district of CITY) expect(district.height, district.id).toBe(CONTENT.height);
+    for (const district of CITY) {
+      expect(district.height, district.id).toBe(CONTENT.height / WORLD_ZOOM);
+    }
   });
 
   it('дом на каждую локацию, кроме самой улицы, и ровно один', () => {

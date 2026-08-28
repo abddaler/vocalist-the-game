@@ -15,11 +15,15 @@ const SKY_BANDS = 10;
 export interface Backdrop {
   /** Полоса неба в экранных координатах. */
   readonly sky: Rect;
-  /** Полоса мостовой между рядами домов. */
+  /** Всё, что ниже неба: тротуар и проезжая часть. */
   readonly road: Rect;
+  /** Граница тротуара и мостовой, в экранных координатах. */
+  readonly kerbY: number;
   /** Сдвиг камеры: нужен дальнему плану. */
   readonly cameraX: number;
   readonly worldWidth: number;
+  /** Во сколько раз мир крупнее экранного пикселя. */
+  readonly unit: number;
 }
 
 export function drawSky(painter: Painter, area: Backdrop, ambience: Ambience): void {
@@ -39,6 +43,8 @@ export function drawSky(painter: Painter, area: Backdrop, ambience: Ambience): v
     );
   }
 
+  drawClouds(painter, area, ambience);
+
   if (ambience.disc !== null) {
     // Светило висит на месте: оно бесконечно далеко и параллаксу не подчиняется.
     const cx = Math.round(sky.x + sky.w * 0.74);
@@ -46,6 +52,22 @@ export function drawSky(painter: Painter, area: Backdrop, ambience: Ambience): v
     painter.fill({ x: cx - 6, y: cy - 4, w: 12, h: 8 }, ambience.disc, 0.35);
     painter.fill({ x: cx - 4, y: cy - 3, w: 8, h: 6 }, ambience.disc);
     painter.fill({ x: cx - 3, y: cy - 4, w: 6, h: 8 }, ambience.disc);
+  }
+}
+
+/** Облака: несколько полос, ползущих медленнее всего остального. */
+function drawClouds(painter: Painter, area: Backdrop, ambience: Ambience): void {
+  const { sky } = area;
+  const color = mix(0xffffff, ambience.skyMid, ambience.lampsOn ? 0.55 : 0.15);
+  const shift = -area.cameraX * 0.12;
+
+  for (let i = 0; i < 9; i += 1) {
+    const x = Math.round(sky.x + ((i * 137) % 620) + shift);
+    const y = sky.y + 3 + ((i * 7) % 3) * 6;
+    const w = 26 + ((i * 11) % 4) * 10;
+    if (x > sky.x + sky.w || x + w < sky.x) continue;
+    painter.fill({ x, y, w, h: 4 }, color, 0.5);
+    painter.fill({ x: x + 6, y: y - 3, w: Math.round(w * 0.6), h: 4 }, color, 0.42);
   }
 }
 
@@ -88,7 +110,7 @@ export function drawFarSide(
     };
   };
 
-  SKYLINE[district](plan(0.2, 0.6, 0, 1), plan(0.42, 0.1, 30, 0.72));
+  SKYLINE[district](plan(0.18, 0.72, 0, 1), plan(0.4, 0.34, 30, 0.82));
 }
 
 interface Silhouette {
@@ -102,74 +124,83 @@ interface Silhouette {
  */
 const SKYLINE: Readonly<Record<DistrictId, (far: Silhouette, near: Silhouette) => void>> = {
   hills: (far, near) => {
-    for (let i = 0; i < 14; i += 1) far.mound(i * 96 - 60, 130, 22 + ((i * 7) % 4) * 5);
+    for (let i = 0; i < 14; i += 1) far.mound(i * 150 - 60, 190, 12 + ((i * 7) % 4) * 4);
     for (let i = 0; i < 12; i += 1) {
-      const x = i * 118 - 40;
-      near.mound(x, 96, 14 + ((i * 5) % 3) * 6);
+      const x = i * 170 - 40;
+      near.mound(x, 140, 7 + ((i * 5) % 3) * 4);
       // Редкие домики на склоне: холмы обжитые, а не заповедник.
-      if (i % 2 === 0) near.bar(x + 44, 7, 20 + ((i * 3) % 3) * 3);
+      if (i % 2 === 0) near.bar(x + 62, 6, 10 + ((i * 3) % 3) * 3);
     }
   },
   downtown: (far, near) => {
-    for (let i = 0; i < 20; i += 1) far.bar(i * 42 - 30, 30, 12 + ((i * 13) % 6) * 4);
-    for (let i = 0; i < 16; i += 1) {
-      const x = i * 54 - 20;
-      const h = 16 + ((i * 11) % 7) * 4;
-      near.bar(x, 24, h);
-      if (i % 3 === 0) near.bar(x + 9, 6, h + 10);
+    for (let i = 0; i < 22; i += 1) far.bar(i * 50 - 30, 34, 10 + ((i * 13) % 6) * 3);
+    for (let i = 0; i < 18; i += 1) {
+      const x = i * 62 - 20;
+      const h = 9 + ((i * 11) % 7) * 3;
+      near.bar(x, 28, h);
+      if (i % 3 === 0) near.bar(x + 11, 6, h + 7);
     }
   },
   boulevard: (far, near) => {
-    for (let i = 0; i < 16; i += 1) far.bar(i * 56 - 20, 44, 12 + ((i * 5) % 4) * 4);
+    for (let i = 0; i < 16; i += 1) far.bar(i * 70 - 20, 56, 8 + ((i * 5) % 4) * 3);
     for (let i = 0; i < 12; i += 1) {
-      const x = i * 72 - 30;
-      near.bar(x, 46, 14 + ((i * 7) % 3) * 5);
+      const x = i * 96 - 30;
+      near.bar(x, 60, 8 + ((i * 7) % 3) * 3);
       // Мачта с вывеской над крышей — примета бульвара.
       if (i % 3 === 1) {
-        near.bar(x + 20, 3, 30);
-        near.bar(x + 12, 18, 8);
+        near.bar(x + 26, 3, 20);
+        near.bar(x + 18, 16, 6);
       }
     }
   },
   pier: (far, near) => {
-    for (let i = 0; i < 12; i += 1) far.bar(i * 70 - 20, 58, 10 + ((i * 3) % 3) * 4);
+    for (let i = 0; i < 12; i += 1) far.bar(i * 90 - 20, 74, 7 + ((i * 3) % 3) * 3);
     for (let i = 0; i < 9; i += 1) {
-      const x = i * 96 - 20;
-      near.bar(x, 66, 12);
+      const x = i * 124 - 20;
+      near.bar(x, 84, 8);
       // Портовый кран: мачта, длинная стрела и трос с крюком.
-      near.bar(x + 30, 4, 34);
-      near.bar(x + 8, 44, 3);
-      near.bar(x + 12, 3, 26);
+      near.bar(x + 40, 4, 24);
+      near.bar(x + 12, 56, 3);
+      near.bar(x + 16, 3, 18);
     }
   },
 };
 
 /**
- * Мостовая: тротуары по краям, проезжая часть посередине и разметка.
- * Три полосы вместо одной заливки — это разница между «дорога» и
- * «серый прямоугольник».
+ * Земля: тротуар, бордюр и полоса мостовой у нижнего края. Границы
+ * приходят из разметки улицы, а не из долей экрана: иначе бордюр
+ * разъезжается с домами, как только меняется масштаб.
  */
 export function drawGround(painter: Painter, area: Backdrop, ambience: Ambience): void {
   const { road } = area;
-  const walkH = Math.round(road.h * 0.3);
-  const asphaltY = road.y + walkH;
-  const asphaltH = road.h - walkH * 2;
+  const kerb = Math.round(area.kerbY);
 
   painter.fill(road, ambience.pavement);
-  painter.fill({ x: road.x, y: asphaltY, w: road.w, h: asphaltH }, ambience.asphalt);
-  // Бордюр — светлая нитка на границе: без неё тротуар не отделяется.
-  painter.fill({ x: road.x, y: asphaltY - 1, w: road.w, h: 1 }, ambience.kerb);
-  painter.fill({ x: road.x, y: asphaltY + asphaltH, w: road.w, h: 1 }, ambience.kerb);
+  // Стыки плит: короткие насечки у бордюра. Полосы во всю высоту
+  // читались бы как стена, а не как тротуар.
+  const step = Math.round(13 * area.unit);
+  const tick = Math.round(5 * area.unit);
+  const start = -Math.round(area.cameraX) % step;
+  const seam = scale(ambience.pavement, 0.88);
+  for (let x = start; x < road.w + step; x += step) {
+    painter.fill({ x: road.x + x, y: kerb - tick - 2, w: 1, h: tick }, seam);
+    painter.fill({ x: road.x + x + Math.round(step / 2), y: road.y, w: 1, h: tick }, seam);
+  }
 
-  const middle = Math.round(asphaltY + asphaltH / 2);
-  const dash = 10;
-  const gap = 14;
-  const start = Math.floor(area.cameraX / (dash + gap)) * (dash + gap) - area.cameraX;
-  for (let x = start; x < road.w; x += dash + gap) {
+  painter.fill({ x: road.x, y: kerb, w: road.w, h: road.y + road.h - kerb }, ambience.asphalt);
+  painter.fill({ x: road.x, y: kerb - 2, w: road.w, h: 2 }, ambience.kerb);
+  painter.fill({ x: road.x, y: kerb, w: road.w, h: 1 }, scale(ambience.kerb, 0.5));
+
+  // Разметка у нижнего края кадра: по ней видно, что улица едет.
+  const dash = Math.round(9 * area.unit);
+  const gap = Math.round(13 * area.unit);
+  const y = kerb + Math.round((road.y + road.h - kerb) * 0.6);
+  const from = Math.floor(area.cameraX / (dash + gap)) * (dash + gap) - area.cameraX;
+  for (let x = from; x < road.w; x += dash + gap) {
     painter.fill(
-      { x: road.x + Math.round(x), y: middle, w: dash, h: 1 },
-      scale(ambience.kerb, 0.9),
-      0.7,
+      { x: road.x + Math.round(x), y, w: dash, h: Math.max(1, Math.round(area.unit)) },
+      scale(ambience.kerb, 0.95),
+      0.8,
     );
   }
 }

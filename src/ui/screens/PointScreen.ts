@@ -96,7 +96,7 @@ function activityRow(ctx: RenderContext, activity: ActivityDef): ListRow {
     title: t(activity.nameKey),
     note: blocked ? t(`reason.${blocked}`) : costOf(activity),
     enabled: !blocked,
-    onActivate: () => ctx.dispatch(doActivity(activity.id)),
+    onActivate: () => ctx.perform(activity.id, doActivity(activity.id)),
   };
 }
 

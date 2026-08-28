@@ -1,6 +1,6 @@
 import type { DistrictId, GameState, WorldPoint, WorldRect } from '@core/types';
 import { t } from '@ui/i18n';
-import { COLORS, CONTENT, LAYOUT } from '@ui/theme';
+import { COLORS, CONTENT, LAYOUT, WORLD_ZOOM } from '@ui/theme';
 import type { Hotspots, Rect } from '@ui/widgets/Hotspots';
 import type { Painter } from '@ui/widgets/Painter';
 import { ambienceOf, mix, scale } from './ambience';
@@ -10,6 +10,7 @@ import type { Backdrop } from './backdrop';
 import { drawInhabitants } from './inhabitants';
 import { drawRoom, interiorLight } from './interior';
 import { facade, sign } from './facade';
+import { STREET } from '@data/world';
 import { cameraOffset, nearest } from './movement';
 import { drawProp } from './props';
 import type { Layer } from './layers';
@@ -43,12 +44,17 @@ function tapRect(rect: Rect): Rect {
 
 export function renderWorld(params: WorldViewParams, layer: Layer): void {
   const { painter, hotspots, position } = params;
-  const camera = cameraOffset(position, layer.bounds, CONTENT.width, CONTENT.height);
+  const camera = cameraOffset(
+    position,
+    layer.bounds,
+    CONTENT.width / WORLD_ZOOM,
+    CONTENT.height / WORLD_ZOOM,
+  );
   const toScreen = (rect: WorldRect): Rect => ({
-    x: Math.round(rect.x - camera.x),
-    y: Math.round(CONTENT.y + rect.y - camera.y),
-    w: Math.round(rect.w),
-    h: Math.round(rect.h),
+    x: Math.round((rect.x - camera.x) * WORLD_ZOOM),
+    y: Math.round(CONTENT.y + (rect.y - camera.y) * WORLD_ZOOM),
+    w: Math.round(rect.w * WORLD_ZOOM),
+    h: Math.round(rect.h * WORLD_ZOOM),
   });
 
   const outdoors = layer.district !== null;
@@ -79,7 +85,9 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
 
     // Вывеска по центру дома: у верхнего ряда дверь снизу, у нижнего —
     // сверху, и надпись у любого края попадала бы под проём.
-    const board = { x: rect.x + 3, y: rect.y + Math.round(rect.h / 2) - 7, w: rect.w - 6, h: 14 };
+    // Вывеска крупная и по центру фасада: при такой близкой камере она
+    // и есть главный опознавательный знак дома.
+    const board = { x: rect.x + 6, y: rect.y + Math.round(rect.h / 2) - 9, w: rect.w - 12, h: 17 };
     const door = block.doorRect ? toScreen(block.doorRect) : null;
     facade(painter, {
       rect,
@@ -91,7 +99,10 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
     });
 
     sign(painter, board, block.color, ambience);
-    painter.label(board, t(block.nameKey), { align: 'center', color: COLORS.text });
+    painter.label(board, t(block.nameKey), {
+      align: 'center',
+      color: ambience.lampsOn ? scale(block.color, 2.2) : COLORS.text,
+    });
   }
 
   const focus = nearest(position, layer.targets, REACH);
@@ -114,9 +125,18 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
   drawWash(painter, { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height }, ambience);
 
   if (focus) {
-    const bar = { x: 0, y: CONTENT.y + CONTENT.height - 12, w: CONTENT.width, h: 12 };
-    painter.fill(bar, COLORS.panelAlt, 0.9);
-    painter.label(bar, promptFor(focus), {
+    // Подсказка — табличка по центру снизу, а не полоса во всю ширину:
+    // полоса резала кадр пополам и спорила с нижними вкладками.
+    const text = promptFor(focus);
+    const width = Math.min(CONTENT.width - 20, text.length * 6 + 20);
+    const bar = {
+      x: Math.round((CONTENT.width - width) / 2),
+      y: CONTENT.y + CONTENT.height - 15,
+      w: width,
+      h: 14,
+    };
+    painter.plate(bar, COLORS.panelDeep, focus.locked ? COLORS.textMuted : COLORS.accent, !focus.locked);
+    painter.label(bar, text, {
       align: 'center',
       color: focus.locked ? COLORS.textMuted : COLORS.accent,
     });
@@ -131,12 +151,21 @@ function drawOutside(
   ambience: Ambience,
   district: DistrictId,
 ): void {
-  const skyHeight = Math.round(CONTENT.height * 0.18);
+  // Небо кончается там, где начинаются крыши: полоса считается из мира,
+  // а не из доли экрана, иначе она разъезжается с домами.
+  const skyHeight = Math.round((STREET.skyH - camera.y) * WORLD_ZOOM);
   const area: Backdrop = {
-    sky: { x: 0, y: CONTENT.y, w: CONTENT.width, h: skyHeight },
-    road: { x: 0, y: CONTENT.y + skyHeight, w: CONTENT.width, h: CONTENT.height - skyHeight },
-    cameraX: camera.x,
-    worldWidth: layer.bounds.width,
+    sky: { x: 0, y: CONTENT.y, w: CONTENT.width, h: Math.max(0, skyHeight) },
+    road: {
+      x: 0,
+      y: CONTENT.y + Math.max(0, skyHeight),
+      w: CONTENT.width,
+      h: CONTENT.height - Math.max(0, skyHeight),
+    },
+    kerbY: CONTENT.y + (STREET.walkBottom - camera.y) * WORLD_ZOOM,
+    cameraX: camera.x * WORLD_ZOOM,
+    worldWidth: layer.bounds.width * WORLD_ZOOM,
+    unit: WORLD_ZOOM,
   };
 
   drawSky(painter, area, ambience);
@@ -210,6 +239,14 @@ function promptFor(target: WorldTarget): string {
 
 /** Точка мира под тапом: экранные координаты обратно в мировые. */
 export function screenToWorld(tap: WorldPoint, position: WorldPoint, layer: Layer): WorldPoint {
-  const camera = cameraOffset(position, layer.bounds, CONTENT.width, CONTENT.height);
-  return { x: tap.x + camera.x, y: tap.y - CONTENT.y + camera.y };
+  const camera = cameraOffset(
+    position,
+    layer.bounds,
+    CONTENT.width / WORLD_ZOOM,
+    CONTENT.height / WORLD_ZOOM,
+  );
+  return {
+    x: tap.x / WORLD_ZOOM + camera.x,
+    y: (tap.y - CONTENT.y) / WORLD_ZOOM + camera.y,
+  };
 }

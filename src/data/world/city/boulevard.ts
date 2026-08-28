@@ -1,11 +1,11 @@
 import type { DistrictDef } from '@core/types';
-import { STREET, curbs, decor, fillLower, fillUpper, gateLeft, gateRight, lower, upper } from './plan';
+import { STREET, curbs, decor, fill, gateLeft, gateRight, house } from './plan';
 
-const WIDTH = 720;
+const WIDTH = 680;
 
 /**
- * Бульвар: клуб, ресторан и витрины. Ночная часть карьеры целиком здесь,
- * поэтому и красок больше всего — маркизы, неон, афиши на каждом шагу.
+ * Neon Boulevard: клуб, ресторан и витрины. Ночная часть карьеры целиком
+ * здесь, поэтому и красок больше всего — маркизы, неон, афиши.
  */
 export const BOULEVARD: DistrictDef = {
   id: 'boulevard',
@@ -13,43 +13,44 @@ export const BOULEVARD: DistrictDef = {
   map: { x: 62, y: 40, w: 70, h: 26 },
   width: WIDTH,
   height: STREET.height,
-  spawn: { x: 360, y: 126 },
+  spawn: { x: 340, y: 84 },
 
   buildings: [
-    upper('club_vertigo', 40, 144, 0xa86fb8),
-    upper('restaurant', 214, 140, 0xb88a5f),
-    lower('clothes_shop', 78, 134, 0xb87f9c),
+    house('club_vertigo', 20, 92, 0xc07fd8),
+    house('restaurant', 206, 88, 0xd8a070),
+    house('clothes_shop', 386, 80, 0xd88fb0),
   ],
 
   scenery: [
-    fillUpper(386, 118, 0x7f8fb8, 'sign.theatre'),
-    fillUpper(534, 152, 0xb85f6f, 'sign.cinema'),
-    fillLower(240, 124, 0x8f7fb8, 'sign.bar'),
-    fillLower(392, 128, 0x5f9fb8, 'sign.tattoo'),
-    fillLower(548, 140, 0xb8a05f, 'sign.pizza'),
+    fill(124, 68, 0xa090d8, 'sign.bar'),
+    fill(306, 66, 0x70b8d8, 'sign.tattoo'),
+    fill(478, 88, 0xd87080, 'sign.cinema'),
+    fill(578, 72, 0xd8b870, 'sign.pizza'),
   ],
 
   decor: [
-    decor('palm', 22, 102, 1),
-    decor('palm', 196, 100, 2),
-    decor('palm', 372, 102, 0),
-    decor('palm', 528, 100, 2),
-    decor('palm', 700, 102, 1),
-    decor('billboard', 199, 101, 0),
-    decor('billboard', 519, 101, 2),
-    decor('parasol', 300, 149),
-    decor('parasol', 344, 149),
-    decor('bench', 224, 148),
-    decor('bin', 500, 148),
-    decor('lamp', 168, 101),
-    decor('lamp', 358, 101),
-    decor('lamp', 508, 101),
-    decor('lamp', 596, 101),
-    decor('lamp', 128, 148),
-    decor('lamp', 428, 148),
-    decor('car', 60, 147, 2),
-    decor('car', 420, 147, 0),
-    decor('car', 662, 147, 1),
+    decor('palm', 10, 74, 1),
+    decor('palm', 116, 72, 2),
+    decor('palm', 200, 74, 0),
+    decor('palm', 300, 72, 2),
+    decor('palm', 380, 74, 1),
+    decor('palm', 470, 72, 2),
+    decor('palm', 572, 74, 0),
+    decor('palm', 668, 73, 1),
+    decor('billboard', 198, 72, 0),
+    decor('billboard', 472, 72, 2),
+    decor('lamp', 60, 71),
+    decor('lamp', 250, 71),
+    decor('lamp', 434, 71),
+    decor('lamp', 620, 71),
+    decor('parasol', 268, 98),
+    decor('parasol', 306, 98),
+    decor('bench', 148, 97),
+    decor('bench', 508, 97),
+    decor('bin', 430, 97),
+    decor('car', 76, 99, 2),
+    decor('car', 360, 99, 0),
+    decor('car', 596, 99, 1),
   ],
 
   gates: [gateLeft('downtown'), gateRight('pier', WIDTH)],
@@ -58,8 +59,8 @@ export const BOULEVARD: DistrictDef = {
     {
       id: 'orders_board',
       nameKey: 'venue.corporate',
-      rect: { x: 632, y: 98, w: 32, h: 24 },
-      color: 0x7a6a3f,
+      rect: { x: 646, y: 70, w: 22, h: 20 },
+      color: 0x8f7a4a,
       prop: 'board',
       activities: [],
       venues: ['corporate'],

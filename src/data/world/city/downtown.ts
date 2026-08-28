@@ -1,11 +1,11 @@
 import type { DistrictDef } from '@core/types';
-import { STREET, curbs, decor, fillLower, fillUpper, gateLeft, gateRight, upper } from './plan';
+import { STREET, curbs, decor, fill, gateLeft, gateRight, house } from './plan';
 
 const WIDTH = 640;
 
 /**
- * Даунтаун: конторы, стекло и подземный переход, в котором начинается
- * карьера. Своих дверей здесь мало — весь район работает на то, чтобы
+ * Downtown: конторы, стекло и подземный переход, в котором начинается
+ * карьера. Своих дверей тут мало — весь район работает на то, чтобы
  * первый заработок случился под ногами у людей, которым не до тебя.
  */
 export const DOWNTOWN: DistrictDef = {
@@ -14,34 +14,36 @@ export const DOWNTOWN: DistrictDef = {
   map: { x: 136, y: 10, w: 60, h: 44 },
   width: WIDTH,
   height: STREET.height,
-  spawn: { x: 320, y: 128 },
+  spawn: { x: 320, y: 86 },
 
-  buildings: [upper('vocal_studio', 168, 136, 0x8c7fb8)],
+  buildings: [house('vocal_studio', 104, 88, 0xa88fd0)],
 
   scenery: [
-    fillUpper(24, 122, 0x6f8ab8, 'sign.bank'),
-    fillUpper(326, 128, 0x7f94a8, 'sign.offices'),
-    fillUpper(476, 140, 0xb89a86, 'sign.hotel'),
-    fillLower(30, 130, 0x7a8496, 'sign.parking'),
-    fillLower(184, 116, 0xb8a06f, 'sign.diner'),
-    fillLower(322, 146, 0x9d7fb0, 'sign.mall'),
-    fillLower(490, 120, 0x86a8b8, 'sign.pharmacy'),
+    fill(14, 76, 0x8fa8d0, 'sign.bank'),
+    fill(206, 70, 0x9fb0c0, 'sign.offices'),
+    fill(292, 64, 0xd0b880, 'sign.diner'),
+    fill(370, 86, 0xb890c8, 'sign.mall'),
+    fill(470, 78, 0xd0ac96, 'sign.hotel'),
+    fill(562, 66, 0x96c0d0, 'sign.pharmacy'),
   ],
 
   decor: [
-    decor('lamp', 92, 100),
-    decor('lamp', 246, 100),
-    decor('lamp', 400, 100),
-    decor('lamp', 556, 100),
-    decor('newsbox', 132, 101),
-    decor('bin', 438, 101),
-    decor('hydrant', 214, 148),
-    decor('busStop', 108, 149),
-    decor('bollard', 268, 148),
-    decor('bollard', 372, 148),
-    decor('car', 470, 147, 1),
-    decor('car', 606, 147, 2),
-    decor('billboard', 628, 100, 1),
+    decor('lamp', 96, 71),
+    decor('lamp', 200, 71),
+    decor('lamp', 284, 71),
+    decor('lamp', 362, 71),
+    decor('lamp', 462, 71),
+    decor('lamp', 554, 71),
+    decor('newsbox', 70, 97),
+    decor('bin', 250, 97),
+    decor('hydrant', 420, 97),
+    decor('busStop', 160, 99),
+    decor('bollard', 348, 98),
+    decor('bollard', 372, 98),
+    decor('car', 470, 99, 1),
+    decor('car', 600, 99, 2),
+    decor('billboard', 286, 72, 1),
+    decor('billboard', 556, 72, 0),
   ],
 
   gates: [gateLeft('hills'), gateRight('boulevard', WIDTH)],
@@ -50,8 +52,8 @@ export const DOWNTOWN: DistrictDef = {
     {
       id: 'underpass_stairs',
       nameKey: 'venue.underpass',
-      rect: { x: 296, y: 110, w: 48, h: 24 },
-      color: 0x39405a,
+      rect: { x: 302, y: 74, w: 36, h: 20 },
+      color: 0x4a5270,
       prop: 'stairs',
       activities: [],
       venues: ['underpass'],

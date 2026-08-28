@@ -10,7 +10,7 @@ import type { WorldPoint, WorldRect } from '@core/types';
 export const ACTOR = { w: 8, h: 12 } as const;
 
 /** Скорость ходьбы, внутренних пикселей в секунду. */
-export const WALK_SPEED = 62;
+export const WALK_SPEED = 46;
 
 /** Насколько близко надо подойти к цели тапа, чтобы считать её достигнутой. */
 export const ARRIVE_EPSILON = 1.5;

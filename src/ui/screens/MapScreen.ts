@@ -19,9 +19,9 @@ const CAPTION = { x: 0, y: CONTENT.y + CONTENT.height - 26, w: SCREEN.width, h: 
 /** Собственная система координат карты: в ней записаны прямоугольники районов. */
 const CITY_SIZE = { w: 200, h: 78 };
 
-const LAND = 0x2f3a2c;
-const WATER = 0x1c3448;
-const ROAD = 0x59606e;
+const LAND = 0x243a34;
+const WATER = 0x16304a;
+const ROAD = 0x6a58a0;
 
 export interface MapParams {
   readonly current: DistrictId;
@@ -71,9 +71,12 @@ export function renderMap(ctx: RenderContext, params: MapParams): void {
     const focused = hotspots.isFocused(hotspot);
     if (focused || (here && !described)) described = district;
 
-    painter.fill(rect, here ? 0x36462f : focused ? 0x353d54 : 0x2a3040);
-    painter.fill({ x: rect.x, y: rect.y, w: rect.w, h: 2 }, here ? 0x4e6640 : 0x3a4258);
-    painter.stroke(rect, here ? COLORS.accent : focused ? COLORS.borderFocus : COLORS.border);
+    painter.plate(
+      rect,
+      here ? COLORS.panelAlt : COLORS.panel,
+      here ? COLORS.accent : focused ? COLORS.borderFocus : COLORS.border,
+      here || focused,
+    );
 
     painter.label({ x: rect.x + 4, y: rect.y + 4, w: rect.w - 8, h: 11 }, t(district.nameKey), {
       color: here ? COLORS.accent : COLORS.text,
@@ -100,7 +103,7 @@ function drawLand(ctx: RenderContext): void {
   for (let i = 0; i < 26; i += 1) {
     const x = BOARD.x + ((i * 79) % (BOARD.w - 10));
     const y = BOARD.y + ((i * 47) % (BOARD.h - 8));
-    painter.fill({ x, y, w: 6 + (i % 3) * 3, h: 3 }, 0x38452f, 0.7);
+    painter.fill({ x, y, w: 6 + (i % 3) * 3, h: 3 }, 0x2e4a3c, 0.7);
   }
 
   // Океан в левом нижнем углу, берег наискось вниз-вправо.
@@ -118,7 +121,7 @@ function drawLand(ctx: RenderContext): void {
     const y = top + 6 + i * Math.round((BOARD.h * 0.55) / 7);
     const w = Math.round((widest * (i + 2)) / (bands + 1));
     if (w < 24) continue;
-    painter.fill({ x: BOARD.x + 6 + ((i * 23) % Math.max(1, w - 22)), y, w: 10, h: 1 }, 0x33587a);
+    painter.fill({ x: BOARD.x + 6 + ((i * 23) % Math.max(1, w - 22)), y, w: 10, h: 1 }, 0x2f6a96);
   }
 
   painter.stroke(BOARD, COLORS.border);
@@ -138,7 +141,8 @@ function drawCaption(
   district: DistrictDef | undefined,
   current: DistrictId,
 ): void {
-  ctx.painter.fill(CAPTION, COLORS.panelAlt);
+  ctx.painter.fill(CAPTION, COLORS.panelDeep);
+  ctx.painter.fill({ x: 0, y: CAPTION.y, w: SCREEN.width, h: 1 }, COLORS.border);
   if (!district) return;
 
   const here = district.id === current;

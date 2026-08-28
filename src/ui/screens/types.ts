@@ -37,6 +37,12 @@ export interface RenderContext {
   readonly state: GameState;
   readonly ui: UiState;
   readonly dispatch: (action: Action) => void;
+  /**
+   * Выполнить дело с показом занятия. От dispatch отличается тем, что
+   * между нажатием и результатом есть сцена: экран показывает, чем
+   * игрок занят, и только потом меняет состояние.
+   */
+  readonly perform: (activityId: string, action: Action) => void;
   readonly go: (patch: Partial<UiState>) => void;
 }
 

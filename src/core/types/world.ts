@@ -53,7 +53,10 @@ export type DecorKind =
   | 'bollard'
   | 'newsbox'
   | 'parasol'
-  | 'gull';
+  | 'gull'
+  | 'rug'
+  | 'poster'
+  | 'shelf';
 
 export interface DecorDef {
   readonly kind: DecorKind;

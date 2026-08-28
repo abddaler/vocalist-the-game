@@ -1,6 +1,6 @@
 import type { DecorDef, WorldPoint } from '@core/types';
 import { t } from '@ui/i18n';
-import { COLORS, CONTENT } from '@ui/theme';
+import { COLORS, CONTENT, WORLD_ZOOM } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
 import { PLAYER_LOOK, actorTexture, lookIndex } from '../art';
 import type { ActorPose } from '../art';
@@ -36,8 +36,8 @@ export function drawInhabitants(
   const pieces: Piece[] = [];
 
   const screen = (point: WorldPoint): WorldPoint => ({
-    x: point.x - camera.x,
-    y: CONTENT.y + point.y - camera.y,
+    x: (point.x - camera.x) * WORLD_ZOOM,
+    y: CONTENT.y + (point.y - camera.y) * WORLD_ZOOM,
   });
 
   for (const item of layer.decor) {
@@ -45,9 +45,9 @@ export function drawInhabitants(
     pieces.push({
       y: item.y,
       draw: () => {
-        const width = shadowWidth(item.kind);
+        const width = shadowWidth(item.kind) * WORLD_ZOOM;
         if (width > 0) drawShadow(painter, at.x, at.y, width, ambience);
-        drawDecor(painter, item as DecorDef, at.x, at.y, ambience);
+        drawDecor(painter, item as DecorDef, at.x, at.y, ambience, WORLD_ZOOM);
       },
     });
   }
@@ -59,8 +59,8 @@ export function drawInhabitants(
     nameKey?: string,
   ): void => {
     const point = screen(at);
-    drawShadow(painter, point.x, point.y, 8, ambience);
-    painter.sprite(point.x, point.y, actorTexture(look, pose.pose), pose.flipX);
+    drawShadow(painter, point.x, point.y, 9 * WORLD_ZOOM, ambience);
+    painter.sprite(point.x, point.y, actorTexture(look, pose.pose), pose.flipX, WORLD_ZOOM);
     if (nameKey) drawNamePlate(painter, point, nameKey);
   };
 

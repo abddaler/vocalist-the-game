@@ -140,58 +140,58 @@ export const CROWD: readonly CrowdMember[] = [
   // — квартира: соседка за стеной не нужна, дом должен быть пустым —
 
   // — вокальная студия —
-  stander('studio_pupil', 'vocal_studio', 'passer_10', { x: 262, y: 127 }),
-  named('teacher', 'vocal_studio', { x: 206, y: 103 }, 'npc.teacher'),
+  stander('studio_pupil', 'vocal_studio', 'passer_10', { x: 150, y: 68 }),
+  named('teacher', 'vocal_studio', { x: 118, y: 55 }, 'npc.teacher'),
 
   // — репбаза —
-  stander('band_guitar', 'rehearsal_base', 'passer_1', { x: 262, y: 109 }),
-  stander('band_drums', 'rehearsal_base', 'passer_4', { x: 326, y: 106 }),
+  stander('band_guitar', 'rehearsal_base', 'passer_1', { x: 150, y: 58 }),
+  stander('band_drums', 'rehearsal_base', 'passer_4', { x: 186, y: 57 }),
   walker('base_sound', 'rehearsal_base', 'passer_3', [
-    { x: 70, y: 158 },
-    { x: 175, y: 150 },
+    { x: 40, y: 85 },
+    { x: 100, y: 80 },
   ], 3000, 12),
 
   // — ресторан —
   walker('waiter', 'restaurant', 'passer_6', [
-    { x: 70, y: 155 },
-    { x: 350, y: 150 },
-    { x: 210, y: 183 },
+    { x: 40, y: 83 },
+    { x: 200, y: 80 },
+    { x: 120, y: 98 },
   ], 700, 22),
-  stander('diner_1', 'restaurant', 'passer_2', { x: 105, y: 127 }),
-  stander('diner_2', 'restaurant', 'passer_5', { x: 308, y: 140 }),
+  stander('diner_1', 'restaurant', 'passer_2', { x: 60, y: 68 }),
+  stander('diner_2', 'restaurant', 'passer_5', { x: 176, y: 75 }),
 
   // — клуб —
   walker('club_guest_1', 'club_vertigo', 'passer_1', [
-    { x: 105, y: 181 },
-    { x: 298, y: 176 },
+    { x: 60, y: 97 },
+    { x: 170, y: 94 },
   ], 1100),
   walker('club_guest_2', 'club_vertigo', 'passer_5', [
-    { x: 350, y: 168 },
-    { x: 192, y: 189 },
+    { x: 200, y: 90 },
+    { x: 110, y: 101 },
   ], 1400),
-  stander('bartender', 'club_vertigo', 'passer_3', { x: 84, y: 122 }),
-  named('promoter', 'club_vertigo', { x: 374, y: 140 }, 'npc.promoter'),
+  stander('bartender', 'club_vertigo', 'passer_3', { x: 48, y: 65 }),
+  named('promoter', 'club_vertigo', { x: 214, y: 75 }, 'npc.promoter'),
 
   // — студия звукозаписи —
-  named('engineer', 'record_studio', { x: 315, y: 103 }, 'npc.engineer'),
+  named('engineer', 'record_studio', { x: 180, y: 55 }, 'npc.engineer'),
 
   // — магазин одежды —
-  stander('shop_clerk', 'clothes_shop', 'passer_6', { x: 206, y: 103 }),
+  stander('shop_clerk', 'clothes_shop', 'passer_6', { x: 118, y: 55 }),
   walker('shopper', 'clothes_shop', 'passer_1', [
-    { x: 105, y: 158 },
-    { x: 315, y: 152 },
+    { x: 60, y: 85 },
+    { x: 180, y: 81 },
   ], 1800, 18),
 
   // — фониатр —
-  stander('doctor', 'phoniatrist', 'passer_7', { x: 168, y: 101 }),
-  stander('patient', 'phoniatrist', 'passer_5', { x: 70, y: 165 }),
+  stander('doctor', 'phoniatrist', 'passer_7', { x: 96, y: 54 }),
+  stander('patient', 'phoniatrist', 'passer_5', { x: 40, y: 88 }),
 
   // — спортзал —
   walker('gym_runner', 'gym', 'passer_3', [
-    { x: 105, y: 165 },
-    { x: 315, y: 165 },
+    { x: 60, y: 88 },
+    { x: 180, y: 88 },
   ], 400, 34),
-  stander('gym_coach', 'gym', 'passer_9', { x: 350, y: 127 }),
+  stander('gym_coach', 'gym', 'passer_9', { x: 200, y: 68 }),
 ];
 
 export function crowdIn(locationId: string): CrowdMember[] {

@@ -19,11 +19,12 @@ export function renderNav(
   go: (patch: Partial<UiState>) => void,
 ): void {
   const y = SCREEN.height - LAYOUT.navHeight;
-  painter.panel({ x: 0, y, w: SCREEN.width, h: LAYOUT.navHeight }, COLORS.panelAlt);
+  painter.fill({ x: 0, y, w: SCREEN.width, h: LAYOUT.navHeight }, COLORS.panelDeep);
+  painter.fill({ x: 0, y, w: SCREEN.width, h: 1 }, COLORS.border);
 
   const width = Math.floor(SCREEN.width / TABS.length);
   TABS.forEach((tab, index) => {
-    const rect = { x: index * width + 2, y: y + 2, w: width - 4, h: LAYOUT.navHeight - 4 };
+    const rect = { x: index * width + 2, y: y + 3, w: width - 4, h: LAYOUT.navHeight - 6 };
     const active = ui.screen === tab.screen || (tab.screen === 'world' && isWorldish(ui.screen));
     // «Район» возвращает туда, где игрок стоит: на улицу или в комнату.
     const destination: ScreenId =
