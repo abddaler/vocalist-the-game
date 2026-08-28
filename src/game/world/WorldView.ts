@@ -127,8 +127,10 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
     const rect = toScreen(block.rect);
     painter.fill(rect, block.color);
     painter.stroke(rect, COLORS.border);
-    if (block.nameKey && rect.h >= 20) {
-      painter.label({ x: rect.x, y: rect.y + 6, w: rect.w, h: 10 }, t(block.nameKey), {
+    // Название по центру дома: у верхнего ряда дверь снизу, у нижнего —
+    // сверху, и надпись у края неизбежно попадала бы под проём.
+    if (block.nameKey && rect.h >= 24) {
+      painter.label({ x: rect.x, y: rect.y, w: rect.w, h: rect.h }, t(block.nameKey), {
         align: 'center',
         color: COLORS.textDim,
       });
@@ -150,10 +152,20 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
     // Пока вместо мебели прямоугольники, подпись — единственный способ
     // понять, что это. На вехе 7 её заменит узнаваемый спрайт.
     if (target.kind === 'point' && rect.w >= 24) {
-      painter.label({ x: rect.x - 10, y: rect.y - 10, w: rect.w + 20, h: 10 }, t(target.nameKey), {
+      const caption = { x: rect.x - 40, y: rect.y - 13, w: rect.w + 80, h: 12 };
+      const label = painter.label(caption, t(target.nameKey), {
         align: 'center',
-        color: active ? COLORS.accent : COLORS.textMuted,
+        color: active ? COLORS.accent : COLORS.textDim,
       });
+      // Подложка ровно по ширине надписи: подпись ложится на стену дома
+      // и без неё сливается. Фигуры рисуются под текстом, поэтому
+      // порядок вызовов роли не играет.
+      const width = Math.ceil(label.width) + 6;
+      painter.fill(
+        { x: rect.x + rect.w / 2 - width / 2, y: caption.y, w: width, h: caption.h },
+        COLORS.bg,
+        0.78,
+      );
     }
 
     const hotspot = {

@@ -81,12 +81,18 @@ export class Painter {
     return object;
   }
 
-  /** Текст, вписанный по вертикали в прямоугольник. */
-  label(rect: Rect, value: string, style: TextStyle = {}): void {
+  /**
+   * Текст, вписанный по вертикали в прямоугольник.
+   * Возвращает объект, чтобы вызывающий мог узнать реальную ширину:
+   * подложку под надпись иначе не подогнать. Порядок вызовов при этом
+   * не важен — фигуры всё равно рисуются под текстом.
+   */
+  label(rect: Rect, value: string, style: TextStyle = {}): Phaser.GameObjects.Text {
     const object = this.text(rect.x, rect.y, value, style);
     const align = style.align ?? 'left';
     const x = align === 'center' ? rect.x + rect.w / 2 : align === 'right' ? rect.x + rect.w : rect.x;
     object.setPosition(x, rect.y + (rect.h - object.height) / 2);
+    return object;
   }
 
   button(rect: Rect, label: string, state: { enabled: boolean; focused: boolean; accent?: boolean }): void {

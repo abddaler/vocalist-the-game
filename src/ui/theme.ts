@@ -7,10 +7,10 @@
 export const SCREEN = { width: 480, height: 270 } as const;
 
 export const LAYOUT = {
-  hudHeight: 30,
-  navHeight: 24,
+  hudHeight: 34,
+  navHeight: 26,
   padding: 6,
-  rowHeight: 20,
+  rowHeight: 22,
   /** Минимальная область тапа — ограничение 4 из раздела 2. */
   minTap: 16,
 } as const;
@@ -48,11 +48,18 @@ export const COLORS = {
   disabled: 0x3a3f4d,
 } as const;
 
+/**
+ * Канвас физически 480x270 пикселей и растягивается до размера окна,
+ * поэтому надпись занимает ровно столько настоящих пикселей, сколько
+ * задано здесь: разрешение текстуры на это не влияет. Восьмипиксельный
+ * текст на телефоне превращался в 11 CSS-пикселей рваного растра —
+ * отсюда десятка как основа.
+ */
 export const FONT = {
   family: 'monospace',
-  small: '8px',
-  normal: '10px',
-  large: '14px',
+  small: '10px',
+  normal: '12px',
+  large: '16px',
 } as const;
 
 /** Цвет полоски связок по значению (раздел 6). */

@@ -24,16 +24,16 @@ const upper = (locationId: string, index: number, color: number) => ({
 const lower = (locationId: string, index: number, color: number) => ({
   locationId,
   color,
-  rect: { x: bottomRow(index), y: 150, w: BUILDING_W, h: 64 },
-  door: { x: bottomRow(index) + (BUILDING_W - DOOR_W) / 2, y: 150, w: DOOR_W, h: DOOR_H },
+  rect: { x: bottomRow(index), y: 146, w: BUILDING_W, h: 62 },
+  door: { x: bottomRow(index) + (BUILDING_W - DOOR_W) / 2, y: 146, w: DOOR_W, h: DOOR_H },
 });
 
 export const DISTRICT: DistrictDef = {
   width: 720,
   // Ровно по высоте игрового поля: район прокручивается только вбок,
   // так улица читается целиком и не уезжает под верхнюю панель.
-  height: 216,
-  spawn: { x: 360, y: 130 },
+  height: 210,
+  spawn: { x: 360, y: 126 },
 
   buildings: [
     upper('apartment', 0, 0x3b4257),
@@ -50,7 +50,7 @@ export const DISTRICT: DistrictDef = {
   // Бордюры вдоль тротуара: улица должна читаться как коридор.
   solids: [
     { x: 0, y: 0, w: 720, h: 6 },
-    { x: 0, y: 214, w: 720, h: 2 },
+    { x: 0, y: 208, w: 720, h: 2 },
   ],
 
   points: [

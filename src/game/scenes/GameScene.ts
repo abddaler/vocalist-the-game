@@ -76,7 +76,14 @@ export class GameScene extends Phaser.Scene {
       this.dirty = true;
     });
 
+    // Смена зума меняет разрешение, в котором рендерится текст,
+    // поэтому поворот телефона требует полной перерисовки.
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.markDirty);
+    this.game.events.on(Phaser.Core.Events.RESUME, this.markDirty);
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.markDirty);
+      this.game.events.off(Phaser.Core.Events.RESUME, this.markDirty);
       this.input$.destroy();
       this.worldPainter.destroy();
       this.painter.destroy();
@@ -211,6 +218,10 @@ export class GameScene extends Phaser.Scene {
         return;
     }
   }
+
+  private markDirty = (): void => {
+    this.dirty = true;
+  };
 
   private go = (patch: Partial<UiState>): void => {
     this.ui = { ...this.ui, ...patch };

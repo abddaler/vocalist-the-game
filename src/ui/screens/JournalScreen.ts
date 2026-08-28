@@ -5,18 +5,18 @@ import { formatLogEntry } from '../log';
 import { COLORS, CONTENT, LAYOUT } from '../theme';
 import type { RenderContext } from './types';
 
-const LINES = 11;
+const LINES = 9;
 
 /** Журнал (9.6): активная цель и история того, что уже случилось. */
 export function renderJournal(ctx: RenderContext): void {
   const { painter, hotspots, state, ui } = ctx;
 
-  const goalRect = { x: LAYOUT.padding, y: CONTENT.y + 4, w: CONTENT.width - LAYOUT.padding * 2, h: 26 };
+  const goalRect = { x: LAYOUT.padding, y: CONTENT.y + 4, w: CONTENT.width - LAYOUT.padding * 2, h: 30 };
   painter.panel(goalRect, COLORS.panelAlt, COLORS.accent);
-  painter.label({ x: goalRect.x + 4, y: goalRect.y + 2, w: goalRect.w - 8, h: 10 }, t('ui.goal'), {
+  painter.label({ x: goalRect.x + 4, y: goalRect.y + 3, w: goalRect.w - 8, h: 12 }, t('ui.goal'), {
     color: COLORS.textDim,
   });
-  painter.label({ x: goalRect.x + 4, y: goalRect.y + 13, w: goalRect.w - 8, h: 10 }, t(goalOf(state)), {
+  painter.label({ x: goalRect.x + 4, y: goalRect.y + 16, w: goalRect.w - 8, h: 12 }, t(goalOf(state)), {
     color: COLORS.text,
   });
 
@@ -34,10 +34,10 @@ export function renderJournal(ctx: RenderContext): void {
   }
 
   visible.forEach((entry, index) => {
-    const y = CONTENT.y + 34 + index * 12;
-    painter.label({ x: LAYOUT.padding, y, w: 58, h: 10 },
+    const y = CONTENT.y + 40 + index * 14;
+    painter.label({ x: LAYOUT.padding, y, w: 70, h: 12 },
       `д${entry.day} ${t(`slot.${entry.slot}`)}`, { color: COLORS.textMuted });
-    painter.label({ x: LAYOUT.padding + 62, y, w: CONTENT.width - 80, h: 10 },
+    painter.label({ x: LAYOUT.padding + 74, y, w: CONTENT.width - 92, h: 12 },
       formatLogEntry(entry), { color: colorOf(entry.code) });
   });
 

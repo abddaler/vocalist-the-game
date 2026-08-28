@@ -8,7 +8,7 @@ import { COLORS, CONTENT, LAYOUT } from '../theme';
 import type { RenderContext } from './types';
 
 const STAT_W = 268;
-const ROW_H = 15;
+const ROW_H = 17;
 
 /**
  * Экран персонажа (9.6): статы с полосками и подсказка, что даёт каждый.
@@ -25,14 +25,14 @@ function renderSkills(ctx: RenderContext): void {
   const { painter, hotspots, state, ui } = ctx;
   const top = CONTENT.y + 4;
 
-  painter.label({ x: LAYOUT.padding, y: top, w: STAT_W, h: 10 }, t('ui.skills'), {
+  painter.label({ x: LAYOUT.padding, y: top, w: STAT_W, h: 12 }, t('ui.skills'), {
     color: COLORS.textDim,
   });
 
   SKILL_KEYS.forEach((key, index) => {
     const rect = {
       x: LAYOUT.padding,
-      y: top + 12 + index * ROW_H,
+      y: top + 14 + index * ROW_H,
       w: STAT_W,
       h: LAYOUT.minTap,
     };
@@ -69,7 +69,7 @@ function renderSkills(ctx: RenderContext): void {
 
 function renderHint(ctx: RenderContext): void {
   const { painter, ui } = ctx;
-  const rect = { x: LAYOUT.padding, y: CONTENT.y + CONTENT.height - 32, w: STAT_W, h: 28 };
+  const rect = { x: LAYOUT.padding, y: CONTENT.y + CONTENT.height - 30, w: STAT_W, h: 26 };
   painter.panel(rect);
   painter.label(
     { x: rect.x + 4, y: rect.y + 2, w: rect.w - 8, h: rect.h - 4 },
@@ -83,27 +83,27 @@ function renderSide(ctx: RenderContext): void {
   const x = LAYOUT.padding * 2 + STAT_W;
   const w = CONTENT.width - x - LAYOUT.padding;
 
-  painter.panel({ x, y: CONTENT.y + 4, w, h: 62 });
-  painter.label({ x: x + 4, y: CONTENT.y + 7, w: w - 8, h: 10 },
+  painter.panel({ x, y: CONTENT.y + 4, w, h: 78 });
+  painter.label({ x: x + 4, y: CONTENT.y + 8, w: w - 8, h: 12 },
     t('ui.career', { tier: t(`tier.${state.career.tier}`) }), { color: COLORS.accent });
-  line(ctx, x, CONTENT.y + 20, w, 'выступлений', String(state.career.performances));
-  line(ctx, x, CONTENT.y + 31, w, 'синглов', String(state.career.singles));
-  line(ctx, x, CONTENT.y + 42, w, 'репутация', String(Math.round(state.resources.reputation)));
-  line(ctx, x, CONTENT.y + 53, w, 'имидж', String(imageLevel(state)));
+  line(ctx, x, CONTENT.y + 23, w, 'выступлений', String(state.career.performances));
+  line(ctx, x, CONTENT.y + 36, w, 'синглов', String(state.career.singles));
+  line(ctx, x, CONTENT.y + 49, w, 'репутация', String(Math.round(state.resources.reputation)));
+  line(ctx, x, CONTENT.y + 62, w, 'имидж', String(imageLevel(state)));
 
-  painter.label({ x: x + 4, y: CONTENT.y + 72, w: w - 8, h: 10 }, t('ui.relations'), {
+  painter.label({ x: x + 4, y: CONTENT.y + 88, w: w - 8, h: 12 }, t('ui.relations'), {
     color: COLORS.textDim,
   });
   NPC_IDS.forEach((id, index) => {
     const npc = state.npcs[id];
-    const y = CONTENT.y + 84 + index * 14;
-    painter.label({ x: x + 4, y, w: w - 60, h: 10 }, t(`npc.${id}`), {
+    const y = CONTENT.y + 104 + index * 16;
+    painter.label({ x: x + 4, y, w: w - 60, h: 12 }, t(`npc.${id}`), {
       color: npc.met ? COLORS.text : COLORS.textMuted,
     });
     if (npc.met) {
-      painter.bar({ x: x + w - 54, y: y + 2, w: 50, h: 6 }, npc.relation, 100, COLORS.mood);
+      painter.bar({ x: x + w - 54, y: y + 3, w: 50, h: 6 }, npc.relation, 100, COLORS.mood);
     } else {
-      painter.label({ x: x + w - 54, y, w: 50, h: 10 }, t('ui.notMet'), {
+      painter.label({ x: x + w - 54, y, w: 50, h: 12 }, t('ui.notMet'), {
         align: 'right',
         color: COLORS.textMuted,
       });
@@ -112,6 +112,6 @@ function renderSide(ctx: RenderContext): void {
 }
 
 function line(ctx: RenderContext, x: number, y: number, w: number, caption: string, value: string): void {
-  ctx.painter.label({ x: x + 4, y, w: w - 8, h: 10 }, caption, { color: COLORS.textDim });
-  ctx.painter.label({ x: x + 4, y, w: w - 8, h: 10 }, value, { align: 'right', color: COLORS.text });
+  ctx.painter.label({ x: x + 4, y, w: w - 8, h: 12 }, caption, { color: COLORS.textDim });
+  ctx.painter.label({ x: x + 4, y, w: w - 8, h: 12 }, value, { align: 'right', color: COLORS.text });
 }
