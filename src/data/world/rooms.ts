@@ -18,9 +18,10 @@ const point = (
   nameKey: string,
   rect: RoomPointDef['rect'],
   color: number,
+  prop: RoomPointDef['prop'],
   activities: readonly string[],
   extra: Partial<RoomPointDef> = {},
-): RoomPointDef => ({ id, nameKey, rect, color, activities, venues: [], ...extra });
+): RoomPointDef => ({ id, nameKey, rect, color, prop, activities, venues: [], ...extra });
 
 const room = (
   locationId: string,
@@ -40,52 +41,52 @@ const room = (
 
 export const ROOMS: readonly RoomDef[] = [
   room('apartment', 0x2b3040, [
-    point('bed', 'point.bed', { x: 18, y: 26, w: 46, h: 26 }, 0x4a5570, ['sleep']),
-    point('mirror', 'point.mirror', { x: 96, y: 22, w: 26, h: 30 }, 0x6d7a94, ['warmup', 'vocal_rest']),
-    point('kitchen', 'point.kitchen', { x: 152, y: 24, w: 44, h: 28 }, 0x5a4f3d, ['tea_regimen']),
-    point('sofa', 'point.sofa', { x: 88, y: 92, w: 54, h: 22 }, 0x4c4258, ['home_rest']),
+    point('bed', 'point.bed', { x: 18, y: 26, w: 46, h: 26 }, 0x4a5570, 'bed', ['sleep']),
+    point('mirror', 'point.mirror', { x: 96, y: 22, w: 26, h: 30 }, 0x6d7a94, 'mirror', ['warmup', 'vocal_rest']),
+    point('kitchen', 'point.kitchen', { x: 152, y: 24, w: 44, h: 28 }, 0x5a4f3d, 'kitchen', ['tea_regimen']),
+    point('sofa', 'point.sofa', { x: 88, y: 92, w: 54, h: 22 }, 0x4c4258, 'sofa', ['home_rest']),
   ]),
 
   room('vocal_studio', 0x33293f, [
-    point('teacher_junior', 'point.teacherJunior', { x: 20, y: 30, w: 48, h: 28 }, 0x584a6b, lessonsOf('junior')),
-    point('teacher_mid', 'point.teacherMid', { x: 96, y: 26, w: 48, h: 32 }, 0x6b5a80, lessonsOf('mid')),
-    point('teacher_master', 'point.teacherMaster', { x: 172, y: 30, w: 48, h: 28 }, 0x8a6ea3, lessonsOf('master')),
+    point('teacher_junior', 'point.teacherJunior', { x: 20, y: 30, w: 48, h: 28 }, 0x584a6b, 'piano', lessonsOf('junior')),
+    point('teacher_mid', 'point.teacherMid', { x: 96, y: 26, w: 48, h: 32 }, 0x6b5a80, 'piano', lessonsOf('mid')),
+    point('teacher_master', 'point.teacherMaster', { x: 172, y: 30, w: 48, h: 28 }, 0x8a6ea3, 'piano', lessonsOf('master')),
   ]),
 
   room('rehearsal_base', 0x25343a, [
-    point('mic_stand', 'point.micStand', { x: 60, y: 34, w: 26, h: 34 }, 0x557080, ['practice_free']),
-    point('band_corner', 'point.bandCorner', { x: 140, y: 30, w: 60, h: 38 }, 0x466070, ['band_rehearsal']),
+    point('mic_stand', 'point.micStand', { x: 60, y: 34, w: 26, h: 34 }, 0x557080, 'mic', ['practice_free']),
+    point('band_corner', 'point.bandCorner', { x: 140, y: 30, w: 60, h: 38 }, 0x466070, 'drums', ['band_rehearsal']),
   ]),
 
   room('restaurant', 0x3d2f24, [
-    point('small_stage', 'point.smallStage', { x: 84, y: 28, w: 72, h: 32 }, 0x6b543c, ['restaurant_shift']),
+    point('small_stage', 'point.smallStage', { x: 84, y: 28, w: 72, h: 32 }, 0x6b543c, 'stage', ['restaurant_shift']),
   ]),
 
   room('club_vertigo', 0x35223d, [
-    point('bar_counter', 'point.barCounter', { x: 18, y: 92, w: 66, h: 22 }, 0x5c3a68, ['networking']),
-    point('open_mic', 'point.openMic', { x: 30, y: 26, w: 62, h: 34 }, 0x74468a, [], { venues: ['bar_stage'] }),
-    point('main_stage', 'point.mainStage', { x: 128, y: 22, w: 92, h: 40 }, 0x9a4fb8, [], { venues: ['club_stage'] }),
+    point('bar_counter', 'point.barCounter', { x: 18, y: 92, w: 66, h: 22 }, 0x5c3a68, 'bar', ['networking']),
+    point('open_mic', 'point.openMic', { x: 30, y: 26, w: 62, h: 34 }, 0x74468a, 'stage', [], { venues: ['bar_stage'] }),
+    point('main_stage', 'point.mainStage', { x: 128, y: 22, w: 92, h: 40 }, 0x9a4fb8, 'stage', [], { venues: ['club_stage'] }),
   ]),
 
   room('record_studio', 0x243440, [
-    point('booth', 'point.booth', { x: 66, y: 26, w: 60, h: 40 }, 0x3f5f78, ['record_single']),
-    point('console', 'point.console', { x: 150, y: 34, w: 62, h: 26 }, 0x50708a, []),
+    point('booth', 'point.booth', { x: 66, y: 26, w: 60, h: 40 }, 0x3f5f78, 'booth', ['record_single']),
+    point('console', 'point.console', { x: 150, y: 34, w: 62, h: 26 }, 0x50708a, 'console', []),
   ]),
 
   room('clothes_shop', 0x3d3524, [
-    point('rack', 'point.rack', { x: 34, y: 26, w: 70, h: 32 }, 0x7a6a45, ['shopping']),
-    point('fitting_room', 'point.fittingRoom', { x: 140, y: 24, w: 52, h: 36 }, 0x8a7a55, [], {
+    point('rack', 'point.rack', { x: 34, y: 26, w: 70, h: 32 }, 0x7a6a45, 'rack', ['shopping']),
+    point('fitting_room', 'point.fittingRoom', { x: 140, y: 24, w: 52, h: 36 }, 0x8a7a55, 'curtain', [], {
       opensShop: true,
     }),
   ]),
 
   room('phoniatrist', 0x27392f, [
-    point('exam_chair', 'point.examChair', { x: 52, y: 28, w: 54, h: 34 }, 0x477a5c, ['doctor_visit']),
-    point('prevention', 'point.prevention', { x: 140, y: 30, w: 56, h: 30 }, 0x3f6b52, ['checkup']),
+    point('exam_chair', 'point.examChair', { x: 52, y: 28, w: 54, h: 34 }, 0x477a5c, 'chair', ['doctor_visit']),
+    point('prevention', 'point.prevention', { x: 140, y: 30, w: 56, h: 30 }, 0x3f6b52, 'chair', ['checkup']),
   ]),
 
   room('gym', 0x3a2828, [
-    point('treadmill', 'point.treadmill', { x: 72, y: 26, w: 90, h: 38 }, 0x7a4a4a, ['gym']),
+    point('treadmill', 'point.treadmill', { x: 72, y: 26, w: 90, h: 38 }, 0x7a4a4a, 'treadmill', ['gym']),
   ]),
 ];
 

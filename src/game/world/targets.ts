@@ -1,4 +1,4 @@
-import type { WorldPoint, WorldRect } from '@core/types';
+import type { PropKind, WorldPoint, WorldRect } from '@core/types';
 import { centerOf } from './movement';
 
 /** Насколько близко надо подойти, чтобы взаимодействовать. */
@@ -12,6 +12,8 @@ export interface WorldTarget {
   readonly rect: WorldRect;
   /** Дверь заперта по часам работы локации (раздел 8). */
   readonly locked?: boolean | undefined;
+  /** Что за предмет здесь стоит. У дверей и выходов его нет. */
+  readonly prop?: PropKind | undefined;
 }
 
 export function withinReach(position: WorldPoint, rect: WorldRect): boolean {

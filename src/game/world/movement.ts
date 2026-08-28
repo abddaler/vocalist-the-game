@@ -87,9 +87,16 @@ export function stepToward(
   const scale = Math.min(distance, length) / length;
   const moved = step(position, dx * scale, dy * scale, solids, bounds);
 
-  // Упёрлись в стену и не сдвинулись — цель недостижима, бросаем её.
-  const stuck = moved.x === position.x && moved.y === position.y;
-  return { position: moved, arrived: stuck };
+  /*
+   * Цель за стеной считается достигнутой, когда шаг перестал к ней
+   * приближать. Сравнивать позиции недостаточно: упёршись в стену
+   * по одной оси, персонаж продолжает ползти по другой всё меньшими
+   * долями пикселя — и «дошёл» не наступает никогда, а вместе с ним
+   * не срабатывает и дверь, к которой шли.
+   */
+  const left = Math.hypot(target.x - moved.x, target.y - moved.y);
+  const progress = length - left;
+  return { position: moved, arrived: progress < distance * 0.2 };
 }
 
 /** Ближайшая к персонажу точка взаимодействия в пределах досягаемости. */

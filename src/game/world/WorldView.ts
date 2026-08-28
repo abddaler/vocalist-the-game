@@ -8,6 +8,7 @@ import { actorTexture } from '../art';
 import type { ActorPose } from '../art';
 import { cameraOffset, nearest } from './movement';
 import { facade, shade } from './facade';
+import { drawProp } from './props';
 import type { Layer } from './layers';
 import { REACH } from './targets';
 import type { WorldTarget } from './targets';
@@ -77,16 +78,23 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
   for (const target of layer.targets) {
     const rect = toScreen(target.rect);
     const active = focus?.id === target.id;
-    // Дверь — тёмный проём, а не яркая метка; светится только та,
-    // до которой игрок дошёл.
-    const color =
-      layer.pointColors.get(target.id) ?? (active ? DOOR_OPEN : DOOR_SHUT);
-    painter.fill(rect, color);
-    painter.stroke(rect, active ? COLORS.borderFocus : COLORS.border);
+    const color = layer.pointColors.get(target.id);
+
+    if (target.prop && color !== undefined) {
+      drawProp(painter, target.prop, rect, color, active);
+      if (active) painter.stroke(rect, COLORS.borderFocus);
+    } else {
+      // Дверь — тёмный проём, а не яркая метка; светится только та,
+      // до которой игрок дошёл.
+      painter.fill(rect, active ? DOOR_OPEN : DOOR_SHUT);
+      painter.stroke(rect, active ? COLORS.borderFocus : COLORS.border);
+    }
 
     // Пока вместо мебели прямоугольники, подпись — единственный способ
     // понять, что это. На вехе 7 её заменит узнаваемый спрайт.
-    if (target.kind === 'point' && rect.w >= 24) {
+    // Подпись только у того предмета, к которому подошли: узнаваемая
+    // мебель в подписи не нуждается, а лес ярлыков забивает комнату.
+    if (target.kind === 'point' && active && rect.w >= 20) {
       const caption = { x: rect.x - 40, y: rect.y - 13, w: rect.w + 80, h: 12 };
       const label = painter.label(caption, t(target.nameKey), {
         align: 'center',

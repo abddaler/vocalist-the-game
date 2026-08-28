@@ -93,6 +93,22 @@ describe('ходьба к цели тапа', () => {
     expect(result.position).toEqual({ x: 56, y: 50 });
   });
 
+  it('цель за стеной перестаёт быть целью, даже если можно ползти вбок', () => {
+    // Ровно этот случай ломал вход в дверь: дверь внутри стены, персонаж
+    // упирается снизу, но продолжает микродвигаться по X и «не доходит».
+    const wall = [{ x: 0, y: 0, w: 200, h: 40 }];
+    let position = { x: 100, y: 60 };
+    let arrived = false;
+
+    for (let i = 0; i < 200 && !arrived; i += 1) {
+      const result = stepToward(position, { x: 104, y: 20 }, 2, wall, bounds);
+      position = result.position;
+      arrived = result.arrived;
+    }
+
+    expect(arrived).toBe(true);
+  });
+
   it('до стены всё-таки доходит, а не встаёт заранее', () => {
     const wall = [{ x: 60, y: 0, w: 10, h: 100 }];
     const result = stepToward({ x: 50, y: 50 }, { x: 150, y: 50 }, 4, wall, bounds);

@@ -16,9 +16,9 @@ const bottomRow = (index: number): number => 85 + index * 160;
 const upper = (locationId: string, index: number, color: number) => ({
   locationId,
   color,
-  rect: { x: topRow(index), y: 26, w: BUILDING_W, h: BUILDING_H },
+  rect: { x: topRow(index), y: 6, w: BUILDING_W, h: BUILDING_H },
   // Дверь снизу: игрок подходит к ней с улицы.
-  door: { x: topRow(index) + (BUILDING_W - DOOR_W) / 2, y: 126 - DOOR_H, w: DOOR_W, h: DOOR_H },
+  door: { x: topRow(index) + (BUILDING_W - DOOR_W) / 2, y: 86 - DOOR_H, w: DOOR_W, h: DOOR_H },
 });
 
 const lower = (locationId: string, index: number, color: number) => ({
@@ -59,6 +59,7 @@ export const DISTRICT: DistrictDef = {
       nameKey: 'venue.underpass',
       rect: { x: 330, y: 96, w: 40, h: 22 },
       color: 0x2a2f3d,
+      prop: 'stairs',
       activities: [],
       venues: ['underpass'],
     },
@@ -67,6 +68,7 @@ export const DISTRICT: DistrictDef = {
       nameKey: 'venue.corporate',
       rect: { x: 640, y: 96, w: 30, h: 22 },
       color: 0x4a4430,
+      prop: 'board',
       activities: [],
       venues: ['corporate'],
     },

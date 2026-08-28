@@ -35,12 +35,37 @@ export interface DistrictDef {
   readonly points: readonly RoomPointDef[];
 }
 
+/**
+ * Что за предмет стоит в этой точке. Рисуется параметрически по размеру
+ * прямоугольника, а не готовым спрайтом: точки разной величины, и одна
+ * картинка на всех либо растянулась бы, либо не заполнила место.
+ */
+export type PropKind =
+  | 'bed'
+  | 'mirror'
+  | 'kitchen'
+  | 'sofa'
+  | 'piano'
+  | 'mic'
+  | 'drums'
+  | 'stage'
+  | 'bar'
+  | 'booth'
+  | 'console'
+  | 'rack'
+  | 'curtain'
+  | 'chair'
+  | 'treadmill'
+  | 'stairs'
+  | 'board';
+
 /** Точка взаимодействия: часть дел локации, привязанная к месту в комнате. */
 export interface RoomPointDef {
   readonly id: string;
   readonly nameKey: string;
   readonly rect: WorldRect;
   readonly color: number;
+  readonly prop: PropKind;
   readonly activities: readonly string[];
   readonly venues: readonly string[];
   /** Точка открывает гардероб, а не список дел (9.2). */

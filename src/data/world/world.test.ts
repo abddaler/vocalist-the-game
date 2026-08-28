@@ -110,3 +110,26 @@ describe('комнаты локаций', () => {
     }
   });
 });
+
+describe('двери держатся своих домов', () => {
+  it('дверь лежит внутри стены дома, а не посреди улицы', () => {
+    // Ровно этот отрыв ломал вход: дверь верхнего ряда осталась на
+    // старых координатах после того, как дома стали ниже.
+    for (const building of DISTRICT.buildings) {
+      const { rect, door } = building;
+      expect(door.x, building.locationId).toBeGreaterThanOrEqual(rect.x);
+      expect(door.x + door.w, building.locationId).toBeLessThanOrEqual(rect.x + rect.w);
+      expect(door.y, building.locationId).toBeGreaterThanOrEqual(rect.y);
+      expect(door.y + door.h, building.locationId).toBeLessThanOrEqual(rect.y + rect.h);
+    }
+  });
+
+  it('к каждой двери можно подойти с улицы', () => {
+    // Дверь должна касаться края дома, иначе она замурована внутри.
+    for (const { rect, door, locationId } of DISTRICT.buildings) {
+      const touchesTop = door.y === rect.y;
+      const touchesBottom = door.y + door.h === rect.y + rect.h;
+      expect(touchesTop || touchesBottom, locationId).toBe(true);
+    }
+  });
+});
