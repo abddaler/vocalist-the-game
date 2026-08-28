@@ -46,7 +46,12 @@ export class WorldController {
   moving = false;
   crowd: CrowdActor[] = spawnCrowd(HOME_DISTRICT);
 
-  private walkTarget: WorldPoint | null = null;
+  /**
+   * Путь до цели по точкам. Одной точки мало: улица — коридор между
+   * двумя рядами домов, и попытка идти к двери напрямую упирается в угол
+   * соседнего дома, после чего ходьба глохнет в метре от цели.
+   */
+  private route: WorldPoint[] = [];
   /** Цель, к которой идём по тапу: дойдя, срабатываем сами. */
   private pendingTarget: WorldTarget | null = null;
 
@@ -66,7 +71,7 @@ export class WorldController {
     this.districtId = HOME_DISTRICT;
     this.position = { ...getDistrict(HOME_DISTRICT).spawn };
     this.facing = 'down';
-    this.walkTarget = null;
+    this.route = [];
     this.pendingTarget = null;
     this.crowd = spawnCrowd(HOME_DISTRICT);
     this.fade = { alpha: 0, phase: 'idle', action: null };
@@ -130,7 +135,7 @@ export class WorldController {
     const { x, y } = input.move;
     if (x !== 0 || y !== 0) {
       // Клавиши отменяют цель, поставленную тапом.
-      this.walkTarget = null;
+      this.route = [];
       this.pendingTarget = null;
       const length = Math.hypot(x, y) || 1;
       this.position = step(
@@ -140,15 +145,17 @@ export class WorldController {
         solids,
         layer.bounds,
       );
-    } else if (this.walkTarget) {
-      const result = stepToward(before, this.walkTarget, distance, solids, layer.bounds);
+    } else if (this.route.length > 0) {
+      const result = stepToward(before, this.route[0]!, distance, solids, layer.bounds);
       this.position = result.position;
       if (result.arrived) {
-        this.walkTarget = null;
-        const target = this.pendingTarget;
-        this.pendingTarget = null;
-        // Дошли — открываем. Если упёрлись и всё равно далеко, просто стоим.
-        if (target && withinReach(this.position, target.rect)) this.enter(target);
+        this.route.shift();
+        if (this.route.length === 0) {
+          const target = this.pendingTarget;
+          this.pendingTarget = null;
+          // Дошли — открываем. Если упёрлись и всё равно далеко, просто стоим.
+          if (target && withinReach(this.position, target.rect)) this.enter(target);
+        }
       }
     }
 
@@ -161,7 +168,7 @@ export class WorldController {
 
   /** Тап по пустому месту — приказ идти туда. */
   walkTo(tap: WorldPoint): void {
-    this.walkTarget = screenToWorld(tap, this.position, this.layer());
+    this.route = [screenToWorld(tap, this.position, this.layer())];
     this.pendingTarget = null;
   }
 
@@ -174,7 +181,10 @@ export class WorldController {
       this.enter(target);
       return;
     }
-    this.walkTarget = centerOf(target.rect);
+    // Сначала вдоль улицы до нужной колонки, потом поперёк к самой цели:
+    // проезжая часть свободна, а поперёк идти всего пару шагов.
+    const center = centerOf(target.rect);
+    this.route = [{ x: center.x, y: this.position.y }, center];
     this.pendingTarget = target;
   }
 
@@ -187,7 +197,7 @@ export class WorldController {
       if (!room) return;
       this.transition(() => {
         this.position = { ...room.spawn };
-        this.walkTarget = null;
+        this.route = [];
         this.facing = 'up';
         this.crowd = spawnCrowd(target.id);
         this.deps.enterRoom(target.id);
@@ -202,7 +212,7 @@ export class WorldController {
       this.transition(() => {
         this.districtId = district.id;
         this.position = { x: at.x, y: Math.min(district.height - 6, at.y + 30) };
-        this.walkTarget = null;
+        this.route = [];
         this.facing = 'down';
         this.crowd = spawnCrowd(district.id);
         this.deps.leaveRoom();
@@ -230,7 +240,7 @@ export class WorldController {
     this.transition(() => {
       this.districtId = to;
       this.position = throughGate ? arrival(next, from) : { ...next.spawn };
-      this.walkTarget = null;
+      this.route = [];
       this.pendingTarget = null;
       this.facing = 'down';
       this.crowd = spawnCrowd(to);

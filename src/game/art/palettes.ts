@@ -1,9 +1,11 @@
 /**
- * Палитры пиксель-арта. Ночной город: тёплая кожа и волосы на холодном
- * синем фоне улицы, одежда — единственное цветное пятно на персонаже.
+ * Палитры пиксель-арта. Ключи совпадают с символами в раскладках кадров:
+ * 1 контур, 2 кожа, 3 тень кожи, 4 волосы, 5 блик волос, 6 одежда,
+ * 7 тень одежды, 8 блик одежды, 9 брюки, A обувь, B акцент, C тень
+ * акцента, D глаза.
  *
- * Ключи 1..6 совпадают с символами в раскладках кадров (см. actors.ts):
- * 1 — контур, 2 — кожа, 3 — волосы, 4 — одежда, 5 — тень одежды, 6 — обувь.
+ * Phaser берёт цвет по символу, а точку и пробел пропускает, поэтому
+ * прозрачность отдельным цветом задавать не надо.
  */
 export interface ActorPalette {
   readonly 0: string;
@@ -24,41 +26,42 @@ export interface ActorPalette {
   readonly F: string;
 }
 
+export interface Colors {
+  readonly skin: string;
+  readonly hair: string;
+  readonly cloth: string;
+  readonly legs: string;
+  readonly shoes: string;
+  readonly accent: string;
+}
+
 const EMPTY = 'rgba(0,0,0,0)';
 
-function palette(skin: string, hair: string, cloth: string, shade: string, shoes: string): ActorPalette {
+/** Затемнение и осветление цвета: тени и блики выводятся, а не задаются. */
+function shift(hex: string, factor: number): string {
+  const value = parseInt(hex.slice(1), 16);
+  const channel = (offset: number): number =>
+    Math.max(0, Math.min(255, Math.round(((value >> offset) & 0xff) * factor)));
+  return `#${((channel(16) << 16) | (channel(8) << 8) | channel(0)).toString(16).padStart(6, '0')}`;
+}
+
+export function palette(colors: Colors): ActorPalette {
   return {
     0: EMPTY,
-    1: '#1b1a24',
-    2: skin,
-    3: hair,
-    4: cloth,
-    5: shade,
-    6: shoes,
-    7: EMPTY,
-    8: EMPTY,
-    9: EMPTY,
-    A: EMPTY,
-    B: EMPTY,
-    C: EMPTY,
-    D: EMPTY,
+    1: '#1a1922',
+    2: colors.skin,
+    3: shift(colors.skin, 0.82),
+    4: colors.hair,
+    5: shift(colors.hair, 1.35),
+    6: colors.cloth,
+    7: shift(colors.cloth, 0.7),
+    8: shift(colors.cloth, 1.25),
+    9: colors.legs,
+    A: colors.shoes,
+    B: colors.accent,
+    C: shift(colors.accent, 0.68),
+    D: '#241f2c',
     E: EMPTY,
     F: EMPTY,
   };
 }
-
-/** Палитра игрока. */
-export const PLAYER_PALETTE = palette('#e8c9a0', '#3b2a1e', '#8fbf7f', '#5f8a55', '#2a2a33');
-
-/**
- * Палитры прохожих. Разные волосы и одежда при одном силуэте дают толпу,
- * в которой не мозолит глаз повтор.
- */
-export const CROWD_PALETTES: readonly ActorPalette[] = [
-  palette('#e8c9a0', '#2a2028', '#c96a6a', '#8f4747', '#22222b'),
-  palette('#d9ac7c', '#4a3020', '#6a8ac9', '#47608f', '#22222b'),
-  palette('#f0d6b4', '#6b5030', '#c9a86a', '#8f7547', '#2a2a33'),
-  palette('#c99a72', '#1e1a20', '#8a6ac9', '#5f478f', '#22222b'),
-  palette('#e8c9a0', '#7a3a3a', '#5fa89a', '#3f776c', '#2a2a33'),
-  palette('#d0a37e', '#332a22', '#b8b0a4', '#807a70', '#22222b'),
-];

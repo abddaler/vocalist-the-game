@@ -26,6 +26,14 @@ export function drawProp(
   const light = shade(color, 1.35);
   const dark = shade(color, 0.6);
 
+  // Тень у основания: без неё предмет висит в воздухе, особенно на полу
+  // комнаты, где нет ни бордюра, ни стены, чтобы его подпереть.
+  painter.fill(
+    { x: rect.x + 2, y: rect.y + rect.h - 2, w: rect.w - 4, h: 3 },
+    0x000000,
+    0.24,
+  );
+
   switch (kind) {
     case 'bed':
       return bed(painter, rect, color, light, dark);
@@ -36,7 +44,7 @@ export function drawProp(
     case 'sofa':
       return sofa(painter, rect, color, light, dark);
     case 'piano':
-      return piano(painter, rect, dark);
+      return piano(painter, rect, color, light, dark);
     case 'mic':
       return mic(painter, rect, active);
     case 'drums':
@@ -101,11 +109,18 @@ function sofa(painter: Painter, r: Rect, color: number, light: number, dark: num
   painter.fill({ x: r.x + r.w - 6, y: r.y + r.h - 6, w: 4, h: 6 }, WOOD);
 }
 
-function piano(painter: Painter, r: Rect, dark: number): void {
-  painter.fill({ x: r.x, y: r.y + 4, w: r.w, h: r.h - 4 }, 0x241f27);
-  painter.fill({ x: r.x + 1, y: r.y + 4, w: r.w - 2, h: 2 }, dark);
+function piano(painter: Painter, r: Rect, color: number, light: number, dark: number): void {
+  // Крышка приподнята, корпус в цвете точки: чёрный прямоугольник у
+  // стены сливался со стеной и читался как дыра.
+  painter.fill({ x: r.x + 2, y: r.y, w: r.w - 4, h: 4 }, light);
+  painter.fill({ x: r.x, y: r.y + 3, w: r.w, h: 3 }, shade(color, 1.05));
+  painter.fill({ x: r.x + 1, y: r.y + 6, w: r.w - 2, h: r.h - 12 }, shade(color, 0.75));
+  painter.fill({ x: r.x + 1, y: r.y + 6, w: 2, h: r.h - 12 }, light, 0.5);
+  // Ножки: без них инструмент стоит на брюхе.
+  painter.fill({ x: r.x + 3, y: r.y + r.h - 6, w: 3, h: 6 }, dark);
+  painter.fill({ x: r.x + r.w - 6, y: r.y + r.h - 6, w: 3, h: 6 }, dark);
   // Клавиатура: белые с чёрными — по ней инструмент и опознают.
-  const keys = { x: r.x + 2, y: r.y + r.h - 9, w: r.w - 4, h: 7 };
+  const keys = { x: r.x + 2, y: r.y + r.h - 11, w: r.w - 4, h: 7 };
   painter.fill(keys, 0xe8e4dc);
   const count = Math.max(3, Math.floor(keys.w / 5));
   for (let i = 1; i < count; i += 1) {

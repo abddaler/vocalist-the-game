@@ -1,15 +1,14 @@
-import type { DecorDef, GameState, WorldPoint, WorldRect } from '@core/types';
+import type { DistrictId, GameState, WorldPoint, WorldRect } from '@core/types';
 import { t } from '@ui/i18n';
 import { COLORS, CONTENT, LAYOUT } from '@ui/theme';
 import type { Hotspots, Rect } from '@ui/widgets/Hotspots';
 import type { Painter } from '@ui/widgets/Painter';
-import { actorTexture } from '../art';
-import type { ActorPose } from '../art';
 import { ambienceOf, mix, scale } from './ambience';
 import type { Ambience } from './ambience';
-import { drawFarSide, drawGround, drawShadow, drawSky, drawWash } from './backdrop';
+import { drawFarSide, drawGround, drawSky, drawWash } from './backdrop';
 import type { Backdrop } from './backdrop';
-import { drawDecor, shadowWidth } from './decor';
+import { drawInhabitants } from './inhabitants';
+import { drawRoom, interiorLight } from './interior';
 import { facade, sign } from './facade';
 import { cameraOffset, nearest } from './movement';
 import { drawProp } from './props';
@@ -17,11 +16,7 @@ import type { Layer } from './layers';
 import { REACH } from './targets';
 import type { WorldTarget } from './targets';
 import type { CrowdActor } from './Crowd';
-import { lookFor } from './actorSprite';
 import type { Facing } from './actorSprite';
-
-/** Ночью в комнате свет включён: игрок дома, а не сидит в темноте. */
-const ROOM_AMBIENCE: Ambience = ambienceOf('day', 'hills');
 
 const DOOR_SHUT = 0x181c26;
 const DOOR_OPEN = 0xffd98f;
@@ -57,14 +52,18 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
   });
 
   const outdoors = layer.district !== null;
-  const ambience = outdoors ? ambienceOf(layer.slot, layer.district!) : ROOM_AMBIENCE;
+  const ambience = outdoors ? ambienceOf(layer.slot, layer.district) : interiorLight(layer.slot);
 
-  if (outdoors) drawOutside(painter, layer, camera, ambience);
-  else {
+  if (outdoors) {
+    drawOutside(painter, layer, camera, ambience, layer.district);
+  } else {
     painter.fill({ x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height }, COLORS.bg);
-    painter.fill(
+    drawRoom(
+      painter,
       toScreen({ x: 0, y: 0, w: layer.bounds.width, h: layer.bounds.height }),
       layer.floor,
+      ambience,
+      layer.slot,
     );
   }
 
@@ -112,13 +111,7 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
 
   drawInhabitants(painter, params, layer, camera, ambience);
 
-  if (outdoors) {
-    drawWash(
-      painter,
-      { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height },
-      ambience,
-    );
-  }
+  drawWash(painter, { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height }, ambience);
 
   if (focus) {
     const bar = { x: 0, y: CONTENT.y + CONTENT.height - 12, w: CONTENT.width, h: 12 };
@@ -136,6 +129,7 @@ function drawOutside(
   layer: Layer,
   camera: WorldPoint,
   ambience: Ambience,
+  district: DistrictId,
 ): void {
   const skyHeight = Math.round(CONTENT.height * 0.18);
   const area: Backdrop = {
@@ -146,7 +140,7 @@ function drawOutside(
   };
 
   drawSky(painter, area, ambience);
-  drawFarSide(painter, area, ambience, layer.district!);
+  drawFarSide(painter, area, ambience, district);
   drawGround(painter, area, ambience);
 }
 
@@ -204,70 +198,6 @@ function drawGate(painter: Painter, rect: Rect, active: boolean, ambience: Ambie
     mix(ambience.asphalt, ambience.skyMid, 0.3),
   );
   painter.stroke(rect, active ? COLORS.borderFocus : scale(stone, 0.6));
-}
-
-/**
- * Живность и обстановка рисуются одним списком по возрастанию Y: тот,
- * кто ниже, заслоняет того, кто дальше. Иначе прохожие протыкают пальмы,
- * а машины наезжают на людей.
- */
-function drawInhabitants(
-  painter: Painter,
-  params: WorldViewParams,
-  layer: Layer,
-  camera: WorldPoint,
-  ambience: Ambience,
-): void {
-  type Piece = { y: number; draw: () => void };
-  const pieces: Piece[] = [];
-
-  const screen = (point: WorldPoint): WorldPoint => ({
-    x: point.x - camera.x,
-    y: CONTENT.y + point.y - camera.y,
-  });
-
-  for (const item of layer.decor) {
-    const at = screen(item);
-    pieces.push({
-      y: item.y,
-      draw: () => {
-        const width = shadowWidth(item.kind);
-        if (width > 0) drawShadow(painter, at.x, at.y, width, ambience);
-        drawDecor(painter, item as DecorDef, at.x, at.y, ambience);
-      },
-    });
-  }
-
-  const person = (
-    at: WorldPoint,
-    palette: number,
-    look: { pose: ActorPose; flipX: boolean },
-  ): void => {
-    const point = screen(at);
-    drawShadow(painter, point.x, point.y, 8, ambience);
-    painter.sprite(point.x, point.y, actorTexture(palette, look.pose), look.flipX);
-  };
-
-  for (const actor of params.crowd) {
-    pieces.push({
-      y: actor.position.y,
-      draw: () =>
-        person(
-          actor.position,
-          actor.member.palette + 1,
-          lookFor(actor.facing, actor.walked, actor.moving),
-        ),
-    });
-  }
-
-  pieces.push({
-    y: params.position.y,
-    draw: () =>
-      person(params.position, 0, lookFor(params.facing, params.walked, params.moving)),
-  });
-
-  pieces.sort((a, b) => a.y - b.y);
-  for (const piece of pieces) piece.draw();
 }
 
 /** У выхода и створа собственная подпись, у двери и точки — глагол перед названием. */

@@ -110,7 +110,7 @@ export function roomLayer(room: RoomDef, slot: Slot): Layer {
       })),
     ],
     pointColors: new Map(room.points.map((point) => [point.id, point.color])),
-    decor: [],
+    decor: room.decor,
     district: null,
     slot,
   };

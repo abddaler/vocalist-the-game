@@ -140,6 +140,8 @@ export interface RoomDef {
   readonly floor: number;
   readonly solids: readonly WorldRect[];
   readonly points: readonly RoomPointDef[];
+  /** Обстановка, с которой нечего делать: растения, стулья, урны. */
+  readonly decor: readonly DecorDef[];
   /** Выход обратно на улицу. */
   readonly exit: WorldRect;
 }

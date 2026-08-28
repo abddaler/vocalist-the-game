@@ -1,38 +1,63 @@
 import type Phaser from 'phaser';
-import { ACTOR_FRAMES } from './actors';
-import { CROWD_PALETTES, PLAYER_PALETTE } from './palettes';
-import type { ActorPalette } from './palettes';
+import { ACCESSORY } from './accessory';
+import { BODY, FACING_OF, POSES } from './body';
+import type { Frame } from './body';
+import { HAIR } from './hair';
+import { LOOKS, PALETTES } from './looks';
 
-export { ACTOR_SPRITE } from './actors';
-export { CROWD_PALETTES, PLAYER_PALETTE } from './palettes';
+export { ACTOR_SPRITE, POSES } from './body';
+export type { ActorPose } from './body';
+export { LOOKS, lookIndex } from './looks';
 
-export type ActorPose = 'downA' | 'downB' | 'upA' | 'upB' | 'sideA' | 'sideB';
-
-/** Ключ текстуры: одна раскладка, разные палитры — разные люди. */
-export function actorTexture(paletteIndex: number, pose: ActorPose): string {
-  return `actor-${paletteIndex}-${pose}`;
+/** Ключ текстуры: внешность плюс поза. */
+export function actorTexture(lookIndex: number, pose: string): string {
+  return `actor-${lookIndex}-${pose}`;
 }
 
-/** Индекс палитры игрока. Прохожие идут дальше по списку. */
-export const PLAYER_PALETTE_INDEX = 0;
+/** Индекс внешности игрока. Прохожие идут дальше по списку. */
+export const PLAYER_LOOK = 0;
+
+/**
+ * Наложение слоя на кадр. Слой короче кадра — остальное остаётся телом;
+ * точка в слое означает «не трогать», а не «стереть».
+ */
+function overlay(base: Frame, layer: Frame): Frame {
+  if (layer.length === 0) return base;
+  return base.map((row, y) => {
+    const patch = layer[y];
+    if (patch === undefined) return row;
+    return [...row]
+      .map((cell, x) => {
+        const over = patch[x];
+        return over === undefined || over === '.' ? cell : over;
+      })
+      .join('');
+  });
+}
 
 /**
  * Текстуры собираются из строковых раскладок прямо в рантайме: арт лежит
- * в исходниках, читается в диффах и не требует шага сборки. На арт-проходе
- * это место сменится загрузкой настоящих PNG, а ключи текстур останутся.
+ * в исходниках, читается в диффах и не требует шага сборки.
  */
 export function buildActorTextures(scene: Phaser.Scene): void {
-  const palettes: readonly ActorPalette[] = [PLAYER_PALETTE, ...CROWD_PALETTES];
+  LOOKS.forEach((look, index) => {
+    const colors = PALETTES[index]!;
 
-  palettes.forEach((palette, index) => {
-    for (const [pose, data] of Object.entries(ACTOR_FRAMES)) {
-      const key = actorTexture(index, pose as ActorPose);
+    for (const pose of POSES) {
+      const key = actorTexture(index, pose);
       if (scene.textures.exists(key)) continue;
+
+      const facing = FACING_OF[pose];
+      const data = overlay(
+        overlay(BODY[pose], HAIR[look.hair][facing]),
+        ACCESSORY[look.accessory][facing],
+      );
+
       scene.textures.generate(key, {
         data: [...data],
         pixelWidth: 1,
         pixelHeight: 1,
-        palette,
+        palette: colors,
       });
     }
   });
