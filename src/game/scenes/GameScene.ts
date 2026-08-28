@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { Store, createInitialState } from '@core/state';
-import { getActivity } from '@data/activities';
 import { getLocation } from '@data/locations';
 import { getDistrict } from '@data/world';
 import type { Action } from '@core/state';
@@ -19,9 +18,8 @@ import { renderGig } from '@ui/screens/GigScreen';
 import { renderHud } from '@ui/screens/Hud';
 import { renderJournal } from '@ui/screens/JournalScreen';
 import { renderMap } from '@ui/screens/MapScreen';
-import { ACTIVITY_MS, moteOf, renderActivity } from '@ui/screens/ActivityScene';
-import type { Mote } from '@ui/screens/ActivityScene';
-import { PLAYER_LOOK, actorTexture } from '../art';
+import { renderActivity } from '@ui/screens/ActivityScene';
+import { ActivityRunner } from './ActivityRunner';
 import { renderNav } from '@ui/screens/Nav';
 import { renderPoint } from '@ui/screens/PointScreen';
 import { renderShop } from '@ui/screens/ShopScreen';
@@ -47,8 +45,7 @@ export class GameScene extends Phaser.Scene {
   private hotspots!: Hotspots;
   private world!: WorldController;
 
-  /** Идущее дело: пока оно не кончится, состояние не меняется. */
-  private busy: { nameKey: string; mote: Mote; elapsed: number; action: Action } | null = null;
+  private readonly activity = new ActivityRunner();
 
   private ui: UiState = initialUiState();
   private dirty = true;
@@ -62,7 +59,7 @@ export class GameScene extends Phaser.Scene {
   init(data: { state?: GameState; seed?: string; genre?: GenreId }): void {
     this.start = data ?? {};
     this.ui = initialUiState();
-    this.busy = null;
+    this.activity.reset();
     this.dirty = true;
   }
 
@@ -119,8 +116,9 @@ export class GameScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     this.input$.update();
 
-    if (this.busy) {
-      this.tickActivity(delta);
+    if (this.activity.busy) {
+      const done = this.activity.tick(delta);
+      if (done) this.store.dispatch(done);
       this.render();
       return;
     }
@@ -140,21 +138,6 @@ export class GameScene extends Phaser.Scene {
     if (this.hotspots.handle(this.input$, onMiss)) this.dirty = true;
     if (this.input$.justPressed('cancel')) this.goBack();
     if (this.dirty) this.render();
-  }
-
-  /**
-   * Сцена занятия. Действие уходит в редьюсер только в конце: иначе
-   * результат появился бы под анимацией, и она превратилась бы в
-   * бессмысленную задержку поверх уже случившегося.
-   */
-  private tickActivity(delta: number): void {
-    const busy = this.busy;
-    if (!busy) return;
-    busy.elapsed += delta;
-    if (busy.elapsed < ACTIVITY_MS) return;
-
-    this.busy = null;
-    this.store.dispatch(busy.action);
   }
 
   /** Стрелки двигают фокус — то же, что делается тапом (ограничение 2.2). */
@@ -201,12 +184,7 @@ export class GameScene extends Phaser.Scene {
   };
 
   private perform = (activityId: string, action: Action): void => {
-    this.busy = {
-      nameKey: getActivity(activityId).nameKey,
-      mote: moteOf(activityId),
-      elapsed: 0,
-      action,
-    };
+    this.activity.start(activityId, action);
     this.dirty = true;
   };
 
@@ -248,17 +226,12 @@ export class GameScene extends Phaser.Scene {
 
     renderHud(this.painter, state, this.placeKey());
 
-    if (this.busy) {
+    const activity = this.activity.view();
+    if (activity) {
       // Под сценой занятия видна комната, а не список дел: список рисует
       // текст, а текст ложится поверх затемнения и спорит с карточкой.
       this.renderWorldLayer(ctx.state);
-      renderActivity(this.painter, state, {
-        nameKey: this.busy.nameKey,
-        mote: this.busy.mote,
-        progress: Math.min(1, this.busy.elapsed / ACTIVITY_MS),
-        elapsed: this.busy.elapsed,
-        actorTexture: actorTexture(PLAYER_LOOK, this.busy.elapsed % 500 < 250 ? 'downA' : 'downB'),
-      });
+      renderActivity(this.painter, state, activity);
       return;
     }
 
