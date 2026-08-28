@@ -2,7 +2,7 @@ import type { DistrictDef } from '@core/types';
 import { band, curbs, decor, fill, gateLeft, house, stairs } from './plan';
 
 const WIDTH = 640;
-const HEIGHT = 210;
+const HEIGHT = 216;
 
 /**
  * Ocean Drive: набережная. Репетируют и пишутся здесь же, в бывших
@@ -22,14 +22,14 @@ export const PIER: DistrictDef = {
   spawn: { x: 300, y: 80 },
 
   terrain: [
-    band('pavement', 66, 20, WIDTH),
-    band('road', 86, 24, WIDTH),
-    band('pavement', 110, 14, WIDTH, 10),
-    stairs(120, 124, 26, 10),
-    stairs(430, 124, 26, 10),
-    band('boardwalk', 134, 24, WIDTH),
-    band('sand', 158, 32, WIDTH),
-    band('water', 190, 20, WIDTH),
+    band('pavement', 66, 22, WIDTH),
+    band('road', 88, 24, WIDTH),
+    band('pavement', 112, 18, WIDTH, 10),
+    stairs(120, 130, 26, 10),
+    stairs(430, 130, 26, 10),
+    band('boardwalk', 140, 26, WIDTH),
+    band('sand', 166, 32, WIDTH),
+    band('water', 198, 18, WIDTH),
   ],
 
   buildings: [
@@ -62,54 +62,53 @@ export const PIER: DistrictDef = {
     decor('lamp', 148, 82),
     decor('lamp', 356, 82),
     decor('lamp', 556, 82),
-    decor('car', 240, 104, 1),
-    decor('car', 520, 106, 0),
+    decor('car', 240, 106, 1),
+    decor('car', 520, 108, 0),
 
-    // Парапет над набережной.
-    decor('bollard', 60, 122),
-    decor('bollard', 330, 122),
-    decor('bollard', 366, 122),
-    decor('bollard', 402, 122),
-    decor('bin', 268, 122),
-    decor('bench', 200, 122),
-    decor('bike', 484, 122),
+    // Парапет над набережной: всё вдоль перил, проход остаётся свободным.
+    decor('bollard', 60, 128),
+    decor('bollard', 330, 128),
+    decor('bollard', 366, 128),
+    decor('bollard', 402, 128),
+    decor('bin', 268, 128),
+    decor('bench', 200, 128),
+    decor('bike', 484, 128),
 
-    // Настил: скамьи, пальмы, велосипеды.
-    decor('bench', 236, 150),
-    decor('bench', 512, 150),
-    decor('bin', 452, 150),
-    decor('palm', 60, 148, 1),
-    decor('palm', 300, 148, 2),
-    decor('palm', 560, 148, 0),
-    decor('dog', 340, 154, 1),
-    decor('newsbox', 396, 150),
-    decor('parasol', 156, 152),
-    decor('table', 176, 150),
+    // Настил: скамьи, пальмы, кафе.
+    decor('bench', 236, 158),
+    decor('bench', 512, 158),
+    decor('bin', 452, 158),
+    decor('palm', 60, 156, 1),
+    decor('palm', 300, 156, 2),
+    decor('palm', 560, 156, 0),
+    decor('dog', 340, 162, 1),
+    decor('newsbox', 396, 158),
+    decor('parasol', 156, 160),
 
     // Пляж: полотенца, лежаки, зонты, спасательная вышка.
-    decor('lifeguard', 466, 176),
-    decor('deckchair', 56, 170, 0),
-    decor('deckchair', 84, 178, 1),
-    decor('umbrella', 70, 174, 0),
-    decor('towel', 118, 182, 0),
-    decor('deckchair', 152, 178, 2),
-    decor('umbrella', 140, 172, 1),
-    decor('towel', 214, 176, 1),
-    decor('boat', 268, 186, 0),
-    decor('surfboard', 350, 172, 1),
-    decor('towel', 384, 184, 2),
-    decor('umbrella', 418, 174, 1),
-    decor('deckchair', 440, 180, 0),
-    decor('deckchair', 496, 178, 1),
-    decor('umbrella', 520, 172, 0),
-    decor('towel', 566, 182, 3),
-    decor('crate', 604, 168, 1),
+    decor('lifeguard', 466, 184),
+    decor('deckchair', 56, 178, 0),
+    decor('deckchair', 84, 186, 1),
+    decor('umbrella', 70, 182, 0),
+    decor('towel', 118, 190, 0),
+    decor('deckchair', 152, 186, 2),
+    decor('umbrella', 140, 180, 1),
+    decor('towel', 214, 184, 1),
+    decor('boat', 268, 194, 0),
+    decor('surfboard', 350, 180, 1),
+    decor('towel', 384, 192, 2),
+    decor('umbrella', 418, 182, 1),
+    decor('deckchair', 440, 188, 0),
+    decor('deckchair', 496, 186, 1),
+    decor('umbrella', 520, 180, 0),
+    decor('towel', 566, 190, 3),
+    decor('crate', 604, 176, 1),
     decor('gull', 200, 12, 0),
     decor('gull', 340, 6, 1),
     decor('gull', 448, 16, 0),
   ],
 
-  gates: [gateLeft('boulevard', 90)],
+  gates: [gateLeft('boulevard', 92)],
   solids: curbs(WIDTH),
   points: [],
 };

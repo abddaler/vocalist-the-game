@@ -2,7 +2,7 @@ import type { DistrictDef } from '@core/types';
 import { band, curbs, decor, fill, gateLeft, gateRight, house, patch } from './plan';
 
 const WIDTH = 700;
-const HEIGHT = 160;
+const HEIGHT = 166;
 
 /**
  * Neon Boulevard: клуб, ресторан и витрины. Ночная часть карьеры целиком
@@ -21,13 +21,13 @@ export const BOULEVARD: DistrictDef = {
   spawn: { x: 340, y: 82 },
 
   terrain: [
-    band('pavement', 66, 24, WIDTH),
+    band('pavement', 66, 30, WIDTH),
     // Красная дорожка от дверей клуба вдоль всего его фасада.
-    patch('carpet', 16, 76, 132, 14),
-    band('road', 90, 28, WIDTH),
-    band('grass', 118, 12, WIDTH),
-    band('road', 130, 22, WIDTH),
-    band('pavement', 152, 8, WIDTH),
+    patch('carpet', 16, 82, 132, 14),
+    band('road', 96, 28, WIDTH),
+    band('grass', 124, 12, WIDTH),
+    band('road', 136, 22, WIDTH),
+    band('pavement', 158, 8, WIDTH),
   ],
 
   buildings: [
@@ -53,48 +53,48 @@ export const BOULEVARD: DistrictDef = {
     decor('tree', 440, 79, 0),
     decor('billboard', 198, 76, 0),
     decor('billboard', 388, 76, 2),
-    decor('lamp', 60, 88),
-    decor('lamp', 254, 88),
-    decor('lamp', 434, 88),
-    decor('lamp', 640, 88),
+    decor('lamp', 60, 94),
+    decor('lamp', 254, 94),
+    decor('lamp', 434, 94),
+    decor('lamp', 640, 94),
     // Зонт рисует и столик под собой: второй столик рядом с ним лишний.
-    decor('parasol', 268, 88),
-    decor('parasol', 300, 86),
-    decor('parasol', 332, 88),
-    decor('bench', 152, 88),
-    decor('bench', 520, 88),
-    decor('bin', 438, 88),
-    decor('bollard', 100, 89),
-    decor('bollard', 128, 89),
-    decor('newsbox', 480, 88),
+    decor('parasol', 268, 94),
+    decor('parasol', 300, 92),
+    decor('parasol', 332, 94),
+    decor('bench', 152, 94),
+    decor('bench', 520, 94),
+    decor('bin', 438, 94),
+    decor('bollard', 100, 95),
+    decor('bollard', 128, 95),
+    decor('newsbox', 480, 94),
 
     // Первая проезжая часть.
-    decor('car', 80, 112, 2),
-    decor('car', 366, 114, 0),
-    decor('car', 606, 110, 1),
+    decor('car', 80, 118, 2),
+    decor('car', 366, 120, 0),
+    decor('car', 606, 116, 1),
 
     // Зелёный островок между полосами: пальмы бульвара растут здесь.
-    decor('palm', 66, 129, 2),
-    decor('palm', 190, 128, 1),
-    decor('palm', 314, 129, 2),
-    decor('palm', 438, 128, 0),
-    decor('palm', 562, 129, 2),
-    decor('palm', 686, 128, 1),
-    decor('bush', 128, 128),
-    decor('bush', 376, 128),
-    decor('bush', 624, 128),
-    decor('flowerbed', 252, 129),
-    decor('flowerbed', 500, 129),
+    decor('palm', 66, 135, 2),
+    decor('palm', 190, 134, 1),
+    decor('palm', 314, 135, 2),
+    decor('palm', 438, 134, 0),
+    decor('palm', 562, 135, 2),
+    decor('palm', 686, 134, 1),
+    decor('bush', 128, 134),
+    decor('bush', 376, 134),
+    decor('bush', 624, 134),
+    decor('flowerbed', 252, 135),
+    decor('flowerbed', 500, 135),
 
     // Дальняя полоса и тротуар у нижнего края.
-    decor('car', 150, 148, 3),
-    decor('car', 460, 150, 2),
-    decor('lamp', 220, 158),
-    decor('lamp', 540, 158),
-    decor('bin', 380, 159),
+    decor('car', 150, 154, 3),
+    decor('car', 460, 156, 2),
+    decor('lamp', 220, 164),
+    decor('lamp', 540, 164),
+    decor('bin', 380, 165),
   ],
 
-  gates: [gateLeft('downtown', 92), gateRight('pier', WIDTH, 92)],
+  gates: [gateLeft('downtown', 98), gateRight('pier', WIDTH, 98)],
   solids: curbs(WIDTH),
   points: [
     {

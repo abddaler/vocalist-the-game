@@ -2,7 +2,7 @@ import type { DistrictDef } from '@core/types';
 import { band, curbs, decor, fill, gateRight, house, patch, stairs } from './plan';
 
 const WIDTH = 700;
-const HEIGHT = 156;
+const HEIGHT = 162;
 
 /**
  * Sunset Hills: жилой склон над городом. Здесь игрок живёт и держит себя
@@ -21,18 +21,18 @@ export const HILLS: DistrictDef = {
   spawn: { x: 300, y: 84 },
 
   terrain: [
-    band('plaza', 66, 22, WIDTH, 6),
+    band('plaza', 66, 30, WIDTH, 6),
     // Палисадники у стен, с разрывами напротив подъездов: сплошная
     // зелёная полоса во всю улицу читается газонной дорожкой, а не садом.
     patch('grass', 0, 66, 40, 9),
     patch('grass', 86, 66, 149, 9),
     patch('grass', 281, 66, 134, 9),
     patch('grass', 461, 66, 239, 9),
-    stairs(176, 88, 24, 6),
-    stairs(468, 88, 24, 6),
-    band('pavement', 94, 18, WIDTH),
-    band('road', 112, 30, WIDTH),
-    band('grass', 142, 14, WIDTH),
+    stairs(176, 96, 24, 6),
+    stairs(468, 96, 24, 6),
+    band('pavement', 102, 18, WIDTH),
+    band('road', 120, 26, WIDTH),
+    band('grass', 146, 16, WIDTH),
   ],
 
   buildings: [
@@ -67,38 +67,40 @@ export const HILLS: DistrictDef = {
     decor('bush', 624, 74),
     decor('flowerbed', 140, 75),
     decor('flowerbed', 424, 75),
-    decor('mailbox', 96, 86),
-    decor('bench', 116, 86),
-    decor('bench', 512, 86),
-    decor('planter', 250, 87),
-    decor('planter', 396, 87),
-    decor('lamp', 64, 87),
-    decor('lamp', 264, 87),
-    decor('lamp', 462, 87),
-    decor('lamp', 646, 87),
+    // Мебель — у самой кромки террасы: посреди неё она перегородила бы
+    // проход, а вдоль перил её и ставят.
+    decor('mailbox', 96, 94),
+    decor('bench', 116, 94),
+    decor('bench', 512, 94),
+    decor('planter', 250, 95),
+    decor('planter', 396, 95),
+    decor('lamp', 64, 95),
+    decor('lamp', 264, 95),
+    decor('lamp', 462, 95),
+    decor('lamp', 646, 95),
 
     // Тротуар под террасой.
-    decor('hydrant', 244, 108),
-    decor('bin', 520, 108),
-    decor('newsbox', 348, 108),
-    decor('dog', 190, 109, 0),
-    decor('bike', 340, 110),
-    decor('bench', 596, 108),
+    decor('hydrant', 244, 118),
+    decor('bin', 520, 118),
+    decor('newsbox', 348, 118),
+    decor('dog', 190, 116, 0),
+    decor('bike', 340, 119),
+    decor('bench', 596, 118),
 
     // Мостовая и газон у нижнего края.
-    decor('car', 96, 136, 0),
-    decor('car', 300, 138, 3),
-    decor('car', 610, 134, 1),
-    decor('tree', 60, 154, 1),
-    decor('tree', 214, 155, 0),
-    decor('tree', 388, 154, 2),
-    decor('tree', 556, 155, 1),
-    decor('bush', 148, 152),
-    decor('bush', 470, 152),
-    decor('bush', 650, 153),
+    decor('car', 96, 140, 0),
+    decor('car', 300, 142, 3),
+    decor('car', 610, 138, 1),
+    decor('tree', 60, 160, 1),
+    decor('tree', 214, 161, 0),
+    decor('tree', 388, 160, 2),
+    decor('tree', 556, 161, 1),
+    decor('bush', 148, 158),
+    decor('bush', 470, 158),
+    decor('bush', 650, 159),
   ],
 
-  gates: [gateRight('downtown', WIDTH, 96)],
+  gates: [gateRight('downtown', WIDTH, 104)],
   solids: curbs(WIDTH),
   points: [],
 };

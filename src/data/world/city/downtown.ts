@@ -2,7 +2,7 @@ import type { DistrictDef } from '@core/types';
 import { band, curbs, decor, fill, gateLeft, gateRight, house, stairs } from './plan';
 
 const WIDTH = 660;
-const HEIGHT = 156;
+const HEIGHT = 162;
 
 /**
  * Downtown: конторы, стекло и подземный переход, в котором начинается
@@ -21,12 +21,12 @@ export const DOWNTOWN: DistrictDef = {
   spawn: { x: 320, y: 84 },
 
   terrain: [
-    band('plaza', 66, 24, WIDTH, 9),
-    stairs(150, 90, 28, 9),
-    stairs(438, 90, 28, 9),
-    band('pavement', 99, 18, WIDTH),
-    band('road', 117, 26, WIDTH),
-    band('pavement', 143, 13, WIDTH),
+    band('plaza', 66, 30, WIDTH, 9),
+    stairs(150, 96, 28, 9),
+    stairs(438, 96, 28, 9),
+    band('pavement', 105, 18, WIDTH),
+    band('road', 123, 26, WIDTH),
+    band('pavement', 149, 13, WIDTH),
   ],
 
   buildings: [house('vocal_studio', 'studio', 104, 88, 0xa88fd0)],
@@ -42,44 +42,44 @@ export const DOWNTOWN: DistrictDef = {
 
   decor: [
     // Площадь у башен.
-    decor('tree', 68, 86, 1),
-    decor('tree', 250, 86, 2),
-    decor('tree', 440, 86, 1),
-    decor('tree', 636, 86, 0),
-    decor('flowerbed', 348, 87),
-    decor('planter', 92, 88),
-    decor('planter', 596, 88),
-    decor('bench', 120, 88),
-    decor('bench', 396, 88),
-    decor('bin', 268, 88),
-    decor('lamp', 200, 88),
-    decor('lamp', 284, 88),
-    decor('lamp', 554, 88),
+    decor('tree', 68, 80, 1),
+    decor('tree', 250, 80, 2),
+    decor('tree', 440, 80, 1),
+    decor('tree', 636, 80, 0),
+    decor('flowerbed', 348, 94),
+    decor('planter', 92, 94),
+    decor('planter', 596, 94),
+    decor('bench', 120, 94),
+    decor('bench', 396, 94),
+    decor('bin', 268, 94),
+    decor('lamp', 200, 94),
+    decor('lamp', 284, 94),
+    decor('lamp', 554, 94),
     decor('billboard', 226, 74, 1),
     decor('billboard', 556, 74, 0),
 
     // Тротуар под площадью.
-    decor('newsbox', 70, 114),
-    decor('busStop', 246, 116),
-    decor('mailbox', 116, 114),
-    decor('bike', 404, 115),
-    decor('hydrant', 496, 114),
-    decor('trafficLight', 364, 113),
-    decor('bollard', 348, 116),
-    decor('bollard', 372, 116),
+    decor('newsbox', 70, 121),
+    decor('busStop', 246, 122),
+    decor('mailbox', 116, 121),
+    decor('bike', 404, 122),
+    decor('hydrant', 496, 121),
+    decor('trafficLight', 364, 120),
+    decor('bollard', 348, 122),
+    decor('bollard', 372, 122),
 
     // Мостовая и дальний тротуар.
-    decor('car', 132, 138, 1),
-    decor('car', 470, 140, 1),
-    decor('car', 600, 136, 2),
-    decor('lamp', 84, 152),
-    decor('lamp', 320, 152),
-    decor('lamp', 588, 152),
-    decor('bin', 210, 154),
-    decor('bench', 452, 154),
+    decor('car', 132, 144, 1),
+    decor('car', 470, 146, 1),
+    decor('car', 600, 142, 2),
+    decor('lamp', 84, 158),
+    decor('lamp', 320, 158),
+    decor('lamp', 588, 158),
+    decor('bin', 210, 160),
+    decor('bench', 452, 160),
   ],
 
-  gates: [gateLeft('hills', 100), gateRight('boulevard', WIDTH, 100)],
+  gates: [gateLeft('hills', 107), gateRight('boulevard', WIDTH, 107)],
   solids: curbs(WIDTH),
   points: [
     {
