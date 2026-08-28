@@ -204,8 +204,10 @@ const boardwalk: Paint = (painter, terrain, plate) => {
 const sand: Paint = (painter, terrain, plate) => {
   const r = box(terrain, plate.rect);
   const { unit, ambience } = terrain;
-  const far = mix(0xe7d3a2, ambience.pavement, 0.2);
-  const near = mix(0xfaeec2, ambience.pavement, 0.08);
+  // Песок тоже подчиняется свету: не пригашенный, ночью он светился
+  // ярче неба и обращал пляж в подсвеченную сцену.
+  const far = scale(mix(0xe7d3a2, ambience.pavement, 0.2), ambience.light);
+  const near = scale(mix(0xfaeec2, ambience.pavement, 0.08), ambience.light);
   gradient(painter, r, far, near);
 
   // Наносы: длинные мягкие дуги вдоль берега.
@@ -244,8 +246,8 @@ const sand: Paint = (painter, terrain, plate) => {
 const water: Paint = (painter, terrain, plate) => {
   const r = box(terrain, plate.rect);
   const { unit, ambience } = terrain;
-  const shallow = mix(0x5fd3dc, ambience.skyLow, 0.22);
-  const deep = mix(0x0e5c98, ambience.skyLow, 0.2);
+  const shallow = scale(mix(0x5fd3dc, ambience.skyLow, 0.22), ambience.light);
+  const deep = scale(mix(0x0e5c98, ambience.skyLow, 0.2), ambience.light);
   gradient(painter, r, shallow, deep);
 
   // Мокрый песок над урезом: без него вода приклеена к пляжу встык.
@@ -288,7 +290,7 @@ const water: Paint = (painter, terrain, plate) => {
 const grass: Paint = (painter, terrain, plate) => {
   const r = box(terrain, plate.rect);
   const { unit, ambience } = terrain;
-  const tone = mix(0x58a54e, ambience.pavement, 0.16);
+  const tone = scale(mix(0x58a54e, ambience.pavement, 0.22), ambience.light);
   gradient(painter, r, scale(tone, 0.86), scale(tone, 1.1));
   painter.fill({ x: r.x, y: r.y, w: r.w, h: Math.max(1, Math.round(unit)) }, scale(tone, 1.3), 0.6);
   painter.fill({ x: r.x, y: r.y + r.h - 1, w: r.w, h: 1 }, scale(tone, 0.62));
@@ -302,7 +304,8 @@ const grass: Paint = (painter, terrain, plate) => {
   for (let i = 0; i < Math.round(r.w / 70); i += 1) {
     const x = r.x + noise(i * 29 + 5, r.w);
     const y = r.y + noise(i * 17 + 2, r.h);
-    painter.fill({ x, y, w: Math.round(unit), h: Math.round(unit) }, i % 2 ? 0xffe066 : 0xff8fb8, 0.85);
+    const flower = scale(i % 2 ? 0xffe066 : 0xff8fb8, ambience.light);
+    painter.fill({ x, y, w: Math.round(unit), h: Math.round(unit) }, flower, 0.85);
   }
 };
 

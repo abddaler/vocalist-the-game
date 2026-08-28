@@ -227,15 +227,41 @@ function treadmill(painter: Painter, r: Rect, dark: number): void {
   painter.fill({ x: r.x + 8, y: r.y + 4, w: 10, h: 6 }, 0x2a3038);
 }
 
+/**
+ * Спуск в подземный переход: ступени уходят в темноту, по бокам перила.
+ * Раньше это была стопка тёмных прямоугольников — на светлой площади она
+ * читалась дырой в текстуре, а не входом, в котором начинается карьера.
+ */
 function stairs(painter: Painter, r: Rect, dark: number): void {
-  const steps = 4;
+  const stone = shade(dark, 2.1);
+  const rail = 3;
+  // Устье: светлый парапет вокруг тёмного проёма.
+  painter.fill(r, stone);
+  painter.fill({ x: r.x, y: r.y, w: r.w, h: 2 }, shade(stone, 1.25));
+  const well = { x: r.x + rail, y: r.y + 2, w: r.w - rail * 2, h: r.h - 4 };
+  painter.fill(well, shade(dark, 0.45));
+
+  // Ступени: каждая ниже и темнее, сужаясь к глубине.
+  const steps = 5;
   for (let i = 0; i < steps; i += 1) {
-    const h = Math.round(r.h / steps);
+    const h = Math.max(1, Math.round(well.h / steps));
+    const inset = Math.round((i * (well.w * 0.18)) / steps);
     painter.fill(
-      { x: r.x + i * 2, y: r.y + i * h, w: r.w - i * 4, h },
-      shade(dark, 1 - i * 0.16),
+      { x: well.x + inset, y: well.y + well.h - (i + 1) * h, w: well.w - inset * 2, h },
+      shade(stone, 0.86 - i * 0.13),
+    );
+    painter.fill(
+      { x: well.x + inset, y: well.y + well.h - (i + 1) * h, w: well.w - inset * 2, h: 1 },
+      shade(stone, 1.05 - i * 0.13),
     );
   }
+
+  // Перила по обе стороны устья.
+  for (const x of [r.x + 1, r.x + r.w - rail]) {
+    painter.fill({ x, y: r.y - 5, w: 2, h: r.h + 3 }, METAL);
+    painter.fill({ x, y: r.y - 5, w: 2, h: 1 }, shade(METAL, 1.4));
+  }
+  painter.fill({ x: r.x + 1, y: r.y - 5, w: r.w - 2, h: 1 }, METAL);
 }
 
 function board(painter: Painter, r: Rect, dark: number): void {

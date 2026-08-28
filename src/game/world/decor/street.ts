@@ -147,14 +147,28 @@ const bin: Draw = (ctx) => {
 };
 
 const busStop: Draw = (ctx) => {
-  const frame = tone(ctx, 0x3f4552);
-  const glass = mix(tone(ctx, 0x8fbcd8), ctx.ambience.skyLow, 0.4);
-  box(ctx, -20, -26, 40, 3, frame);
-  box(ctx, -20, -23, 3, 23, frame);
-  box(ctx, 17, -23, 3, 23, frame);
-  box(ctx, -17, -23, 34, 18, glass, 0.45);
-  box(ctx, -14, -10, 28, 3, tone(ctx, 0xa8814a));
-  if (ctx.ambience.lampsOn) box(ctx, -16, -22, 10, 16, 0xffe6a8, 0.3);
+  const frame = tone(ctx, 0x39404d);
+  const glass = mix(tone(ctx, 0x9fd0e8), ctx.ambience.skyLow, 0.35);
+
+  // Навес с козырьком, стекло с бликом, лавка и афиша сбоку: серый ящик
+  // без них читался трансформаторной будкой.
+  box(ctx, -17, -23, 34, 17, glass, 0.5);
+  box(ctx, -15, -21, 6, 13, 0xffffff, 0.22);
+  box(ctx, -21, -27, 42, 3, frame);
+  box(ctx, -21, -24, 42, 1, scale(frame, 1.5));
+  box(ctx, -20, -24, 3, 24, frame);
+  box(ctx, 17, -24, 3, 24, frame);
+  // Лавка под навесом.
+  box(ctx, -14, -10, 27, 2.5, tone(ctx, 0xb08a52));
+  box(ctx, -14, -10, 27, 0.5, tone(ctx, 0xd8ac6a));
+  box(ctx, -13, -7.5, 2, 7.5, frame);
+  box(ctx, 10, -7.5, 2, 7.5, frame);
+  // Афиша в торце и табличка маршрута на крыше.
+  box(ctx, 13, -22, 6, 13, tone(ctx, 0xd8506a));
+  box(ctx, 14, -20, 4, 4, 0xffffff, 0.7);
+  box(ctx, -6, -30, 12, 3, tone(ctx, 0x2f7fb8));
+  box(ctx, -4, -29, 8, 1, 0xffffff, 0.8);
+  if (ctx.ambience.lampsOn) box(ctx, -17, -23, 34, 17, 0xffe6a8, 0.22);
 };
 
 const bollard: Draw = (ctx) => {
@@ -242,10 +256,18 @@ const dog: Draw = (ctx) => {
 /** Доска у стены: без неё этот город не отличить от любого другого. */
 const surfboard: Draw = (ctx) => {
   const deck = tone(ctx, [0xe86a6a, 0x5fc9e8, 0xe8c45f][ctx.variant % 3]!);
-  box(ctx, -4, -30, 8, 30, deck);
-  box(ctx, -3, -33, 6, 4, deck);
-  box(ctx, -2, -35, 4, 3, scale(deck, 1.2));
-  box(ctx, -1, -28, 2, 24, 0xffffff, 0.35);
+  // Доска сужается к обоим концам, а не стоит бруском: у бруска нет ни
+  // носа, ни хвоста, и в песке он читается коробкой.
+  const height = 32;
+  for (let i = 0; i < height; i += 1) {
+    const t = i / height;
+    const w = 8 * Math.sin(Math.PI * (0.12 + t * 0.76));
+    box(ctx, -w / 2, -i - 1, w, 1, scale(deck, 1 - Math.abs(0.5 - t) * 0.22));
+  }
+  // Стрингер и кант.
+  box(ctx, -0.5, -28, 1, 24, 0xffffff, 0.45);
+  box(ctx, -3, -26, 1, 20, scale(deck, 0.7), 0.6);
+  box(ctx, 2, -26, 1, 20, scale(deck, 1.25), 0.5);
 };
 
 export const STREET = { palm, lamp, bench, car, billboard, hydrant, planter, bin, busStop, bollard, newsbox, parasol, gull, bike, trafficLight, mailbox, dog, surfboard };

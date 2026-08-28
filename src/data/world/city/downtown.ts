@@ -21,10 +21,10 @@ export const DOWNTOWN: DistrictDef = {
   spawn: { x: 320, y: 84 },
 
   terrain: [
-    band('plaza', 66, 24, WIDTH, 7),
-    stairs(150, 90, 28, 7),
-    stairs(438, 90, 28, 7),
-    band('pavement', 97, 20, WIDTH),
+    band('plaza', 66, 24, WIDTH, 9),
+    stairs(150, 90, 28, 9),
+    stairs(438, 90, 28, 9),
+    band('pavement', 99, 18, WIDTH),
     band('road', 117, 26, WIDTH),
     band('pavement', 143, 13, WIDTH),
   ],
@@ -59,14 +59,14 @@ export const DOWNTOWN: DistrictDef = {
     decor('billboard', 556, 74, 0),
 
     // Тротуар под площадью.
-    decor('newsbox', 70, 113),
-    decor('busStop', 246, 115),
-    decor('mailbox', 116, 113),
-    decor('bike', 404, 114),
-    decor('hydrant', 496, 113),
-    decor('trafficLight', 364, 112),
-    decor('bollard', 348, 115),
-    decor('bollard', 372, 115),
+    decor('newsbox', 70, 114),
+    decor('busStop', 246, 116),
+    decor('mailbox', 116, 114),
+    decor('bike', 404, 115),
+    decor('hydrant', 496, 114),
+    decor('trafficLight', 364, 113),
+    decor('bollard', 348, 116),
+    decor('bollard', 372, 116),
 
     // Мостовая и дальний тротуар.
     decor('car', 132, 138, 1),
@@ -79,7 +79,7 @@ export const DOWNTOWN: DistrictDef = {
     decor('bench', 452, 154),
   ],
 
-  gates: [gateLeft('hills', 99), gateRight('boulevard', WIDTH, 99)],
+  gates: [gateLeft('hills', 100), gateRight('boulevard', WIDTH, 100)],
   solids: curbs(WIDTH),
   points: [
     {

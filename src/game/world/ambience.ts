@@ -112,7 +112,9 @@ const BY_DISTRICT: Readonly<Record<DistrictId, Partial<Ambience>>> = {
   downtown: { light: 1.0 },
   boulevard: { light: 1.04 },
   // Побережье не холодное: соль и дымка — это блёклость, а не синева.
-  pier: { light: 1.04, wash: 0xffe6c0, washAlpha: 0.07 },
+  // Общий тон район не подменяет: подменённым он съедал закат, ради
+  // которого время суток и заведено.
+  pier: { light: 1.04 },
 };
 
 export function ambienceOf(slot: Slot, district: DistrictId): Ambience {

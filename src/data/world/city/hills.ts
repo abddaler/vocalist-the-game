@@ -22,8 +22,12 @@ export const HILLS: DistrictDef = {
 
   terrain: [
     band('plaza', 66, 22, WIDTH, 6),
-    // Палисадник у самых стен: деревья растут в земле, а не в плитке.
-    patch('grass', 0, 66, WIDTH, 9),
+    // Палисадники у стен, с разрывами напротив подъездов: сплошная
+    // зелёная полоса во всю улицу читается газонной дорожкой, а не садом.
+    patch('grass', 0, 66, 40, 9),
+    patch('grass', 86, 66, 149, 9),
+    patch('grass', 281, 66, 134, 9),
+    patch('grass', 461, 66, 239, 9),
     stairs(176, 88, 24, 6),
     stairs(468, 88, 24, 6),
     band('pavement', 94, 18, WIDTH),
@@ -46,7 +50,7 @@ export const HILLS: DistrictDef = {
 
   decor: [
     // Палисадник на террасе.
-    decor('palm', 12, 75, 2),
+    decor('palm', 16, 75, 2),
     decor('tree', 106, 74, 0),
     decor('palm', 202, 75, 1),
     decor('tree', 300, 74, 1),
@@ -54,14 +58,14 @@ export const HILLS: DistrictDef = {
     decor('tree', 478, 74, 2),
     decor('palm', 570, 75, 0),
     decor('tree', 668, 74, 0),
-    decor('bush', 60, 74),
+    decor('bush', 100, 74),
     decor('bush', 154, 74),
     decor('bush', 250, 74),
     decor('bush', 344, 74),
     decor('bush', 438, 74),
     decor('bush', 528, 74),
     decor('bush', 624, 74),
-    decor('flowerbed', 132, 75),
+    decor('flowerbed', 140, 75),
     decor('flowerbed', 424, 75),
     decor('mailbox', 96, 86),
     decor('bench', 116, 86),
