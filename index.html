@@ -54,31 +54,65 @@
           0 18px 48px -12px rgba(0, 0, 0, 0.9);
       }
 
-      /* Узкий портрет: 16:9 в такой экран не помещается читаемо. */
+      /*
+       * Узкий портрет: 16:9 в такую ширину помещается мелко, но играть
+       * можно. Раньше игра здесь пряталась целиком под просьбой повернуть
+       * телефон — а с блокировкой поворота это тупик, из которого не
+       * выйти. Теперь это подсказка снизу, которая гаснет сама.
+       */
       #rotate {
+        position: fixed;
+        left: 50%;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        display: none;
+        max-width: 90vw;
+        padding: 8px 14px;
+        border: 1px solid #5c3f9c;
+        border-radius: 999px;
+        text-align: center;
+        font: 13px/1.3 system-ui, sans-serif;
+        color: #2ee6c8;
+        background: rgba(26, 16, 48, 0.92);
+        z-index: 10;
+        transition: opacity 0.4s;
+      }
+
+      body.portrait-hint #rotate {
+        display: block;
+      }
+      body.hint-fading #rotate {
+        opacity: 0;
+      }
+
+      /*
+       * Если игра не завелась, чёрный экран не объясняет ничего ни
+       * игроку, ни тому, кто будет чинить. Пусть скажет, что случилось.
+       */
+      #boot {
         position: fixed;
         inset: 0;
         display: none;
-        place-items: center;
-        padding: 0 32px;
+        place-content: center;
+        padding: 24px;
         text-align: center;
-        font: 16px/1.5 system-ui, sans-serif;
-        color: #8fbf7f;
-        background: #08090c;
-        z-index: 10;
+        font: 14px/1.6 ui-monospace, monospace;
+        color: #ff9a9a;
+        background: #1a1030;
+        z-index: 20;
+        white-space: pre-wrap;
+        word-break: break-word;
       }
 
-      body.portrait-blocked #rotate {
+      body.boot-failed #boot {
         display: grid;
-      }
-      body.portrait-blocked #game {
-        visibility: hidden;
       }
     </style>
   </head>
   <body>
     <div id="game"></div>
     <div id="rotate"></div>
+    <div id="boot"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

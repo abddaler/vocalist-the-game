@@ -9,6 +9,7 @@ import type { Ambience } from './ambience';
 import { drawFarSide, drawGround, drawSky, drawStrip, drawWash } from './backdrop';
 import type { Backdrop } from './backdrop';
 import { drawInhabitants } from './inhabitants';
+import type { WorldCanvas } from './WorldCanvas';
 import { drawRoom, interiorLight } from './interior';
 import { facade, sign } from './facade';
 import { cameraOffset, nearest } from './movement';
@@ -23,7 +24,11 @@ const DOOR_SHUT = 0x181c26;
 const DOOR_OPEN = 0xffd98f;
 
 export interface WorldViewParams {
+  /** Живая часть мира: она рисуется поверх подложки. */
   readonly painter: Painter;
+  /** Небо и дальний план: они лежат под подложкой. */
+  readonly back: Painter;
+  readonly canvas: WorldCanvas;
   readonly hotspots: Hotspots;
   readonly state: GameState;
   readonly position: WorldPoint;
@@ -60,51 +65,23 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
   const outdoors = layer.district !== null;
   const ambience = outdoors ? ambienceOf(layer.slot, layer.district) : interiorLight(layer.slot);
 
-  if (outdoors) {
-    drawOutside(painter, layer, camera, ambience, layer.district);
-  } else {
-    painter.fill({ x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height }, COLORS.bg);
-    drawRoom(
-      painter,
-      toScreen({ x: 0, y: 0, w: layer.bounds.width, h: layer.bounds.height }),
-      layer.floor,
-      ambience,
-      layer.slot,
-    );
-  }
+  // Неподвижная часть — земля и дома — запекается в текстуру размером с
+  // район и в кадре только сдвигается. Небо и дальний план остаются
+  // живыми: они едут не со скоростью мира.
+  params.canvas.show();
+  params.canvas.ensure(
+    `${layer.district ?? 'room'}:${layer.slot}:${layer.bounds.width}x${layer.bounds.height}`,
+    Math.round(layer.bounds.width * WORLD_ZOOM),
+    Math.round(layer.bounds.height * WORLD_ZOOM),
+    (into) => paintStatic(into, layer, ambience),
+  );
 
-  for (const block of layer.blocks) {
-    const rect = toScreen(block.rect);
-    if (rect.x > CONTENT.width || rect.x + rect.w < 0) continue;
+  if (outdoors) drawOutside(params.back, layer, camera, ambience, layer.district);
 
-    if (!block.nameKey) {
-      painter.fill(rect, outdoors ? scale(block.color, ambience.light) : block.color);
-      painter.stroke(rect, COLORS.border);
-      continue;
-    }
-
-    // Вывеска по центру дома: у верхнего ряда дверь снизу, у нижнего —
-    // сверху, и надпись у любого края попадала бы под проём.
-    // Вывеска крупная и по центру фасада: при такой близкой камере она
-    // и есть главный опознавательный знак дома.
-    const board = { x: rect.x + 6, y: rect.y + Math.round(rect.h / 2) - 9, w: rect.w - 12, h: 17 };
-    const door = block.doorRect ? toScreen(block.doorRect) : null;
-    facade(painter, {
-      rect,
-      color: block.color,
-      kind: block.kind,
-      seed: block.nameKey,
-      ambience,
-      reserved: door ? [board, door] : [board],
-      door,
-    });
-
-    sign(painter, board, block.color, ambience);
-    painter.label(board, t(block.nameKey), {
-      align: 'center',
-      color: ambience.lampsOn ? scale(block.color, 2.2) : COLORS.text,
-    });
-  }
+  params.canvas.place(
+    -camera.x * WORLD_ZOOM,
+    CONTENT.y - camera.y * WORLD_ZOOM,
+  );
 
   const focus = nearest(position, layer.targets, REACH);
 
@@ -144,7 +121,81 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
   }
 }
 
-/** Небо, дальний план и мостовая — всё, что лежит под домами. */
+/**
+ * Всё, что не двигается: мостовая и дома. Рисуется в координатах района,
+ * а не экрана, поэтому камеры здесь нет вовсе.
+ */
+function paintStatic(painter: Painter, layer: Layer, ambience: Ambience): void {
+  const size = {
+    w: Math.round(layer.bounds.width * WORLD_ZOOM),
+    h: Math.round(layer.bounds.height * WORLD_ZOOM),
+  };
+  const toTexture = (rect: WorldRect): Rect => ({
+    x: Math.round(rect.x * WORLD_ZOOM),
+    y: Math.round(rect.y * WORLD_ZOOM),
+    w: Math.round(rect.w * WORLD_ZOOM),
+    h: Math.round(rect.h * WORLD_ZOOM),
+  });
+
+  const outdoors = layer.district !== null;
+  if (outdoors) {
+    const skyH = Math.round(STREET.skyH * WORLD_ZOOM);
+    const area: Backdrop = {
+      sky: { x: 0, y: 0, w: size.w, h: skyH },
+      road: { x: 0, y: skyH, w: size.w, h: size.h - skyH },
+      kerbY: layer.kerb * WORLD_ZOOM,
+      cameraX: 0,
+      worldWidth: size.w,
+      unit: WORLD_ZOOM,
+      ground: layer.ground,
+    };
+    drawGround(painter, area, ambience);
+    if (layer.strip) {
+      drawStrip(painter, area, ambience, {
+        y: layer.strip.y * WORLD_ZOOM,
+        h: layer.strip.h * WORLD_ZOOM,
+        kind: layer.strip.kind,
+      });
+    }
+  } else {
+    const room = { x: 0, y: 0, w: layer.bounds.width, h: layer.bounds.height };
+    drawRoom(painter, toTexture(room), layer.floor, ambience, layer.slot);
+  }
+
+  for (const block of layer.blocks) {
+    const rect = toTexture(block.rect);
+    if (!block.nameKey) {
+      painter.fill(rect, outdoors ? scale(block.color, ambience.light) : block.color);
+      painter.stroke(rect, COLORS.border);
+      continue;
+    }
+
+    // Вывеска крупная и по центру фасада: при такой близкой камере она
+    // и есть главный опознавательный знак дома.
+    const board = { x: rect.x + 6, y: rect.y + Math.round(rect.h / 2) - 9, w: rect.w - 12, h: 17 };
+    const door = block.doorRect ? toTexture(block.doorRect) : null;
+    facade(painter, {
+      rect,
+      color: block.color,
+      kind: block.kind,
+      seed: block.nameKey,
+      ambience,
+      reserved: door ? [board, door] : [board],
+      door,
+    });
+
+    sign(painter, board, block.color, ambience);
+    // Цвет подписи — из палитры, а не из цвета дома: каждый новый цвет
+    // текста заводит собственный атлас шрифта, и на прогулке по городу
+    // их набегали десятки.
+    painter.label(board, t(block.nameKey), {
+      align: 'center',
+      color: ambience.lampsOn ? COLORS.money : COLORS.text,
+    });
+  }
+}
+
+/** Небо и дальний план: они едут медленнее мира, поэтому не запекаются. */
 function drawOutside(
   painter: Painter,
   layer: Layer,
@@ -172,14 +223,6 @@ function drawOutside(
 
   drawSky(painter, area, ambience);
   drawFarSide(painter, area, ambience, district);
-  drawGround(painter, area, ambience);
-  if (layer.strip) {
-    drawStrip(painter, area, ambience, {
-      y: CONTENT.y + (layer.strip.y - camera.y) * WORLD_ZOOM,
-      h: layer.strip.h * WORLD_ZOOM,
-      kind: layer.strip.kind,
-    });
-  }
 }
 
 function drawTarget(

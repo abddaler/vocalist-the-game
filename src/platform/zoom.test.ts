@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseZoom, isPortraitBlocked } from './zoom';
+import { chooseZoom, isNarrowPortrait } from './zoom';
 
 describe('подбор зума', () => {
   it('берёт целое, когда округление почти ничего не стоит', () => {
@@ -36,14 +36,14 @@ describe('подбор зума', () => {
 });
 
 describe('узкий портрет', () => {
-  it('на телефоне в портрете просит повернуть', () => {
-    expect(isPortraitBlocked(390, 844)).toBe(true);
-    expect(isPortraitBlocked(360, 640)).toBe(true);
+  it('на телефоне в портрете подсказку показывает', () => {
+    expect(isNarrowPortrait(390, 844)).toBe(true);
+    expect(isNarrowPortrait(360, 640)).toBe(true);
   });
 
   it('в ландшафте и на широких экранах не мешает', () => {
-    expect(isPortraitBlocked(844, 390)).toBe(false);
-    expect(isPortraitBlocked(1920, 1080)).toBe(false);
-    expect(isPortraitBlocked(768, 1024)).toBe(false);
+    expect(isNarrowPortrait(844, 390)).toBe(false);
+    expect(isNarrowPortrait(1920, 1080)).toBe(false);
+    expect(isNarrowPortrait(768, 1024)).toBe(false);
   });
 });

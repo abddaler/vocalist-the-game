@@ -8,17 +8,48 @@ export interface SaveAdapter {
   remove(key: string): Promise<void>;
 }
 
+/**
+ * Обращение к localStorage не всегда безобидно: браузер с запретом
+ * хранилища (Safari с заблокированными куками, часть встроенных
+ * вебвью) бросает SecurityError на само чтение свойства, а не
+ * возвращает null. Необязательная цепочка от этого не спасает, и игра
+ * падала на первом же сохранении.
+ *
+ * Поэтому доступ обёрнут: без хранилища игра просто не помнит прогон.
+ */
+function storage(): Storage | null {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export class LocalStorageSaveAdapter implements SaveAdapter {
   async read(key: string): Promise<string | null> {
-    return globalThis.localStorage?.getItem(key) ?? null;
+    try {
+      return storage()?.getItem(key) ?? null;
+    } catch {
+      return null;
+    }
   }
 
   async write(key: string, value: string): Promise<void> {
-    globalThis.localStorage?.setItem(key, value);
+    // Место может кончиться в приватном режиме: потеря сохранения — не
+    // повод ронять игру.
+    try {
+      storage()?.setItem(key, value);
+    } catch {
+      /* пусто */
+    }
   }
 
   async remove(key: string): Promise<void> {
-    globalThis.localStorage?.removeItem(key);
+    try {
+      storage()?.removeItem(key);
+    } catch {
+      /* пусто */
+    }
   }
 }
 

@@ -17,8 +17,8 @@ import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from './config';
 /** Доля от вписывающегося зума, ниже которой целое округление невыгодно. */
 const INTEGER_EFFICIENCY = 0.8;
 
-/** Ýже этого в портрете игру уже не прочитать — просим повернуть телефон. */
-const MIN_READABLE_WIDTH = INTERNAL_WIDTH;
+/** Ýже этого в портрете картинка мельчает настолько, что стоит подсказать. */
+const HINT_WIDTH = INTERNAL_WIDTH;
 
 export function chooseZoom(windowWidth: number, windowHeight: number): number {
   const fit = Math.min(windowWidth / INTERNAL_WIDTH, windowHeight / INTERNAL_HEIGHT);
@@ -29,6 +29,11 @@ export function chooseZoom(windowWidth: number, windowHeight: number): number {
   return integer / fit >= INTEGER_EFFICIENCY ? integer : fit;
 }
 
-export function isPortraitBlocked(windowWidth: number, windowHeight: number): boolean {
-  return windowHeight > windowWidth && windowWidth < MIN_READABLE_WIDTH;
+/**
+ * Стоит ли предложить повернуть телефон. Именно предложить: играть можно
+ * и так. Прежняя версия прятала игру целиком, и при включённой блокировке
+ * поворота выйти из этого экрана было нельзя вовсе.
+ */
+export function isNarrowPortrait(windowWidth: number, windowHeight: number): boolean {
+  return windowHeight > windowWidth && windowWidth < HINT_WIDTH;
 }

@@ -26,7 +26,7 @@ import { renderShop } from '@ui/screens/ShopScreen';
 import { initialUiState } from '@ui/screens/types';
 import type { RenderContext, UiState } from '@ui/screens/types';
 import { buildActorTextures } from '../art';
-import { WorldController, renderWorld } from '../world';
+import { WorldCanvas, WorldController, renderWorld } from '../world';
 
 /**
  * Игровая сцена: состояние, ввод и отрисовка. Ходьба, живность и переходы
@@ -39,11 +39,18 @@ import { WorldController, renderWorld } from '../world';
 export class GameScene extends Phaser.Scene {
   private store!: Store;
   private input$!: InputController;
-  /** Мир и интерфейс — разные слои: внутри одного порядок не разделить. */
+  /**
+   * Слои снизу вверх: небо, запечённая подложка района, живая часть мира,
+   * интерфейс. Внутри одного слоя порядок не разделить — вся заливка
+   * попадает в одну Graphics, — поэтому подложке нужен свой контейнер.
+   */
+  private backPainter!: Painter;
   private worldPainter!: Painter;
   private painter!: Painter;
   private hotspots!: Hotspots;
   private world!: WorldController;
+  /** Запечённая подложка района: она и делает кадр дешёвым. */
+  private canvas!: WorldCanvas;
 
   private readonly activity = new ActivityRunner();
 
@@ -85,8 +92,12 @@ export class GameScene extends Phaser.Scene {
     });
     this.world.reset();
 
+    const backLayer = this.add.container(0, 0);
+    const canvasLayer = this.add.container(0, 0);
     const worldLayer = this.add.container(0, 0);
     const uiLayer = this.add.container(0, 0);
+    this.backPainter = new Painter(this, backLayer);
+    this.canvas = new WorldCanvas(this, canvasLayer);
     this.worldPainter = new Painter(this, worldLayer);
     this.painter = new Painter(this, uiLayer);
     this.hotspots = new Hotspots();
@@ -108,6 +119,8 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.markDirty);
       this.input$.destroy();
+      this.canvas.destroy();
+      this.backPainter.destroy();
       this.worldPainter.destroy();
       this.painter.destroy();
     });
@@ -190,13 +203,14 @@ export class GameScene extends Phaser.Scene {
 
   private render(): void {
     this.dirty = false;
+    this.backPainter.clear();
     this.worldPainter.clear();
     this.painter.clear();
     this.hotspots.clear();
 
     const state = this.store.getState();
-    // Фон — в нижнем слое: из верхнего он закрасил бы весь мир.
-    this.worldPainter.fill({ x: 0, y: 0, w: SCREEN.width, h: SCREEN.height }, COLORS.bg);
+    // Фон — в самом нижнем слое: из верхнего он закрасил бы весь мир.
+    this.backPainter.fill({ x: 0, y: 0, w: SCREEN.width, h: SCREEN.height }, COLORS.bg);
 
     const ctx: RenderContext = {
       painter: this.painter,
@@ -257,6 +271,8 @@ export class GameScene extends Phaser.Scene {
     renderWorld(
       {
         painter: this.worldPainter,
+        back: this.backPainter,
+        canvas: this.canvas,
         hotspots: this.hotspots,
         state,
         position: this.world.position,

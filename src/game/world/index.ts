@@ -8,3 +8,4 @@ export { spawnCrowd, updateCrowd } from './Crowd';
 export type { CrowdActor } from './Crowd';
 export { facingFrom, lookFor } from './actorSprite';
 export type { Facing } from './actorSprite';
+export { WorldCanvas } from './WorldCanvas';

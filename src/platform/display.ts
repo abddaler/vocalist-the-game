@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import { chooseZoom, isPortraitBlocked } from './zoom';
+import { chooseZoom, isNarrowPortrait } from './zoom';
 
 /**
  * Привязка подбора зума к движку и к окну. Сама политика — в zoom.ts.
@@ -7,12 +7,12 @@ import { chooseZoom, isPortraitBlocked } from './zoom';
  * модуль в platform/ (ограничение 2.5).
  */
 export interface DisplayHooks {
-  /** Вызывается, когда экран становится слишком узким и обратно. */
-  onPortraitBlock?: (blocked: boolean) => void;
+  /** Вызывается, когда экран становится узким портретом и обратно. */
+  onNarrowPortrait?: (narrow: boolean) => void;
 }
 
 export function attachDisplay(game: Phaser.Game, hooks: DisplayHooks = {}): () => void {
-  let blocked: boolean | null = null;
+  let narrow: boolean | null = null;
 
   const apply = (): void => {
     // visualViewport точнее innerWidth на мобильных: он учитывает панели
@@ -23,10 +23,10 @@ export function attachDisplay(game: Phaser.Game, hooks: DisplayHooks = {}): () =
 
     game.scale.setZoom(chooseZoom(width, height));
 
-    const next = isPortraitBlocked(width, height);
-    if (next !== blocked) {
-      blocked = next;
-      hooks.onPortraitBlock?.(next);
+    const next = isNarrowPortrait(width, height);
+    if (next !== narrow) {
+      narrow = next;
+      hooks.onNarrowPortrait?.(next);
     }
   };
 
