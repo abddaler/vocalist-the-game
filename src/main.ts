@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '@platform/config';
-import { attachIntegerScaling } from '@platform/display';
+import { attachDisplay } from '@platform/display';
 import { BootScene } from '@game/scenes/BootScene';
 import { GameScene } from '@game/scenes/GameScene';
+import { t } from '@ui/i18n';
 
 /**
  * Внутреннее разрешение фиксировано 480x270 (раздел 2, ограничение 3).
- * Режим NONE + ручной целочисленный зум: см. platform/display.ts.
+ * Режим NONE плюс подбор зума вручную: см. platform/display.ts.
  */
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -22,7 +23,15 @@ const game = new Phaser.Game({
     mode: Phaser.Scale.NONE,
     autoCenter: Phaser.Scale.NO_CENTER,
   },
+  input: { activePointers: 2 },
   scene: [BootScene, GameScene],
 });
 
-attachIntegerScaling(game);
+const rotateHint = document.getElementById('rotate');
+if (rotateHint) rotateHint.textContent = t('ui.rotate');
+
+attachDisplay(game, {
+  onPortraitBlock: (blocked) => {
+    document.body.classList.toggle('portrait-blocked', blocked);
+  },
+});

@@ -15,8 +15,13 @@ export default defineConfig({
       '@sim': r('./src/sim'),
     },
   },
+  server: { host: true },
+  preview: { host: true },
   build: {
-    target: 'es2022',
+    // Телефоны живут дольше десктопов: es2022 отсекает Safari 15 и
+    // добрую часть андроидных вебвью, на которых страница просто
+    // не парсится и остаётся чёрной.
+    target: ['es2019', 'safari13', 'chrome80'],
     outDir: 'dist',
   },
   test: {

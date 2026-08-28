@@ -4,6 +4,7 @@
  */
 export const COMMON_RU = {
   'app.title': 'Vocalist Sim',
+  'ui.rotate': 'Поверните телефон горизонтально',
   'ui.district': 'Район',
   'ui.character': 'Персонаж',
   'ui.journal': 'Журнал',

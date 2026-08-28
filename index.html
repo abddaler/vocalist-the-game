@@ -2,8 +2,13 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
     <meta name="color-scheme" content="dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" href="data:," />
     <title>Vocalist Sim</title>
     <style>
@@ -11,8 +16,22 @@
       body {
         margin: 0;
         height: 100%;
+        /* dvh учитывает исчезающие панели мобильных браузеров; для тех,
+           кто его не знает, выше остаётся 100%. */
+        height: 100dvh;
         overflow: hidden;
         background: #08090c;
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        /* Игра управляется тапами: двойной тап не должен зумить страницу,
+           а долгое нажатие — выделять текст и подсвечивать элементы. */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        -webkit-user-select: none;
       }
 
       /* Поля вокруг игры — не пустота, а рамка: тёплый свет сцены из-за кулис. */
@@ -34,10 +53,32 @@
           0 0 34px -6px rgba(143, 191, 127, 0.18),
           0 18px 48px -12px rgba(0, 0, 0, 0.9);
       }
+
+      /* Узкий портрет: 16:9 в такой экран не помещается читаемо. */
+      #rotate {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-items: center;
+        padding: 0 32px;
+        text-align: center;
+        font: 16px/1.5 system-ui, sans-serif;
+        color: #8fbf7f;
+        background: #08090c;
+        z-index: 10;
+      }
+
+      body.portrait-blocked #rotate {
+        display: grid;
+      }
+      body.portrait-blocked #game {
+        visibility: hidden;
+      }
     </style>
   </head>
   <body>
     <div id="game"></div>
+    <div id="rotate"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
