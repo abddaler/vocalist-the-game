@@ -1,0 +1,61 @@
+# Сборка и публикация среза на GitHub Pages.
+#
+# В репозитории лежит исходник, а не сборка: index.html в корне — точка
+# входа для Vite и ссылается на TypeScript, который браузер выполнить не
+# может. Поэтому Pages должен отдавать dist/, собранный здесь.
+#
+# ВАЖНО: в настройках репозитория Settings → Pages источник должен быть
+# «GitHub Actions», а не «Deploy from a branch».
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/vocalist-sim-vertical-slice-ja7cj7
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Параллельные деплои душим, но текущий не отменяем: недокрученный
+# деплой оставил бы страницу в промежуточном состоянии.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Сломанное публиковать нельзя. build сам прогоняет tsc,
+      # поэтому отдельного шага типов здесь нет.
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
