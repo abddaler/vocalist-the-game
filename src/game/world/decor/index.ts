@@ -39,6 +39,7 @@ const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
   mailbox: 14,
   dog: 11,
   surfboard: 7,
+  towel: 0,
   table: 20,
   tree: 16,
   bush: 12,
@@ -79,6 +80,8 @@ const FOOTPRINT: Readonly<Record<DecorKind, readonly [number, number]>> = {
   // живности читается как баг, а не как препятствие.
   dog: [0, 0],
   surfboard: [5, 3],
+  // Полотенце лежит плашмя: через него переступают.
+  towel: [0, 0],
   table: [16, 8],
   tree: [7, 4],
   bush: [10, 5],

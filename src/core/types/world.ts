@@ -97,6 +97,7 @@ export type DecorKind =
   | 'mailbox'
   | 'dog'
   | 'surfboard'
+  | 'towel'
   | 'table';
 
 export interface DecorDef {

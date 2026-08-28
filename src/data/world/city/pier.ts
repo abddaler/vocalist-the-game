@@ -2,7 +2,7 @@ import type { DistrictDef } from '@core/types';
 import { band, curbs, decor, fill, gateLeft, house, stairs } from './plan';
 
 const WIDTH = 640;
-const HEIGHT = 192;
+const HEIGHT = 210;
 
 /**
  * Ocean Drive: набережная. Репетируют и пишутся здесь же, в бывших
@@ -24,12 +24,12 @@ export const PIER: DistrictDef = {
   terrain: [
     band('pavement', 66, 20, WIDTH),
     band('road', 86, 24, WIDTH),
-    band('pavement', 110, 12, WIDTH, 10),
-    stairs(120, 122, 26, 10),
-    stairs(430, 122, 26, 10),
-    band('boardwalk', 132, 26, WIDTH),
-    band('sand', 158, 22, WIDTH),
-    band('water', 180, 12, WIDTH),
+    band('pavement', 110, 14, WIDTH, 10),
+    stairs(120, 124, 26, 10),
+    stairs(430, 124, 26, 10),
+    band('boardwalk', 134, 24, WIDTH),
+    band('sand', 158, 32, WIDTH),
+    band('water', 190, 20, WIDTH),
   ],
 
   buildings: [
@@ -66,34 +66,44 @@ export const PIER: DistrictDef = {
     decor('car', 520, 106, 0),
 
     // Парапет над набережной.
-    decor('bollard', 60, 120),
-    decor('bollard', 330, 120),
-    decor('bollard', 366, 120),
-    decor('bollard', 402, 120),
-    decor('bin', 268, 120),
-    decor('bench', 200, 120),
-    decor('bike', 484, 120),
+    decor('bollard', 60, 122),
+    decor('bollard', 330, 122),
+    decor('bollard', 366, 122),
+    decor('bollard', 402, 122),
+    decor('bin', 268, 122),
+    decor('bench', 200, 122),
+    decor('bike', 484, 122),
 
-    // Настил: скамьи, чайки, велосипеды.
-    decor('bench', 236, 146),
-    decor('bench', 512, 146),
-    decor('bin', 452, 146),
-    decor('palm', 60, 144, 1),
-    decor('palm', 300, 144, 2),
-    decor('palm', 560, 144, 0),
-    decor('dog', 306, 150, 1),
-    decor('newsbox', 396, 146),
+    // Настил: скамьи, пальмы, велосипеды.
+    decor('bench', 236, 150),
+    decor('bench', 512, 150),
+    decor('bin', 452, 150),
+    decor('palm', 60, 148, 1),
+    decor('palm', 300, 148, 2),
+    decor('palm', 560, 148, 0),
+    decor('dog', 340, 154, 1),
+    decor('newsbox', 396, 150),
+    decor('parasol', 156, 152),
+    decor('table', 176, 150),
 
-    // Пляж.
-    decor('lifeguard', 466, 172),
+    // Пляж: полотенца, лежаки, зонты, спасательная вышка.
+    decor('lifeguard', 466, 176),
     decor('deckchair', 56, 170, 0),
-    decor('deckchair', 82, 174, 1),
-    decor('umbrella', 70, 172, 0),
-    decor('deckchair', 146, 174, 2),
-    decor('umbrella', 418, 172, 1),
-    decor('deckchair', 450, 174, 0),
-    decor('boat', 244, 176, 0),
-    decor('surfboard', 350, 170, 1),
+    decor('deckchair', 84, 178, 1),
+    decor('umbrella', 70, 174, 0),
+    decor('towel', 118, 182, 0),
+    decor('deckchair', 152, 178, 2),
+    decor('umbrella', 140, 172, 1),
+    decor('towel', 214, 176, 1),
+    decor('boat', 268, 186, 0),
+    decor('surfboard', 350, 172, 1),
+    decor('towel', 384, 184, 2),
+    decor('umbrella', 418, 174, 1),
+    decor('deckchair', 440, 180, 0),
+    decor('deckchair', 496, 178, 1),
+    decor('umbrella', 520, 172, 0),
+    decor('towel', 566, 182, 3),
+    decor('crate', 604, 168, 1),
     decor('gull', 200, 12, 0),
     decor('gull', 340, 6, 1),
     decor('gull', 448, 16, 0),
