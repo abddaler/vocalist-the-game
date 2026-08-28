@@ -73,7 +73,7 @@ export class MenuScene extends Phaser.Scene {
     this.painter.fill({ x: 0, y: 0, w: SCREEN.width, h: SCREEN.height }, COLORS.bg);
     this.painter.label({ x: 0, y: 30, w: SCREEN.width, h: 20 }, t('app.title'), {
       align: 'center',
-      size: 'large',
+      scale: 2,
       color: COLORS.text,
     });
     this.painter.label({ x: 0, y: 52, w: SCREEN.width, h: 14 }, t('app.subtitle'), {

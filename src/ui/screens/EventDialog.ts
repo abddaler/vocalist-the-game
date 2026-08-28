@@ -24,7 +24,6 @@ export function renderEventDialog(ctx: RenderContext): void {
   painter.panel(dialog, COLORS.panel, COLORS.accent);
 
   painter.label({ x: dialog.x + 10, y: dialog.y + 8, w: dialog.w - 20, h: 14 }, t(event.titleKey), {
-    size: 'normal',
     color: COLORS.accent,
   });
 

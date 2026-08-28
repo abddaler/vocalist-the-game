@@ -16,7 +16,7 @@ export function renderFinale(ctx: RenderContext, onRestart: () => void): void {
   painter.fill({ x: 0, y: 0, w: SCREEN.width, h: SCREEN.height }, COLORS.bg);
   painter.label({ x: 0, y: 22, w: SCREEN.width, h: 18 }, t('finale.title'), {
     align: 'center',
-    size: 'large',
+    scale: 2,
     color: COLORS.text,
   });
   painter.label({ x: 0, y: 44, w: SCREEN.width, h: 14 }, t(club ? 'finale.club' : 'finale.noClub'), {

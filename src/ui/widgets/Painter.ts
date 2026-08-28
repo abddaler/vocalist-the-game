@@ -1,12 +1,20 @@
 import Phaser from 'phaser';
-import { COLORS, FONT, hex } from '../theme';
+import { FONT_METRICS, pixelFont, wrapText } from '../font';
+import { COLORS } from '../theme';
 import type { Rect } from './Hotspots';
 
 export interface TextStyle {
-  size?: keyof typeof FONT | undefined;
+  /** Кратность растрового шрифта. Только целая: дробная его размывает. */
+  scale?: 1 | 2 | undefined;
   color?: number | undefined;
   align?: 'left' | 'center' | 'right' | undefined;
   wrapWidth?: number | undefined;
+}
+
+/** Надпись на экране: вызывающему нужна только её ширина под подложку. */
+export interface Label {
+  readonly width: number;
+  readonly height: number;
 }
 
 /**
@@ -16,11 +24,11 @@ export interface TextStyle {
  */
 export class Painter {
   private readonly shapes: Phaser.GameObjects.Graphics;
-  private readonly texts: Phaser.GameObjects.Text[] = [];
+  private readonly texts: Phaser.GameObjects.BitmapText[] = [];
   private readonly images: Phaser.GameObjects.Image[] = [];
 
   /**
-   * Все Text ложатся поверх общей Graphics внутри одного контейнера,
+   * Весь текст ложится поверх общей Graphics внутри одного контейнера,
    * поэтому порядок вызовов слои не разделяет. Разделяют контейнеры:
    * мир и интерфейс рисуются разными Painter'ами.
    */
@@ -76,17 +84,23 @@ export class Painter {
     this.stroke(rect, COLORS.border);
   }
 
-  text(x: number, y: number, value: string, style: TextStyle = {}): Phaser.GameObjects.Text {
-    const object = this.scene.add.text(x, y, value, {
-      fontFamily: FONT.family,
-      fontSize: FONT[style.size ?? 'small'],
-      color: hex(style.color ?? COLORS.text),
-      align: style.align ?? 'left',
-      ...(style.wrapWidth ? { wordWrap: { width: style.wrapWidth, useAdvancedWrap: true } } : {}),
-    });
-    object.setResolution(1);
-    if (style.align === 'center') object.setOrigin(0.5, 0);
-    else if (style.align === 'right') object.setOrigin(1, 0);
+  text(x: number, y: number, value: string, style: TextStyle = {}): Phaser.GameObjects.BitmapText {
+    const body = style.wrapWidth ? wrapText(value, style.wrapWidth).join('\n') : value;
+    const object = this.scene.add.bitmapText(
+      Math.round(x),
+      Math.round(y),
+      pixelFont(this.scene, style.color ?? COLORS.text),
+      body,
+      FONT_METRICS.height * (style.scale ?? 1),
+    );
+
+    if (style.align === 'center') {
+      object.setOrigin(0.5, 0);
+      object.setCenterAlign();
+    } else if (style.align === 'right') {
+      object.setOrigin(1, 0);
+      object.setRightAlign();
+    }
 
     this.layer.add(object);
     this.texts.push(object);
@@ -95,15 +109,15 @@ export class Painter {
 
   /**
    * Текст, вписанный по вертикали в прямоугольник.
-   * Возвращает объект, чтобы вызывающий мог узнать реальную ширину:
-   * подложку под надпись иначе не подогнать. Порядок вызовов при этом
+   * Возвращает надпись, чтобы вызывающий мог узнать её реальную ширину:
+   * подложку под текст иначе не подогнать. Порядок вызовов при этом
    * не важен — фигуры всё равно рисуются под текстом.
    */
-  label(rect: Rect, value: string, style: TextStyle = {}): Phaser.GameObjects.Text {
+  label(rect: Rect, value: string, style: TextStyle = {}): Label {
     const object = this.text(rect.x, rect.y, value, style);
     const align = style.align ?? 'left';
     const x = align === 'center' ? rect.x + rect.w / 2 : align === 'right' ? rect.x + rect.w : rect.x;
-    object.setPosition(x, rect.y + (rect.h - object.height) / 2);
+    object.setPosition(Math.round(x), Math.round(rect.y + (rect.h - object.height) / 2));
     return object;
   }
 

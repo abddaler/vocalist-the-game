@@ -49,18 +49,10 @@ export const COLORS = {
 } as const;
 
 /**
- * Канвас физически 480x270 пикселей и растягивается до размера окна,
- * поэтому надпись занимает ровно столько настоящих пикселей, сколько
- * задано здесь: разрешение текстуры на это не влияет. Восьмипиксельный
- * текст на телефоне превращался в 11 CSS-пикселей рваного растра —
- * отсюда десятка как основа.
+ * Шрифт здесь не задаётся: интерфейс набран растровым шрифтом из
+ * ui/font — системный моноширинный сглаживался, а канвас 480x270
+ * растягивается до окна, и это сглаживание расползалось в кашу.
  */
-export const FONT = {
-  family: 'monospace',
-  small: '10px',
-  normal: '12px',
-  large: '16px',
-} as const;
 
 /** Цвет полоски связок по значению (раздел 6). */
 export function healthColor(vocalHealth: number): number {
@@ -70,4 +62,3 @@ export function healthColor(vocalHealth: number): number {
   return COLORS.healthCritical;
 }
 
-export const hex = (color: number): string => `#${color.toString(16).padStart(6, '0')}`;
