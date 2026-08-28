@@ -49,6 +49,7 @@ export function facade(painter: Painter, params: FacadeParams): void {
   // Карниз и цоколь: без верха и низа стена не читается как дом.
   painter.fill({ x: rect.x, y: rect.y, w: rect.w, h: 4 }, scale(wall, 1.3));
   painter.fill({ x: rect.x, y: rect.y + 4, w: rect.w, h: 1 }, scale(wall, 0.6));
+  drawRoof(painter, params, wall);
   painter.fill(
     { x: rect.x, y: rect.y + rect.h - 4, w: rect.w, h: 4 },
     scale(wall, 0.62),
@@ -83,17 +84,56 @@ export function facade(painter: Painter, params: FacadeParams): void {
         ? WINDOW_LIT[Math.floor(roll * 977) % WINDOW_LIT.length]!
         : mix(scale(color, ambience.light * 0.45), ambience.skyMid, 0.35);
 
-      painter.fill({ x: x - 1, y: y - 1, w: w + 2, h: 11 }, scale(wall, 0.72));
+      painter.fill({ x: x - 2, y: y - 2, w: w + 4, h: 13 }, scale(wall, 0.72));
+      painter.fill({ x: x - 2, y: y - 2, w: w + 4, h: 1 }, scale(wall, 1.2));
       painter.fill(box, glass);
       // Переплёт: без него окно — просто светлое пятно.
       painter.fill({ x, y: y + 4, w, h: 1 }, scale(glass, 0.7));
+      painter.fill({ x: x + Math.floor(w / 2), y, w: 1, h: 9 }, scale(glass, 0.75));
+      // Балконная решётка под каждым вторым окном.
+      if (row % 2 === 1) {
+        painter.fill({ x: x - 3, y: y + 11, w: w + 6, h: 1 }, scale(wall, 1.35));
+        for (let i = 0; i <= w + 4; i += 3) {
+          painter.fill({ x: x - 2 + i, y: y + 11, w: 1, h: 3 }, scale(wall, 1.15));
+        }
+      }
       if (lit) {
-        painter.fill({ x: x - 2, y: y + 9, w: w + 4, h: 3 }, glass, 0.22);
+        painter.fill({ x: x - 3, y: y + 9, w: w + 6, h: 4 }, glass, 0.22);
       }
     }
   }
 
   if (params.shopfront) drawShopfront(painter, params, wall);
+}
+
+/**
+ * Крыша: парапет, антенны и блоки кондиционеров. Ровная линия крыш
+ * читается как забор; десяток торчащих мелочей превращает её в город.
+ */
+function drawRoof(painter: Painter, params: FacadeParams, wall: number): void {
+  const { rect, seed, ambience } = params;
+  const metal = scale(0x9aa0ac, ambience.light);
+
+  const count = Math.max(2, Math.floor(rect.w / 34));
+  for (let i = 0; i < count; i += 1) {
+    const roll = hash(`${seed}:roof:${i}`, 19);
+    const x = Math.round(rect.x + 8 + (i * (rect.w - 16)) / count);
+    if (roll < 0.34) {
+      // Антенна.
+      painter.fill({ x, y: rect.y - 9, w: 1, h: 9 }, metal);
+      painter.fill({ x: x - 2, y: rect.y - 9, w: 5, h: 1 }, metal);
+      painter.fill({ x: x - 1, y: rect.y - 6, w: 3, h: 1 }, metal);
+    } else if (roll < 0.68) {
+      // Кондиционер.
+      painter.fill({ x, y: rect.y - 6, w: 9, h: 6 }, metal);
+      painter.fill({ x: x + 1, y: rect.y - 5, w: 7, h: 1 }, scale(metal, 0.7));
+      painter.fill({ x: x + 1, y: rect.y - 3, w: 7, h: 1 }, scale(metal, 0.7));
+    } else {
+      // Бак или надстройка.
+      painter.fill({ x, y: rect.y - 5, w: 12, h: 5 }, scale(wall, 1.15));
+      painter.fill({ x, y: rect.y - 5, w: 12, h: 1 }, scale(wall, 1.45));
+    }
+  }
 }
 
 /** Первый этаж: витрина во всю ширину и маркиза над ней. */

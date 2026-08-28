@@ -71,6 +71,18 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 160, y: 134 },
   ], 2000, 18),
 
+  walker('hills_7', 'hills', 'passer_11', [
+    { x: 420, y: 74 },
+    { x: 560, y: 92 },
+    { x: 380, y: 96 },
+  ], 1100, 30),
+  stander('hills_8', 'hills', 'staff_apron', { x: 486, y: 76 }),
+  walker('hills_9', 'hills', 'passer_12', [
+    { x: 640, y: 92 },
+    { x: 460, y: 88 },
+  ], 1900, 22),
+  stander('hills_10', 'hills', 'passer_8', { x: 214, y: 94 }),
+
   // — Даунтаун: поток служащих, у перехода всегда кто-то стоит —
   walker('dt_1', 'downtown', 'passer_7', [
     { x: 40, y: 124 },
@@ -96,6 +108,18 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 470, y: 122 },
   ], 1600, 22),
 
+  walker('dt_8', 'downtown', 'passer_6', [
+    { x: 90, y: 96 },
+    { x: 300, y: 90 },
+    { x: 520, y: 94 },
+  ], 500, 34),
+  stander('dt_9', 'downtown', 'passer_12', { x: 152, y: 92 }),
+  stander('dt_10', 'downtown', 'passer_11', { x: 440, y: 76 }),
+  walker('dt_11', 'downtown', 'passer_3', [
+    { x: 600, y: 74 },
+    { x: 600, y: 96 },
+  ], 1500, 24),
+
   // — Бульвар: очередь в клуб, гуляющие, кто-то курит у входа —
   walker('blvd_1', 'boulevard', 'passer_5', [
     { x: 60, y: 130 },
@@ -120,6 +144,15 @@ export const CROWD: readonly CrowdMember[] = [
   ], 1300),
   named('blogger', 'boulevard', { x: 316, y: 140 }, 'npc.blogger'),
 
+  stander('blvd_9', 'boulevard', 'passer_9', { x: 268, y: 88 }),
+  stander('blvd_10', 'boulevard', 'passer_12', { x: 306, y: 88 }),
+  walker('blvd_11', 'boulevard', 'passer_11', [
+    { x: 660, y: 74 },
+    { x: 480, y: 94 },
+    { x: 620, y: 96 },
+  ], 900, 28),
+  stander('blvd_12', 'boulevard', 'staff_apron', { x: 226, y: 76 }),
+
   // — Причал: грузчики, курьер, чайки и их люди —
   walker('pier_1', 'pier', 'passer_9', [
     { x: 80, y: 146 },
@@ -136,6 +169,13 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 300, y: 132 },
     { x: 540, y: 124 },
   ], 900, 28),
+
+  walker('pier_6', 'pier', 'passer_12', [
+    { x: 60, y: 94 },
+    { x: 240, y: 90 },
+  ], 2100, 20),
+  stander('pier_7', 'pier', 'passer_11', { x: 470, y: 76 }),
+  stander('pier_8', 'pier', 'passer_6', { x: 486, y: 82 }),
 
   // — квартира: соседка за стеной не нужна, дом должен быть пустым —
 
@@ -176,7 +216,7 @@ export const CROWD: readonly CrowdMember[] = [
   named('engineer', 'record_studio', { x: 180, y: 55 }, 'npc.engineer'),
 
   // — магазин одежды —
-  stander('shop_clerk', 'clothes_shop', 'passer_6', { x: 118, y: 55 }),
+  stander('shop_clerk', 'clothes_shop', 'staff_apron', { x: 118, y: 55 }),
   walker('shopper', 'clothes_shop', 'passer_1', [
     { x: 60, y: 85 },
     { x: 180, y: 81 },
@@ -191,7 +231,7 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 60, y: 88 },
     { x: 180, y: 88 },
   ], 400, 34),
-  stander('gym_coach', 'gym', 'passer_9', { x: 200, y: 68 }),
+  stander('gym_coach', 'gym', 'staff_coach', { x: 200, y: 68 }),
 ];
 
 export function crowdIn(locationId: string): CrowdMember[] {

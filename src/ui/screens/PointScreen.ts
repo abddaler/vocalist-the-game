@@ -7,7 +7,7 @@ import { imageLevel } from '@core/systems/outfit';
 import { doActivity } from '@core/state';
 import type { ActivityDef, RoomPointDef, VenueDef } from '@core/types';
 import { t } from '../i18n';
-import { CONTENT, LAYOUT } from '../theme';
+import { COLORS, CONTENT, LAYOUT } from '../theme';
 import { renderList } from '../widgets/List';
 import type { ListRow } from '../widgets/List';
 import type { RenderContext, ScreenId } from './types';
@@ -18,9 +18,9 @@ export function renderPoint(ctx: RenderContext): void {
   const point = findPoint(ui.locationId, ui.pointId);
   const back: ScreenId = ui.locationId ? 'room' : 'world';
 
-  const header = { x: 0, y: CONTENT.y, w: CONTENT.width, h: 18 };
-  painter.label({ x: LAYOUT.padding + 60, y: header.y, w: header.w - 130, h: header.h },
-    point ? t(point.nameKey) : '', { align: 'center' });
+  const header = { x: LAYOUT.padding + 62, y: CONTENT.y + 1, w: CONTENT.width - 130, h: LAYOUT.minTap };
+  painter.plate(header, COLORS.panelDeep, COLORS.accent);
+  painter.label(header, point ? t(point.nameKey) : '', { align: 'center', color: COLORS.accent });
 
   const backRect = { x: LAYOUT.padding, y: CONTENT.y + 1, w: 52, h: LAYOUT.minTap };
   const backSpot = {

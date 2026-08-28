@@ -43,6 +43,8 @@ export const BOULEVARD: DistrictDef = {
     decor('lamp', 250, 71),
     decor('lamp', 434, 71),
     decor('lamp', 620, 71),
+    decor('table', 268, 92),
+    decor('table', 306, 92),
     decor('parasol', 268, 98),
     decor('parasol', 306, 98),
     decor('bench', 148, 97),

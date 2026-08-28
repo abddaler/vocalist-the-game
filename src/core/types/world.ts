@@ -56,7 +56,13 @@ export type DecorKind =
   | 'gull'
   | 'rug'
   | 'poster'
-  | 'shelf';
+  | 'shelf'
+  | 'bike'
+  | 'trafficLight'
+  | 'mailbox'
+  | 'dog'
+  | 'surfboard'
+  | 'table';
 
 export interface DecorDef {
   readonly kind: DecorKind;

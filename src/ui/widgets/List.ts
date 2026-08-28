@@ -50,12 +50,17 @@ export function renderList(
     hotspots.add(hotspot);
 
     const focused = hotspots.isFocused(hotspot);
-    painter.panel(
-      rect,
-      focused ? COLORS.panelAlt : COLORS.panel,
-      !row.enabled ? COLORS.disabled : focused ? COLORS.borderFocus : COLORS.border,
-    );
-    painter.label({ x: rect.x + 5, y: rect.y, w: rect.w * 0.55, h: rect.h }, row.title, {
+    const border = !row.enabled
+      ? COLORS.disabled
+      : focused
+        ? COLORS.borderFocus
+        : row.accent
+          ? COLORS.accent
+          : COLORS.border;
+    painter.plate(rect, focused ? COLORS.panelAlt : COLORS.panel, border, focused);
+    // Полоска у левого края: строка получает вес и цвет своего типа.
+    painter.fill({ x: rect.x + 2, y: rect.y + 3, w: 2, h: rect.h - 6 }, border);
+    painter.label({ x: rect.x + 9, y: rect.y, w: rect.w * 0.55, h: rect.h }, row.title, {
       color: !row.enabled ? COLORS.textMuted : row.accent ? COLORS.accent : COLORS.text,
     });
     painter.label(

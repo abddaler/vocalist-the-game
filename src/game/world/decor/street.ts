@@ -1,48 +1,15 @@
-import type { DecorDef, DecorKind } from '@core/types';
-import type { Painter } from '@ui/widgets/Painter';
-import { mix, scale } from './ambience';
-import type { Ambience } from './ambience';
+import { box, tone } from './kit';
+import type { Draw } from './kit';
+import { mix, scale } from '../ambience';
 
 /**
- * Уличная мелочь. Рисуется процедурами, а не спрайтами: предметов много,
- * а различаются они парой размеров, так что таблица из четырнадцати
- * коротких функций дешевле четырнадцати текстур.
- *
- * У всех одна точка опоры — низ по центру, как у персонажа: тогда
- * предмет и человек сортируются по одной координате и правильно
- * заслоняют друг друга.
+ * Уличная мелочь: пальмы, фонари, машины, щиты, светофор, велосипед,
+ * почтовый ящик, чайки. Всё рисуется процедурами по точке опоры.
  */
-export interface DecorContext {
-  readonly painter: Painter;
-  readonly ambience: Ambience;
-  /** Экранные координаты точки опоры. */
-  readonly x: number;
-  readonly y: number;
-  readonly variant: number;
-  /** Во сколько раз мир крупнее экранного пикселя. */
-  readonly unit: number;
-}
-
-type Draw = (ctx: DecorContext) => void;
-
-const box = (ctx: DecorContext, dx: number, dy: number, w: number, h: number, color: number, alpha = 1): void =>
-  ctx.painter.fill(
-    {
-      x: Math.round(ctx.x + dx * ctx.unit),
-      y: Math.round(ctx.y + dy * ctx.unit),
-      w: Math.max(1, Math.round(w * ctx.unit)),
-      h: Math.max(1, Math.round(h * ctx.unit)),
-    },
-    color,
-    alpha,
-  );
-
-/** Цвет под текущим светом: ночью мелочь не должна светиться сама. */
-const tone = (ctx: DecorContext, color: number): number => scale(color, ctx.ambience.light);
-
 const PALM_HEIGHTS = [30, 38, 46];
 const CAR_BODIES = [0xd9534f, 0x4f7fd9, 0xe8c46a, 0xe8e8ee];
-
+const BILLBOARD_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f];
+const PARASOL_COLORS = [0xe8705f, 0xe8c25f, 0x5fb8a8];
 const palm: Draw = (ctx) => {
   const height = PALM_HEIGHTS[ctx.variant % PALM_HEIGHTS.length]!;
   const trunk = tone(ctx, 0x7a5f42);
@@ -115,8 +82,6 @@ const car: Draw = (ctx) => {
   box(ctx, -18, -8, 3, 2, back);
 };
 
-const BILLBOARD_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f];
-
 const billboard: Draw = (ctx) => {
   const post = tone(ctx, 0x4a4450);
   box(ctx, -2, -14, 2, 14, post);
@@ -169,21 +134,6 @@ const busStop: Draw = (ctx) => {
   if (ctx.ambience.lampsOn) box(ctx, -16, -22, 10, 16, 0xffe6a8, 0.3);
 };
 
-const crate: Draw = (ctx) => {
-  const size = ctx.variant % 2 === 0 ? 20 : 15;
-  const wood = tone(ctx, ctx.variant % 2 === 0 ? 0xb08a52 : 0x8a9f6a);
-  const stack = ctx.variant % 2 === 0 ? 2 : 1;
-  for (let i = 0; i < stack; i += 1) {
-    const w = size - i * 4;
-    const y = -size * (i + 1) + i * 2;
-    box(ctx, -w / 2, y, w, size, scale(wood, 1 - i * 0.12));
-    box(ctx, -w / 2, y, w, 2, scale(wood, 1.3));
-    box(ctx, -w / 2, y + size / 2 - 1, w, 2, scale(wood, 0.7));
-    box(ctx, -w / 2, y, 2, size, scale(wood, 0.8));
-    box(ctx, w / 2 - 2, y, 2, size, scale(wood, 0.8));
-  }
-};
-
 const bollard: Draw = (ctx) => {
   const iron = tone(ctx, 0x4a4f58);
   box(ctx, -3, -10, 6, 10, iron);
@@ -196,8 +146,6 @@ const newsbox: Draw = (ctx) => {
   box(ctx, -4, -14, 8, 6, tone(ctx, 0xd8d4c8));
   box(ctx, -6, -3, 12, 3, scale(shell, 0.7));
 };
-
-const PARASOL_COLORS = [0xe8705f, 0xe8c25f, 0x5fb8a8];
 
 const parasol: Draw = (ctx) => {
   const cloth = tone(ctx, PARASOL_COLORS[ctx.variant % PARASOL_COLORS.length]!);
@@ -218,98 +166,63 @@ const gull: Draw = (ctx) => {
   box(ctx, -1, 0, 2, 1, body);
 };
 
-const RUG_COLORS = [0x6f3a4c, 0x3a5a6f, 0x6f6238];
-
-/** Ковёр: пятно цвета на полу, от которого комната перестаёт быть коробкой. */
-const rug: Draw = (ctx) => {
-  const base = tone(ctx, RUG_COLORS[ctx.variant % RUG_COLORS.length]!);
-  box(ctx, -26, -9, 52, 18, base);
-  box(ctx, -24, -7, 48, 14, scale(base, 1.2));
-  box(ctx, -20, -5, 40, 10, base);
-  box(ctx, -14, -3, 28, 6, scale(base, 1.35));
+/** Велосипед у столба: примета живой улицы, а не декорации. */
+const bike: Draw = (ctx) => {
+  const frame = tone(ctx, 0x3f6f9a);
+  const tyre = tone(ctx, 0x22242a);
+  const wheel = (cx: number): void => {
+    box(ctx, cx - 5, -11, 10, 2, tyre);
+    box(ctx, cx - 5, -3, 10, 2, tyre);
+    box(ctx, cx - 6, -10, 2, 8, tyre);
+    box(ctx, cx + 4, -10, 2, 8, tyre);
+  };
+  wheel(-8);
+  wheel(8);
+  box(ctx, -8, -8, 17, 2, frame);
+  box(ctx, -2, -14, 2, 8, frame);
+  box(ctx, -5, -15, 8, 2, frame);
+  box(ctx, 6, -16, 5, 2, frame);
+  box(ctx, 8, -15, 2, 6, frame);
 };
 
-const POSTER_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f, 0x8f5fe8];
-
-/** Афиша на стене: у певицы дома должны висеть чужие концерты. */
-const poster: Draw = (ctx) => {
-  const art = tone(ctx, POSTER_ART[ctx.variant % POSTER_ART.length]!);
-  box(ctx, -9, -22, 18, 22, tone(ctx, 0x2a2430));
-  box(ctx, -8, -21, 16, 20, art);
-  box(ctx, -6, -18, 12, 8, 0x000000, 0.28);
-  box(ctx, -6, -8, 12, 2, 0xffffff, 0.45);
-  box(ctx, -6, -5, 8, 2, 0xffffff, 0.3);
+const trafficLight: Draw = (ctx) => {
+  const post = tone(ctx, 0x3a3f4a);
+  box(ctx, -1, -34, 3, 34, post);
+  box(ctx, -4, -46, 9, 13, tone(ctx, 0x22242c));
+  const on = ctx.ambience.lampsOn ? 1 : 0.75;
+  box(ctx, -2, -44, 5, 3, 0xe84a4a, on);
+  box(ctx, -2, -40, 5, 3, 0xe8c44a, on * 0.5);
+  box(ctx, -2, -36, 5, 3, 0x4ae87a, on * 0.5);
+  if (ctx.ambience.lampsOn) box(ctx, -7, -47, 15, 16, 0xe84a4a, 0.12);
 };
 
-/** Полка: пара досок с мелочью, чтобы стена не была пустой. */
-const shelf: Draw = (ctx) => {
-  const wood = tone(ctx, 0x8a6a44);
-  box(ctx, -14, -14, 28, 3, wood);
-  box(ctx, -14, -4, 28, 3, wood);
-  box(ctx, -11, -20, 4, 6, tone(ctx, 0xc95f5f));
-  box(ctx, -6, -19, 3, 5, tone(ctx, 0x5fa8c9));
-  box(ctx, 2, -21, 5, 7, tone(ctx, 0xc9a85f));
-  box(ctx, -10, -10, 6, 6, tone(ctx, 0x6a8f5f));
-  box(ctx, 3, -9, 8, 5, tone(ctx, 0xa88fc9));
+const mailbox: Draw = (ctx) => {
+  const blue = tone(ctx, 0x3a5f9a);
+  box(ctx, -6, -16, 13, 13, blue);
+  box(ctx, -6, -18, 13, 3, scale(blue, 1.25));
+  box(ctx, -4, -13, 9, 2, scale(blue, 0.6));
+  box(ctx, -3, -3, 3, 3, tone(ctx, 0x2a2c34));
+  box(ctx, 2, -3, 3, 3, tone(ctx, 0x2a2c34));
 };
 
-const DRAW: Readonly<Record<DecorKind, Draw>> = {
-  palm,
-  lamp,
-  bench,
-  car,
-  billboard,
-  hydrant,
-  planter,
-  bin,
-  busStop,
-  crate,
-  bollard,
-  newsbox,
-  parasol,
-  gull,
-  rug,
-  poster,
-  shelf,
+/** Собака на выгуле: единственное, что здесь двигалось бы само. */
+const dog: Draw = (ctx) => {
+  const fur = tone(ctx, ctx.variant % 2 === 0 ? 0xa8814a : 0x585048);
+  box(ctx, -5, -5, 9, 3, fur);
+  box(ctx, 3, -7, 4, 3, fur);
+  box(ctx, 5, -8, 2, 1, scale(fur, 0.7));
+  box(ctx, -6, -7, 2, 2, fur);
+  box(ctx, -4, -2, 2, 2, fur);
+  box(ctx, 2, -2, 2, 2, fur);
 };
 
-/** Насколько широкую тень отбрасывает предмет. Ноль — тени нет. */
-const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
-  palm: 10,
-  lamp: 6,
-  bench: 22,
-  car: 34,
-  billboard: 9,
-  hydrant: 8,
-  planter: 14,
-  bin: 11,
-  busStop: 38,
-  crate: 20,
-  bollard: 7,
-  newsbox: 12,
-  parasol: 24,
-  gull: 0,
-  rug: 0,
-  poster: 0,
-  shelf: 0,
+/** Доска у стены: без неё этот город не отличить от любого другого. */
+const surfboard: Draw = (ctx) => {
+  const deck = tone(ctx, [0xe86a6a, 0x5fc9e8, 0xe8c45f][ctx.variant % 3]!);
+  box(ctx, -4, -30, 8, 30, deck);
+  box(ctx, -3, -33, 6, 4, deck);
+  box(ctx, -2, -35, 4, 3, scale(deck, 1.2));
+  box(ctx, -1, -28, 2, 24, 0xffffff, 0.35);
 };
 
-export function drawDecor(
-  painter: Painter,
-  item: DecorDef,
-  screenX: number,
-  screenY: number,
-  ambience: Ambience,
-  unit = 1,
-): void {
-  DRAW[item.kind]({
-    painter,
-    ambience,
-    x: screenX,
-    y: screenY,
-    variant: item.variant ?? 0,
-    unit,
-  });
-}
-
-export const shadowWidth = (kind: DecorKind): number => SHADOW_WIDTH[kind];
+export const STREET = { palm, lamp, bench, car, billboard, hydrant, planter, bin, busStop, bollard, newsbox, parasol, gull, bike, trafficLight, mailbox, dog, surfboard };

@@ -1,8 +1,13 @@
 /**
  * Палитры пиксель-арта. Ключи совпадают с символами в раскладках кадров:
- * 1 контур, 2 кожа, 3 тень кожи, 4 волосы, 5 блик волос, 6 одежда,
- * 7 тень одежды, 8 блик одежды, 9 брюки, A обувь, B акцент, C тень
- * акцента, D глаза.
+ * 1 контур, 2 кожа, 3 тень кожи, 4 волосы, 5 блик волос, 6 ткань,
+ * 7 её тень, 8 вторая ткань, 9 низ (брюки, юбка), A обувь, B акцент,
+ * C тень акцента, D тёмная деталь (брови, рот), E белок глаза, F блик
+ * кожи.
+ *
+ * Тени и блики выводятся из основных цветов, а не задаются: у пятнадцати
+ * человек в толпе они всё равно были бы одним и тем же сдвигом яркости,
+ * зато вручную их легко рассогласовать.
  *
  * Phaser берёт цвет по символу, а точку и пробел пропускает, поэтому
  * прозрачность отдельным цветом задавать не надо.
@@ -30,6 +35,8 @@ export interface Colors {
   readonly skin: string;
   readonly hair: string;
   readonly cloth: string;
+  /** Вторая ткань: подкладка пиджака, вставка на худи, рубашка под пиджаком. */
+  readonly trim: string;
   readonly legs: string;
   readonly shoes: string;
   readonly accent: string;
@@ -55,13 +62,13 @@ export function palette(colors: Colors): ActorPalette {
     5: shift(colors.hair, 1.35),
     6: colors.cloth,
     7: shift(colors.cloth, 0.7),
-    8: shift(colors.cloth, 1.25),
+    8: colors.trim,
     9: colors.legs,
     A: colors.shoes,
     B: colors.accent,
     C: shift(colors.accent, 0.68),
-    D: '#241f2c',
-    E: EMPTY,
-    F: EMPTY,
+    D: '#2b2331',
+    E: '#f4f0f8',
+    F: shift(colors.skin, 1.12),
   };
 }
