@@ -131,10 +131,20 @@ describe('город', () => {
   });
 
   it('прохожие ходят по земле района, а не сквозь стену и не по воде', () => {
+    // Проверяется весь отрезок, а не только его концы: маршрут с двумя
+    // хорошими концами может пересекать обрыв ровно посередине, и тогда
+    // прохожий проходит сквозь подпорную стенку.
     for (const district of CITY) {
       for (const member of crowdIn(district.id)) {
-        for (const point of member.path) {
-          expect(canStand(district, point.x, point.y), `${member.id} @ ${point.x},${point.y}`).toBe(true);
+        for (let i = 0; i < member.path.length; i += 1) {
+          const from = member.path[i]!;
+          const to = member.path[(i + 1) % member.path.length]!;
+          const steps = Math.ceil(Math.hypot(to.x - from.x, to.y - from.y));
+          for (let k = 0; k <= steps; k += 1) {
+            const x = from.x + ((to.x - from.x) * k) / Math.max(1, steps);
+            const y = from.y + ((to.y - from.y) * k) / Math.max(1, steps);
+            expect(canStand(district, x, y), `${member.id} @ ${Math.round(x)},${Math.round(y)}`).toBe(true);
+          }
         }
       }
     }

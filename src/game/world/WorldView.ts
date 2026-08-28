@@ -4,24 +4,21 @@ import { STREET } from '@data/world';
 import { COLORS, CONTENT, LAYOUT, WORLD_ZOOM } from '@ui/theme';
 import type { Hotspots, Rect } from '@ui/widgets/Hotspots';
 import type { Painter } from '@ui/widgets/Painter';
-import { ambienceOf, mix, scale } from './ambience';
+import { ambienceOf, scale } from './ambience';
 import type { Ambience } from './ambience';
 import { drawFarSide, drawSky, drawTerrain, drawWash } from './backdrop';
 import type { Backdrop } from './backdrop';
 import { drawInhabitants } from './inhabitants';
+import { drawTarget, promptFor } from './marks';
 import type { WorldCanvas } from './WorldCanvas';
 import { drawRoom, interiorLight } from './interior';
 import { facade, sign } from './facade';
 import { cameraOffset, nearest } from './movement';
-import { drawProp } from './props';
 import type { Layer } from './layers';
 import { REACH } from './targets';
 import type { WorldTarget } from './targets';
 import type { CrowdActor } from './Crowd';
 import type { Facing } from './actorSprite';
-
-const DOOR_SHUT = 0x181c26;
-const DOOR_OPEN = 0xffd98f;
 
 export interface WorldViewParams {
   /** Живая часть мира: она рисуется поверх подложки. */
@@ -207,70 +204,6 @@ function drawOutside(
   drawSky(painter, area, ambience);
   drawFarSide(painter, area, ambience, district);
   painter.clip(null);
-}
-
-function drawTarget(
-  painter: Painter,
-  target: WorldTarget,
-  rect: Rect,
-  active: boolean,
-  layer: Layer,
-  ambience: Ambience,
-): void {
-  if (target.kind === 'gate') {
-    drawGate(painter, rect, active, ambience);
-    return;
-  }
-
-  const color = layer.pointColors.get(target.id);
-  if (target.prop && color !== undefined) {
-    drawProp(painter, target.prop, rect, color, active);
-    if (active) painter.stroke(rect, COLORS.borderFocus);
-  } else {
-    // Дверь — тёмный проём с подсветкой над ним, а не яркая метка.
-    painter.fill(rect, DOOR_SHUT);
-    painter.fill({ x: rect.x + 1, y: rect.y + 1, w: rect.w - 2, h: 2 }, scale(DOOR_SHUT, 2.4));
-    if (ambience.lampsOn && !target.locked) {
-      painter.fill({ x: rect.x - 3, y: rect.y - 2, w: rect.w + 6, h: rect.h + 4 }, DOOR_OPEN, 0.14);
-    }
-    painter.stroke(rect, active ? COLORS.borderFocus : COLORS.border);
-  }
-
-  // Подпись только у того, к которому подошли: узнаваемая мебель в
-  // подписи не нуждается, а лес ярлыков забивает комнату.
-  if (target.kind === 'point' && active && rect.w >= 20) {
-    const caption = { x: rect.x - 40, y: rect.y - 13, w: rect.w + 80, h: 12 };
-    const label = painter.label(caption, t(target.nameKey), {
-      align: 'center',
-      color: COLORS.accent,
-    });
-    const width = Math.ceil(label.width) + 6;
-    painter.fill(
-      { x: rect.x + rect.w / 2 - width / 2, y: caption.y, w: width, h: caption.h },
-      COLORS.bg,
-      0.78,
-    );
-  }
-}
-
-/** Створ в соседний район: арка со стрелкой, а не невидимая грань экрана. */
-function drawGate(painter: Painter, rect: Rect, active: boolean, ambience: Ambience): void {
-  const stone = scale(0x8f94a8, ambience.light);
-  painter.fill(rect, mix(stone, ambience.skyLow, 0.35));
-  painter.fill({ x: rect.x, y: rect.y, w: rect.w, h: 3 }, scale(stone, 1.3));
-  painter.fill(
-    { x: rect.x + 2, y: rect.y + 5, w: rect.w - 4, h: rect.h - 9 },
-    mix(ambience.asphalt, ambience.skyMid, 0.3),
-  );
-  painter.stroke(rect, active ? COLORS.borderFocus : scale(stone, 0.6));
-}
-
-/** У выхода и створа собственная подпись, у двери и точки — глагол перед названием. */
-function promptFor(target: WorldTarget): string {
-  if (target.kind === 'exit') return t(target.nameKey);
-  if (target.kind === 'gate') return `${t('ui.goTo')}: ${t(target.nameKey)}`;
-  if (target.locked) return `${t(target.nameKey)} — ${t('ui.closedNow')}`;
-  return `${t(target.kind === 'door' ? 'ui.enter' : 'ui.open')}: ${t(target.nameKey)}`;
 }
 
 /** Точка мира под тапом: экранные координаты обратно в мировые. */

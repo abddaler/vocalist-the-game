@@ -76,7 +76,7 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 560, y: 86 },
     { x: 380, y: 80 },
   ], 1100, 30),
-  stander('hills_8', 'hills', 'staff_apron', { x: 486, y: 84 }),
+  stander('hills_8', 'hills', 'staff_apron', { x: 160, y: 86 }),
   walker('hills_9', 'hills', 'passer_12', [
     { x: 640, y: 100 },
     { x: 460, y: 104 },
@@ -113,7 +113,7 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 300, y: 100 },
     { x: 520, y: 108 },
   ], 500, 34),
-  stander('dt_9', 'downtown', 'passer_12', { x: 152, y: 86 }),
+  stander('dt_9', 'downtown', 'passer_12', { x: 118, y: 86 }),
   stander('dt_10', 'downtown', 'passer_11', { x: 440, y: 82 }),
   walker('dt_11', 'downtown', 'passer_3', [
     { x: 600, y: 82 },
@@ -131,9 +131,10 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 300, y: 148 },
     { x: 70, y: 142 },
   ], 1100),
-  stander('blvd_3', 'boulevard', 'passer_3', { x: 96, y: 106 }),
-  stander('blvd_4', 'boulevard', 'passer_10', { x: 108, y: 114 }),
-  stander('blvd_5', 'boulevard', 'passer_2', { x: 120, y: 106 }),
+  // Очередь у клуба: стоят на дорожке, а не на проезжей части.
+  stander('blvd_3', 'boulevard', 'passer_3', { x: 90, y: 80 }),
+  stander('blvd_4', 'boulevard', 'passer_10', { x: 104, y: 87 }),
+  stander('blvd_5', 'boulevard', 'passer_2', { x: 122, y: 82 }),
   walker('blvd_6', 'boulevard', 'passer_4', [
     { x: 262, y: 110 },
     { x: 262, y: 144 },
@@ -142,7 +143,7 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 560, y: 146 },
     { x: 460, y: 112 },
   ], 1300),
-  named('blogger', 'boulevard', { x: 316, y: 140 }, 'npc.blogger'),
+  named('blogger', 'boulevard', { x: 348, y: 88 }, 'npc.blogger'),
 
   stander('blvd_9', 'boulevard', 'passer_9', { x: 268, y: 88 }),
   stander('blvd_10', 'boulevard', 'passer_12', { x: 306, y: 88 }),
@@ -159,8 +160,8 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 300, y: 142 },
   ], 2400, 16),
   walker('pier_2', 'pier', 'passer_3', [
-    { x: 400, y: 112 },
-    { x: 400, y: 148 },
+    { x: 400, y: 138 },
+    { x: 400, y: 156 },
   ], 2000, 18),
   stander('pier_3', 'pier', 'passer_2', { x: 168, y: 114 }),
   stander('pier_4', 'pier', 'passer_7', { x: 182, y: 120 }),
@@ -171,11 +172,11 @@ export const CROWD: readonly CrowdMember[] = [
   ], 900, 28),
 
   walker('pier_6', 'pier', 'passer_12', [
-    { x: 60, y: 94 },
-    { x: 240, y: 90 },
+    { x: 60, y: 80 },
+    { x: 240, y: 84 },
   ], 2100, 20),
   stander('pier_7', 'pier', 'passer_11', { x: 470, y: 80 }),
-  stander('pier_8', 'pier', 'passer_6', { x: 486, y: 86 }),
+  stander('pier_8', 'pier', 'passer_6', { x: 500, y: 82 }),
 
   // — квартира: соседка за стеной не нужна, дом должен быть пустым —
 
