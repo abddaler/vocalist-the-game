@@ -1,4 +1,11 @@
-import type { BuildingDef, DecorDef, GateDef, SceneryDef, WorldRect } from '@core/types';
+import type {
+  BuildingDef,
+  BuildingKind,
+  DecorDef,
+  GateDef,
+  SceneryDef,
+  WorldRect,
+} from '@core/types';
 
 /**
  * Разметка улицы. Камера стоит близко (мир рисуется вдвое крупнее
@@ -28,9 +35,16 @@ export const STREET = {
 const centered = (x: number, w: number): number => x + Math.round((w - STREET.doorW) / 2);
 
 /** Дом с дверью на тротуар. */
-export function house(locationId: string, x: number, w: number, color: number): BuildingDef {
+export function house(
+  locationId: string,
+  kind: BuildingKind,
+  x: number,
+  w: number,
+  color: number,
+): BuildingDef {
   return {
     locationId,
+    kind,
     color,
     rect: { x, y: STREET.rowY, w, h: STREET.rowH },
     door: {
@@ -43,8 +57,14 @@ export function house(locationId: string, x: number, w: number, color: number): 
 }
 
 /** Чужой дом: внутрь не войти, но улица перестаёт зиять. */
-export function fill(x: number, w: number, color: number, signKey?: string): SceneryDef {
-  return { rect: { x, y: STREET.rowY, w, h: STREET.rowH }, color, signKey };
+export function fill(
+  kind: BuildingKind,
+  x: number,
+  w: number,
+  color: number,
+  signKey?: string,
+): SceneryDef {
+  return { kind, rect: { x, y: STREET.rowY, w, h: STREET.rowH }, color, signKey };
 }
 
 export const decor = (kind: DecorDef['kind'], x: number, y: number, variant?: number): DecorDef => ({

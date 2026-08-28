@@ -1,16 +1,16 @@
 import type { DistrictId, GameState, WorldPoint, WorldRect } from '@core/types';
 import { t } from '@ui/i18n';
+import { STREET } from '@data/world';
 import { COLORS, CONTENT, LAYOUT, WORLD_ZOOM } from '@ui/theme';
 import type { Hotspots, Rect } from '@ui/widgets/Hotspots';
 import type { Painter } from '@ui/widgets/Painter';
 import { ambienceOf, mix, scale } from './ambience';
 import type { Ambience } from './ambience';
-import { drawFarSide, drawGround, drawSky, drawWash } from './backdrop';
+import { drawFarSide, drawGround, drawSky, drawStrip, drawWash } from './backdrop';
 import type { Backdrop } from './backdrop';
 import { drawInhabitants } from './inhabitants';
 import { drawRoom, interiorLight } from './interior';
 import { facade, sign } from './facade';
-import { STREET } from '@data/world';
 import { cameraOffset, nearest } from './movement';
 import { drawProp } from './props';
 import type { Layer } from './layers';
@@ -92,10 +92,11 @@ export function renderWorld(params: WorldViewParams, layer: Layer): void {
     facade(painter, {
       rect,
       color: block.color,
+      kind: block.kind,
       seed: block.nameKey,
       ambience,
       reserved: door ? [board, door] : [board],
-      shopfront: door !== null,
+      door,
     });
 
     sign(painter, board, block.color, ambience);
@@ -162,15 +163,23 @@ function drawOutside(
       w: CONTENT.width,
       h: CONTENT.height - Math.max(0, skyHeight),
     },
-    kerbY: CONTENT.y + (STREET.walkBottom - camera.y) * WORLD_ZOOM,
+    kerbY: CONTENT.y + (layer.kerb - camera.y) * WORLD_ZOOM,
     cameraX: camera.x * WORLD_ZOOM,
     worldWidth: layer.bounds.width * WORLD_ZOOM,
     unit: WORLD_ZOOM,
+    ground: layer.ground,
   };
 
   drawSky(painter, area, ambience);
   drawFarSide(painter, area, ambience, district);
   drawGround(painter, area, ambience);
+  if (layer.strip) {
+    drawStrip(painter, area, ambience, {
+      y: CONTENT.y + (layer.strip.y - camera.y) * WORLD_ZOOM,
+      h: layer.strip.h * WORLD_ZOOM,
+      kind: layer.strip.kind,
+    });
+  }
 }
 
 function drawTarget(

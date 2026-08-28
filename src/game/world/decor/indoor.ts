@@ -10,7 +10,7 @@ import { scale } from '../ambience';
 const RUG_COLORS = [0x6f3a4c, 0x3a5a6f, 0x6f6238];
 const POSTER_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f, 0x8f5fe8];
 const crate: Draw = (ctx) => {
-  const size = ctx.variant % 2 === 0 ? 20 : 15;
+  const size = ctx.variant % 2 === 0 ? 12 : 9;
   const wood = tone(ctx, ctx.variant % 2 === 0 ? 0xb08a52 : 0x8a9f6a);
   const stack = ctx.variant % 2 === 0 ? 2 : 1;
   for (let i = 0; i < stack; i += 1) {

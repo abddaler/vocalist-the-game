@@ -15,9 +15,36 @@ export interface WorldPoint {
   readonly y: number;
 }
 
+/**
+ * Чем занят дом. От этого зависит, как он нарисован: у клуба маркиза с
+ * лампами и канат у входа, у склада роль-ставня и гофрированная стена, у
+ * виллы черепица и арки. Одинаковые коробки с разными вывесками городом
+ * не выглядят — по фасаду должно быть понятно, куда ты идёшь.
+ */
+export type BuildingKind =
+  | 'apartment'
+  | 'club'
+  | 'restaurant'
+  | 'shop'
+  | 'studio'
+  | 'record'
+  | 'gym'
+  | 'clinic'
+  | 'office'
+  | 'hotel'
+  | 'diner'
+  | 'cinema'
+  | 'theatre'
+  | 'villa'
+  | 'warehouse'
+  | 'market'
+  | 'bar'
+  | 'shack';
+
 /** Дом на экране района. Вход — через дверь, не через меню. */
 export interface BuildingDef {
   readonly locationId: string;
+  readonly kind: BuildingKind;
   readonly rect: WorldRect;
   readonly color: number;
   readonly door: WorldRect;
@@ -29,6 +56,7 @@ export interface BuildingDef {
  * дешёвый способ показать, что мир больше игрока.
  */
 export interface SceneryDef {
+  readonly kind: BuildingKind;
   readonly rect: WorldRect;
   readonly color: number;
   /** Вывеска на фасаде. Без неё дом остаётся просто стеной. */
@@ -57,6 +85,13 @@ export type DecorKind =
   | 'rug'
   | 'poster'
   | 'shelf'
+  | 'tree'
+  | 'bush'
+  | 'flowerbed'
+  | 'lifeguard'
+  | 'deckchair'
+  | 'umbrella'
+  | 'boat'
   | 'bike'
   | 'trafficLight'
   | 'mailbox'
@@ -86,9 +121,27 @@ export interface GateDef {
   readonly rect: WorldRect;
 }
 
+/**
+ * Что видно за крышами и по чему ходят. Улица, набережная и площадь
+ * различаются землёй и дальним планом, а не только цветом домов.
+ */
+export type GroundKind = 'street' | 'boardwalk' | 'plaza';
+
 export interface DistrictDef {
   readonly id: DistrictId;
   readonly nameKey: string;
+  readonly ground: GroundKind;
+  /**
+   * Полоса вдоль тротуара: газон с деревьями, песок, красная дорожка.
+   * Ландшафт из одной серой полосы читается как коридор.
+   */
+  readonly strip?: { readonly y: number; readonly h: number; readonly kind: 'grass' | 'sand' | 'carpet' } | undefined;
+  /**
+   * Где кончается мощёная часть и начинается кромка кадра. По умолчанию
+   * совпадает с краем тротуара; на набережной поднята, чтобы под настилом
+   * осталась полоса песка, по которой тоже ходят.
+   */
+  readonly kerb?: number | undefined;
   /** Место на карте города, в её собственных координатах. */
   readonly map: WorldRect;
   readonly width: number;

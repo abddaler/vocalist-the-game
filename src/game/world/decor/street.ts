@@ -10,33 +10,56 @@ const PALM_HEIGHTS = [30, 38, 46];
 const CAR_BODIES = [0xd9534f, 0x4f7fd9, 0xe8c46a, 0xe8e8ee];
 const BILLBOARD_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f];
 const PARASOL_COLORS = [0xe8705f, 0xe8c25f, 0x5fb8a8];
+/**
+ * Пальма. Рисуется в долях мировой клетки, поэтому ствол получает кольца
+ * в один экранный пиксель, а лист — сужающуюся кромку: на целой клетке
+ * дерево выходило из тех же квадратов, что и стена дома.
+ */
 const palm: Draw = (ctx) => {
   const height = PALM_HEIGHTS[ctx.variant % PALM_HEIGHTS.length]!;
-  const trunk = tone(ctx, 0x7a5f42);
-  const frond = tone(ctx, 0x3f8f52);
-  const frondLit = tone(ctx, 0x5fbf6a);
+  const bark = tone(ctx, 0x8a6a48);
+  const barkLit = tone(ctx, 0xa8855c);
+  const frond = tone(ctx, 0x2f7f46);
+  const frondLit = tone(ctx, 0x5cb86a);
 
-  // Ствол с наклоном: прямая палка читается как столб, а не как пальма.
+  // Ствол клонится: прямая палка читается столбом, а не пальмой.
+  const lean = (t: number): number => Math.sin(t * 1.15) * 4;
   for (let i = 0; i < height; i += 1) {
-    const bend = Math.round(Math.sin(i / height) * 3);
-    box(ctx, bend - 1, -i - 1, 3, 2, i % 6 < 3 ? trunk : scale(trunk, 1.2));
+    const t = i / height;
+    const x = lean(t);
+    const w = 3 - t * 0.8;
+    box(ctx, x - w / 2, -i - 1, w, 1, i % 4 === 0 ? bark : barkLit);
+    box(ctx, x - w / 2, -i - 1, 0.5, 1, tone(ctx, 0x6a4f36));
   }
 
-  const topX = 3;
+  const topX = lean(1);
   const topY = -height - 1;
-  const frondArm = (dx: number, dy: number, length: number, lit: boolean): void => {
+
+  // Лист: цепочка сегментов, сужающихся к концу, со светлой кромкой.
+  const leaf = (dx: number, dy: number, length: number, droop: number): void => {
     for (let i = 1; i <= length; i += 1) {
-      const spread = Math.round((i * i) / (length * 2));
-      box(ctx, topX + dx * i, topY + dy * i + spread, 2, 2, lit ? frondLit : frond);
+      const t = i / length;
+      const x = topX + dx * i;
+      const y = topY + dy * i + droop * t * t * length * 0.5;
+      const w = 2.4 * (1 - t * 0.7);
+      box(ctx, x - w / 2, y, w, 1, frond);
+      box(ctx, x - w / 2, y - 0.5, w * 0.6, 0.5, frondLit);
     }
   };
-  frondArm(-1, -1, 7, true);
-  frondArm(1, -1, 7, true);
-  frondArm(-1.6, 0, 6, false);
-  frondArm(1.6, 0, 6, false);
-  frondArm(-0.6, 1, 5, false);
-  frondArm(0.9, 1, 5, false);
-  box(ctx, topX - 2, topY - 2, 5, 4, tone(ctx, 0x2f6b3f));
+
+  leaf(-1.1, -0.5, 8, 0.8);
+  leaf(1.1, -0.5, 8, 0.8);
+  leaf(-1.5, 0.1, 7, 0.9);
+  leaf(1.5, 0.1, 7, 0.9);
+  leaf(-0.7, -0.9, 6, 0.7);
+  leaf(0.7, -0.9, 6, 0.7);
+  leaf(-1.7, 0.6, 6, 0.6);
+  leaf(1.7, 0.6, 6, 0.6);
+
+  // Сердцевина и кокосы.
+  box(ctx, topX - 2, topY - 2, 4, 3, tone(ctx, 0x265f38));
+  box(ctx, topX - 2.5, topY + 1, 1.5, 1.5, tone(ctx, 0x7a5a34));
+  box(ctx, topX + 1, topY + 1.5, 1.5, 1.5, tone(ctx, 0x6a4f2c));
 };
 
 const lamp: Draw = (ctx) => {

@@ -2,6 +2,7 @@ import type { DecorDef, DecorKind } from '@core/types';
 import type { Painter } from '@ui/widgets/Painter';
 import type { Ambience } from '../ambience';
 import { INDOOR } from './indoor';
+import { NATURE } from './nature';
 import { STREET } from './street';
 import type { Draw } from './kit';
 
@@ -12,7 +13,7 @@ export type { DecorContext } from './kit';
  * а связь «вид предмета — процедура» держится здесь, чтобы забытый вид
  * не собрался.
  */
-const DRAW: Readonly<Record<DecorKind, Draw>> = { ...STREET, ...INDOOR };
+const DRAW: Readonly<Record<DecorKind, Draw>> = { ...STREET, ...INDOOR, ...NATURE };
 
 /** Насколько широкую тень отбрасывает предмет. Ноль — тени нет. */
 const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
@@ -25,7 +26,7 @@ const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
   planter: 14,
   bin: 11,
   busStop: 38,
-  crate: 20,
+  crate: 13,
   bollard: 7,
   newsbox: 12,
   parasol: 24,
@@ -39,6 +40,13 @@ const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
   dog: 11,
   surfboard: 7,
   table: 20,
+  tree: 16,
+  bush: 12,
+  flowerbed: 20,
+  lifeguard: 22,
+  deckchair: 15,
+  umbrella: 22,
+  boat: 30,
 };
 
 export function drawDecor(

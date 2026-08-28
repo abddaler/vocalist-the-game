@@ -1,8 +1,10 @@
-import { getDistrict } from '@data/world';
+import { STREET, getDistrict } from '@data/world';
 import { getLocation } from '@data/locations';
 import { SLOTS } from '@core/types';
 import type {
+  BuildingKind,
   DecorDef,
+  GroundKind,
   DistrictDef,
   DistrictId,
   GameState,
@@ -19,6 +21,8 @@ import type { WorldTarget } from './targets';
 export interface Block {
   readonly rect: WorldRect;
   readonly color: number;
+  /** Чем занят дом: по этому подбирается фасад. */
+  readonly kind: BuildingKind;
   /** Вывеска на фасаде: у рабочих домов — имя локации, у чужих — своя. */
   readonly nameKey?: string | undefined;
   readonly doorRect?: WorldRect | undefined;
@@ -38,6 +42,10 @@ export interface Layer {
   readonly decor: readonly DecorDef[];
   /** Под открытым небом: район задаёт небо и мостовую, комната — нет. */
   readonly district: DistrictId | null;
+  readonly ground: GroundKind;
+  readonly strip: DistrictDef['strip'];
+  /** Мировая координата кромки мощёной части. */
+  readonly kerb: number;
   readonly slot: Slot;
 }
 
@@ -55,11 +63,13 @@ export function districtLayer(state: GameState, districtId: DistrictId): Layer {
       ...district.scenery.map((house) => ({
         rect: house.rect,
         color: house.color,
+        kind: house.kind,
         nameKey: house.signKey,
       })),
       ...district.buildings.map((building) => ({
         rect: building.rect,
         color: open(building.locationId) ? building.color : dim(building.color),
+        kind: building.kind,
         nameKey: getLocation(building.locationId).nameKey,
         doorRect: building.door,
       })),
@@ -89,6 +99,9 @@ export function districtLayer(state: GameState, districtId: DistrictId): Layer {
     pointColors: new Map(district.points.map((point) => [point.id, point.color])),
     decor: district.decor,
     district: district.id,
+    ground: district.ground,
+    strip: district.strip,
+    kerb: district.kerb ?? STREET.walkBottom,
     slot,
   };
 }
@@ -98,7 +111,8 @@ export function roomLayer(room: RoomDef, slot: Slot): Layer {
     bounds: { width: room.width, height: room.height },
     floor: room.floor,
     walls: [],
-    blocks: room.solids.map((rect) => ({ rect, color: 0x101319 })),
+    // Стены комнаты рисуются заливкой, а не фасадом: род занятий им не нужен.
+    blocks: room.solids.map((rect) => ({ rect, color: 0x101319, kind: 'apartment' as BuildingKind })),
     targets: [
       { kind: 'exit', id: room.locationId, nameKey: 'ui.exit', rect: room.exit },
       ...room.points.map((point) => ({
@@ -112,6 +126,9 @@ export function roomLayer(room: RoomDef, slot: Slot): Layer {
     pointColors: new Map(room.points.map((point) => [point.id, point.color])),
     decor: room.decor,
     district: null,
+    ground: 'street',
+    strip: undefined,
+    kerb: STREET.walkBottom,
     slot,
   };
 }
