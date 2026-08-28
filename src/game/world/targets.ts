@@ -4,9 +4,9 @@ import { centerOf } from './movement';
 /** Насколько близко надо подойти, чтобы взаимодействовать. */
 export const REACH = 26;
 
-/** То, во что можно войти или к чему подойти: дверь, выход, точка. */
+/** То, во что можно войти или к чему подойти: дверь, выход, точка, створ. */
 export interface WorldTarget {
-  readonly kind: 'door' | 'exit' | 'point';
+  readonly kind: 'door' | 'exit' | 'point' | 'gate';
   readonly id: string;
   readonly nameKey: string;
   readonly rect: WorldRect;

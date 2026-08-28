@@ -6,6 +6,7 @@ import type { ScreenId, UiState } from './types';
 
 const TABS: readonly { screen: ScreenId; key: string }[] = [
   { screen: 'world', key: 'ui.district' },
+  { screen: 'map', key: 'ui.map' },
   { screen: 'character', key: 'ui.character' },
   { screen: 'journal', key: 'ui.journal' },
 ];

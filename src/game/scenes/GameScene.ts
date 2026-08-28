@@ -15,6 +15,7 @@ import { renderFinale } from '@ui/screens/FinaleScreen';
 import { renderGig } from '@ui/screens/GigScreen';
 import { renderHud } from '@ui/screens/Hud';
 import { renderJournal } from '@ui/screens/JournalScreen';
+import { renderMap } from '@ui/screens/MapScreen';
 import { renderNav } from '@ui/screens/Nav';
 import { renderPoint } from '@ui/screens/PointScreen';
 import { renderShop } from '@ui/screens/ShopScreen';
@@ -148,6 +149,7 @@ export class GameScene extends Phaser.Scene {
         return this.go({ screen: this.ui.locationId ? 'room' : 'world', pointId: null, page: 0 });
       case 'character':
       case 'journal':
+      case 'map':
         return this.go({ screen: this.ui.locationId ? 'room' : 'world', page: 0 });
       default:
         return;
@@ -244,6 +246,15 @@ export class GameScene extends Phaser.Scene {
         return renderCharacter(ctx);
       case 'journal':
         return renderJournal(ctx);
+      case 'map':
+        return renderMap(ctx, {
+          current: this.world.districtId,
+          // С карты игрок выходит на площадь района: «откуда пришёл» там нет.
+          onTravel: (to) => {
+            this.world.travelTo(to, false);
+            this.go({ screen: 'world', locationId: null, pointId: null, page: 0 });
+          },
+        });
     }
   }
 }

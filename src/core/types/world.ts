@@ -19,16 +19,76 @@ export interface WorldPoint {
 export interface BuildingDef {
   readonly locationId: string;
   readonly rect: WorldRect;
-  /** Заглушка вехи 5; на вехе 7 её сменит тайлсет. */
   readonly color: number;
   readonly door: WorldRect;
 }
 
+/**
+ * Дом, в который не войти. Город из одних только рабочих дверей выглядит
+ * декорацией на девять комнат; заполнение улицы чужими домами — самый
+ * дешёвый способ показать, что мир больше игрока.
+ */
+export interface SceneryDef {
+  readonly rect: WorldRect;
+  readonly color: number;
+  /** Вывеска на фасаде. Без неё дом остаётся просто стеной. */
+  readonly signKey?: string | undefined;
+}
+
+/**
+ * Мелочь на улице. Рисуется параметрически по типу и месту: пальма у
+ * пирса и пальма на бульваре — одна процедура с разной высотой.
+ */
+export type DecorKind =
+  | 'palm'
+  | 'lamp'
+  | 'bench'
+  | 'car'
+  | 'billboard'
+  | 'hydrant'
+  | 'planter'
+  | 'bin'
+  | 'busStop'
+  | 'crate'
+  | 'bollard'
+  | 'newsbox'
+  | 'parasol'
+  | 'gull';
+
+export interface DecorDef {
+  readonly kind: DecorKind;
+  /** Точка опоры: низ предмета, как у персонажа. */
+  readonly x: number;
+  readonly y: number;
+  /** Вариация: высота пальмы, цвет машины, поворот вывески. */
+  readonly variant?: number | undefined;
+}
+
+/**
+ * Районы города. Идентификатор заодно задаёт характер: небо, мостовую и
+ * набор мелочей рисуют по нему же — второго «холмистого» района, который
+ * выглядел бы иначе, в срезе нет.
+ */
+export type DistrictId = 'hills' | 'downtown' | 'boulevard' | 'pier';
+
+/** Переход в соседний район: створ в конце улицы. */
+export interface GateDef {
+  readonly to: DistrictId;
+  readonly rect: WorldRect;
+}
+
 export interface DistrictDef {
+  readonly id: DistrictId;
+  readonly nameKey: string;
+  /** Место на карте города, в её собственных координатах. */
+  readonly map: WorldRect;
   readonly width: number;
   readonly height: number;
   readonly spawn: WorldPoint;
   readonly buildings: readonly BuildingDef[];
+  readonly scenery: readonly SceneryDef[];
+  readonly decor: readonly DecorDef[];
+  readonly gates: readonly GateDef[];
   /** Непроходимые куски улицы: бордюры, ограды. */
   readonly solids: readonly WorldRect[];
   /** Площадки прямо на улице — переход и заказы. */

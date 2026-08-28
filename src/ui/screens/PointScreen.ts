@@ -1,11 +1,10 @@
 import { getActivity } from '@data/activities';
-import { getRoom, hasRoom } from '@data/world';
+import { findStreetPoint, getRoom, hasRoom } from '@data/world';
 import { getVenue } from '@data/venues';
 import { checkActivity } from '@core/systems/activity';
 import { checkPerformance } from '@core/systems/performance';
 import { imageLevel } from '@core/systems/outfit';
 import { doActivity } from '@core/state';
-import { DISTRICT } from '@data/world';
 import type { ActivityDef, RoomPointDef, VenueDef } from '@core/types';
 import { t } from '../i18n';
 import { CONTENT, LAYOUT } from '../theme';
@@ -53,9 +52,8 @@ export function renderPoint(ctx: RenderContext): void {
 /** Точка ищется в комнате локации, а для улицы — среди точек района. */
 function findPoint(locationId: string | null, pointId: string | null): RoomPointDef | undefined {
   if (!pointId) return undefined;
-  const source =
-    locationId && hasRoom(locationId) ? getRoom(locationId).points : DISTRICT.points;
-  return source.find((point) => point.id === pointId);
+  if (!locationId || !hasRoom(locationId)) return findStreetPoint(pointId);
+  return getRoom(locationId).points.find((point) => point.id === pointId);
 }
 
 function wardrobeRow(ctx: RenderContext): ListRow {

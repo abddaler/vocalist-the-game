@@ -1,11 +1,18 @@
-import type { GameState, RoomDef, WorldPoint } from '@core/types';
-import { DISTRICT, getRoom, hasRoom } from '@data/world';
+import { SLOTS } from '@core/types';
+import type { DistrictId, GameState, RoomDef, WorldPoint } from '@core/types';
+import {
+  HOME_DISTRICT,
+  districtOfLocation,
+  getDistrict,
+  getRoom,
+  hasRoom,
+} from '@data/world';
 import type { InputController } from '@platform/input';
 import { spawnCrowd, updateCrowd } from './Crowd';
 import type { CrowdActor } from './Crowd';
 import { facingFrom } from './actorSprite';
 import type { Facing } from './actorSprite';
-import { districtLayer, roomLayer, solidsOf } from './layers';
+import { districtLayer, doorOf, roomLayer, solidsOf } from './layers';
 import type { Layer } from './layers';
 import { WALK_SPEED, centerOf, step, stepToward } from './movement';
 import { withinReach } from './targets';
@@ -31,11 +38,13 @@ export interface WorldDeps {
  * (раздел 4), а прохожие — чистое оформление.
  */
 export class WorldController {
-  position: WorldPoint = { ...DISTRICT.spawn };
+  /** В каком районе игрок стоит. Это оформление, поэтому не в GameState. */
+  districtId: DistrictId = HOME_DISTRICT;
+  position: WorldPoint = { ...getDistrict(HOME_DISTRICT).spawn };
   facing: Facing = 'down';
   walked = 0;
   moving = false;
-  crowd: CrowdActor[] = spawnCrowd('district');
+  crowd: CrowdActor[] = spawnCrowd(HOME_DISTRICT);
 
   private walkTarget: WorldPoint | null = null;
   /** Цель, к которой идём по тапу: дойдя, срабатываем сами. */
@@ -54,11 +63,12 @@ export class WorldController {
   constructor(private readonly deps: WorldDeps) {}
 
   reset(): void {
-    this.position = { ...DISTRICT.spawn };
+    this.districtId = HOME_DISTRICT;
+    this.position = { ...getDistrict(HOME_DISTRICT).spawn };
     this.facing = 'down';
     this.walkTarget = null;
     this.pendingTarget = null;
-    this.crowd = spawnCrowd('district');
+    this.crowd = spawnCrowd(HOME_DISTRICT);
     this.fade = { alpha: 0, phase: 'idle', action: null };
   }
 
@@ -76,8 +86,10 @@ export class WorldController {
   }
 
   layer(): Layer {
+    const state = this.deps.getState();
+    const slot = SLOTS[state.slotIndex] ?? 'morning';
     const room = this.room;
-    return room ? roomLayer(room) : districtLayer(this.deps.getState());
+    return room ? roomLayer(room, slot) : districtLayer(state, this.districtId);
   }
 
   /** Живность идёт и во время затемнения: замирающая комната выдаёт декорацию. */
@@ -184,22 +196,61 @@ export class WorldController {
     }
 
     if (target.kind === 'exit') {
-      const building = DISTRICT.buildings.find((b) => b.locationId === target.id);
-      const door = building ? centerOf(building.door) : DISTRICT.spawn;
+      const district = districtOfLocation(target.id) ?? getDistrict(this.districtId);
+      const door = doorOf(district, target.id);
+      const at = door ? centerOf(door) : district.spawn;
       this.transition(() => {
-        this.position = { x: door.x, y: Math.min(DISTRICT.height, door.y + 30) };
+        this.districtId = district.id;
+        this.position = { x: at.x, y: Math.min(district.height - 6, at.y + 30) };
         this.walkTarget = null;
         this.facing = 'down';
-        this.crowd = spawnCrowd('district');
+        this.crowd = spawnCrowd(district.id);
         this.deps.leaveRoom();
       });
+      return;
+    }
+
+    if (target.kind === 'gate') {
+      this.travelTo(target.id as DistrictId);
       return;
     }
 
     this.deps.openPoint(target.id);
   }
 
+  /**
+   * Смена района. Через створ игрок выходит с той стороны, с которой
+   * пришёл; с карты — на площадь района, потому что «откуда» там нет.
+   */
+  travelTo(to: DistrictId, throughGate = true): void {
+    if (to === this.districtId) return;
+    const from = this.districtId;
+    const next = getDistrict(to);
+
+    this.transition(() => {
+      this.districtId = to;
+      this.position = throughGate ? arrival(next, from) : { ...next.spawn };
+      this.walkTarget = null;
+      this.pendingTarget = null;
+      this.facing = 'down';
+      this.crowd = spawnCrowd(to);
+      this.deps.leaveRoom();
+    });
+  }
+
   private transition(action: () => void): void {
     this.fade = { alpha: 0, phase: 'out', action };
   }
+}
+
+/**
+ * Где игрок оказывается, придя из соседнего района: у створа, ведущего
+ * назад, но на шаг в сторону улицы — иначе он тут же уйдёт обратно.
+ */
+function arrival(district: ReturnType<typeof getDistrict>, from: DistrictId): WorldPoint {
+  const back = district.gates.find((gate) => gate.to === from);
+  if (!back) return { ...district.spawn };
+  const center = centerOf(back.rect);
+  const inward = center.x < district.width / 2 ? 22 : -22;
+  return { x: center.x + inward, y: center.y };
 }

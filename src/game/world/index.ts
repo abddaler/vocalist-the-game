@@ -1,4 +1,4 @@
-export { renderWorld, screenToWorld, pointOf } from './WorldView';
+export { renderWorld, screenToWorld } from './WorldView';
 export { districtLayer, roomLayer, solidsOf } from './layers';
 export type { Layer } from './layers';
 export { REACH, withinReach } from './targets';
