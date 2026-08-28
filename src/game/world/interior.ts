@@ -23,7 +23,7 @@ export function interiorLight(slot: Slot): Ambience {
   const evening = slot === 'evening' || slot === 'night';
   return {
     ...outside,
-    light: evening ? 0.95 : 1.1,
+    light: evening ? 1.0 : 1.16,
     lampsOn: evening,
     shadow: 0.22,
     wash: evening ? 0xffb469 : 0xfff0d8,
@@ -39,27 +39,55 @@ export function drawRoom(
   slot: Slot,
 ): void {
   const wallH = Math.round(rect.h * WALL_SHARE);
-  const wall = scale(floorColor, 1.55);
-  const floor = scale(floorColor, 0.92);
+  // Цвет локации задаёт гамму, а не яркость: взятый напрямую, он делал
+  // комнату темнее улицы, и вход в дом читался как выключенный свет.
+  const wall = scale(mix(floorColor, 0xe8dcc8, 0.62), ambience.light);
+  const floor = scale(mix(floorColor, 0xc09868, 0.55), ambience.light);
 
-  painter.fill({ x: rect.x, y: rect.y, w: rect.w, h: wallH }, wall);
-  painter.fill({ x: rect.x, y: rect.y + wallH, w: rect.w, h: rect.h - wallH }, floor);
+  ramp(painter, { x: rect.x, y: rect.y, w: rect.w, h: wallH }, scale(wall, 1.06), scale(wall, 0.88));
+  ramp(
+    painter,
+    { x: rect.x, y: rect.y + wallH, w: rect.w, h: rect.h - wallH },
+    scale(floor, 0.86),
+    scale(floor, 1.1),
+  );
 
   // Обои в полоску: ровная стена не даёт глазу масштаба комнаты.
   for (let x = rect.x + 8; x < rect.x + rect.w; x += 16) {
-    painter.fill({ x, y: rect.y + 2, w: 1, h: wallH - 4 }, scale(wall, 1.12), 0.6);
+    painter.fill({ x, y: rect.y + 2, w: 1, h: wallH - 8 }, scale(wall, 1.14), 0.5);
+  }
+  // Панель по низу стены и карниз по верху: голая стена читается фоном.
+  painter.fill({ x: rect.x, y: rect.y + wallH - 12, w: rect.w, h: 12 }, scale(wall, 0.92));
+  painter.fill({ x: rect.x, y: rect.y + wallH - 12, w: rect.w, h: 1 }, scale(wall, 1.2));
+  painter.fill({ x: rect.x, y: rect.y, w: rect.w, h: 2 }, scale(wall, 1.18));
+
+  // Плинтус и тень от него на полу.
+  painter.fill({ x: rect.x, y: rect.y + wallH - 4, w: rect.w, h: 4 }, scale(wall, 0.7));
+  painter.fill({ x: rect.x, y: rect.y + wallH - 1, w: rect.w, h: 1 }, scale(wall, 0.45));
+  for (let i = 0; i < 5; i += 1) {
+    painter.fill({ x: rect.x, y: rect.y + wallH + i, w: rect.w, h: 1 }, 0x000000, 0.16 * (1 - i / 5));
   }
 
-  // Плинтус и половицы.
-  painter.fill({ x: rect.x, y: rect.y + wallH - 3, w: rect.w, h: 3 }, scale(wall, 0.66));
-  for (let y = rect.y + wallH + 9; y < rect.y + rect.h; y += 12) {
-    painter.fill({ x: rect.x, y, w: rect.w, h: 1 }, scale(floor, 0.84));
+  // Половицы: шов и блик по кромке следующей доски.
+  for (let y = rect.y + wallH + 10; y < rect.y + rect.h; y += 11) {
+    painter.fill({ x: rect.x, y, w: rect.w, h: 1 }, scale(floor, 0.74));
+    painter.fill({ x: rect.x, y: y + 1, w: rect.w, h: 1 }, scale(floor, 1.14), 0.5);
   }
 
   drawWindow(painter, { x: rect.x + Math.round(rect.w * 0.66), y: rect.y + 10, w: 46, h: 30 }, ambience, slot);
   if (ambience.lampsOn) drawLamp(painter, rect);
 
-  painter.stroke(rect, scale(wall, 0.5));
+  painter.stroke(rect, scale(wall, 0.45));
+}
+
+/** Растяжка сверху вниз рядами в один пиксель. */
+function ramp(painter: Painter, rect: Rect, from: number, to: number): void {
+  for (let i = 0; i < rect.h; i += 1) {
+    painter.fill(
+      { x: rect.x, y: rect.y + i, w: rect.w, h: 1 },
+      mix(from, to, i / Math.max(1, rect.h - 1)),
+    );
+  }
 }
 
 /** Окно с тем же небом, что снаружи: комната живёт по тем же часам. */
