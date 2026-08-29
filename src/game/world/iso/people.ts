@@ -3,6 +3,7 @@ import { t } from '@ui/i18n';
 import { COLORS } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
 import { ACTOR_SPRITE, ACTOR_TEXTURE, PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
+import { BUBBLE_CELL, BUBBLE_TEXTURE, bubbleFrame } from '../../art/bubble';
 import type { ActorPose } from '../../art';
 import type { Ambience } from '../ambience';
 import { drawShadow } from '../backdrop';
@@ -10,7 +11,7 @@ import { ISO_OVERHEAD, paintProp, propId } from './props';
 import { PROP_ANCHOR } from '../PropAtlas';
 import type { PropAtlas } from '../PropAtlas';
 import { lookFor } from '../actorSprite';
-import type { CrowdActor } from '../Crowd';
+import type { CrowdActor, Mood } from '../Crowd';
 import type { Facing } from '../actorSprite';
 import type { ScreenPoint } from './project';
 import type { IsoScene } from './scene';
@@ -94,12 +95,14 @@ export function inhabitantPieces(
     look: number,
     pose: { pose: ActorPose; flipX: boolean; lift: number },
     nameKey?: string,
+    mood?: Mood | null,
   ): void => {
     const at = place(point);
     // Тень остаётся на земле: подскакивает человек, а не его след.
     drawShadow(painter, at.x, at.y, ACTOR_SPRITE.width * 0.7, ambience);
     painter.sprite(at.x, at.y - pose.lift, ACTOR_TEXTURE, pose.flipX, actorTexture(look, pose.pose));
     if (nameKey) drawNamePlate(painter, at, nameKey);
+    if (mood) drawBubble(painter, at, mood, nameKey !== undefined);
   };
 
   for (const actor of params.crowd) {
@@ -111,6 +114,7 @@ export function inhabitantPieces(
           lookIndex(actor.member.look),
           lookFor(actor.facing, actor.walked, actor.moving),
           actor.member.nameKey,
+          actor.mood,
         ),
     });
   }
@@ -142,4 +146,62 @@ function drawNamePlate(painter: Painter, at: ScreenPoint, nameKey: string): void
     0.72,
   );
   painter.label(plate, text, { align: 'center', color: COLORS.text });
+}
+
+/**
+ * Размеры пузыря. Он висит справа над головой: по центру его место
+ * занимает табличка с именем, а спорить с ней пузырь не должен.
+ */
+const BUBBLE = {
+  padX: 2,
+  padY: 1,
+  /** Насколько пузырь всплывает за жизнь, px. */
+  rise: 4,
+  /** Появление и уход, мс. */
+  fadeIn: 160,
+  fadeOut: 480,
+  life: 2400,
+  /** Подъём над макушкой; с табличкой имени — выше неё. */
+  lift: 8,
+  liftNamed: 22,
+  fill: 0xf2eff5,
+  border: 0x14161c,
+} as const;
+
+function drawBubble(painter: Painter, at: ScreenPoint, mood: Mood, named: boolean): void {
+  const width = BUBBLE_CELL.width + BUBBLE.padX * 2;
+  const height = BUBBLE_CELL.height + BUBBLE.padY * 2;
+  // Всплытие затухает: рывок вверх в начале читается как «подумал»,
+  // равномерный подъём — как улетающий шарик.
+  const rise = BUBBLE.rise * Math.min(1, mood.age / (BUBBLE.life / 4));
+  const alpha = Math.min(
+    1,
+    mood.age / BUBBLE.fadeIn,
+    Math.max(0, BUBBLE.life - mood.age) / BUBBLE.fadeOut,
+  );
+  if (alpha <= 0) return;
+
+  const x = Math.round(at.x) + 3;
+  const y = Math.round(at.y) - ACTOR_SPRITE.height - (named ? BUBBLE.liftNamed : BUBBLE.lift) - Math.round(rise);
+
+  // Скошенные углы набираются крестом из двух прямоугольников: прямой
+  // угол делает из облачка вывеску.
+  const bevel = (
+    left: number,
+    top: number,
+    w: number,
+    h: number,
+    color: number,
+    a: number,
+  ): void => {
+    painter.fill({ x: left + 1, y: top, w: w - 2, h }, color, a);
+    painter.fill({ x: left, y: top + 1, w, h: h - 2 }, color, a);
+  };
+
+  bevel(x - 1, y - 1, width + 2, height + 2, BUBBLE.border, alpha * 0.85);
+  bevel(x, y, width, height, BUBBLE.fill, alpha);
+  // Хвостик ступеньками вниз-влево, к голове: без него пузырь ничей.
+  painter.fill({ x: x + 2, y: y + height - 1, w: 3, h: 2 }, BUBBLE.fill, alpha);
+  painter.fill({ x, y: y + height + 1, w: 2, h: 2 }, BUBBLE.fill, alpha);
+  painter.stamp(x + BUBBLE.padX, y + BUBBLE.padY, BUBBLE_TEXTURE, bubbleFrame(mood.icon), alpha);
 }

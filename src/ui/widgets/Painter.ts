@@ -104,11 +104,12 @@ export class Painter {
    * объёмная мелочь: её изображение не меняется от кадра к кадру, и
    * пересобирать его из полутора сотен заливок каждый раз незачем.
    */
-  stamp(x: number, y: number, key: string, frame: string): void {
+  stamp(x: number, y: number, key: string, frame: string, alpha = 1): void {
     const image = this.take(key, frame);
     image.setOrigin(0, 0);
     image.setPosition(Math.round(x), Math.round(y));
     image.setFlipX(false);
+    image.setAlpha(alpha);
   }
 
   /** Картинка из пула, поднятая на верх контейнера. */
@@ -125,6 +126,10 @@ export class Painter {
       image.setVisible(true);
       this.layer.bringToTop(image);
     }
+    // Прозрачность сбрасывается всегда: картинка идёт из пула, и
+    // выцветший пузырь оставил бы её полупрозрачной следующему, кто её
+    // возьмёт.
+    image.setAlpha(1);
     // Следующая заливка ляжет поверх спрайта, а не под него.
     this.shapes = null;
     return image;
