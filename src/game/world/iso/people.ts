@@ -7,6 +7,7 @@ import type { ActorPose } from '../../art';
 import type { Ambience } from '../ambience';
 import { drawShadow } from '../backdrop';
 import { drawDecor, shadowWidth } from '../decor';
+import { ISO_PROPS } from './street';
 import { lookFor } from '../actorSprite';
 import type { CrowdActor } from '../Crowd';
 import type { Facing } from '../actorSprite';
@@ -48,6 +49,13 @@ export function drawInhabitants(
     pieces.push({
       depth: item.x + item.y,
       draw: () => {
+        // У объёмной мелочи своя тень по следу на земле; у щитов —
+        // прежняя полоска под ногами.
+        const volume = ISO_PROPS[item.kind];
+        if (volume) {
+          volume({ painter, ambience, at, variant: item.variant ?? 0 });
+          return;
+        }
         const width = shadowWidth(item.kind) * UNIT;
         if (width > 0) drawShadow(painter, at.x, at.y, width, ambience);
         drawDecor(painter, item as DecorDef, at.x, at.y, ambience, UNIT);

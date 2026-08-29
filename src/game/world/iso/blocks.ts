@@ -247,8 +247,9 @@ function drawSideWindows(
 }
 
 /**
- * Вывеска щитом над фасадом: надпись на скошенной грани не читается, а
- * по вывеске дом и узнают.
+ * Вывеска щитом на фасаде: надпись на скошенной грани не читается, а по
+ * вывеске дом и узнают. Щит висит на самой стене, а не над крышей —
+ * иначе у высокого дома он уезжает под панель ресурсов.
  */
 function drawSign(
   ctx: BlockPaint,
@@ -258,26 +259,23 @@ function drawSign(
   lift: number,
 ): void {
   const { painter, ambience } = ctx;
-  const mid = along(west, south, 0.5, 0);
   const text = t(block.nameKey ?? '');
-  const width = Math.min(block.rect.w * TILE.halfW * 1.6, text.length * 6 + 18);
-  const board = { x: Math.round(mid.x - width / 2), y: mid.y - 20, w: Math.round(width), h: 15 };
+  const width = Math.min(block.rect.w * TILE.halfW * 1.7, text.length * 6 + 18);
+  const top = Math.min(14, Math.max(6, lift - 40));
+  const mid = along(west, south, 0.5, top);
+  const board = { x: Math.round(mid.x - width / 2), y: mid.y, w: Math.round(width), h: 15 };
 
   painter.fill({ x: board.x - 1, y: board.y - 1, w: board.w + 2, h: board.h + 2 }, 0x14121f);
   painter.fill(board, mix(scale(block.color, ambience.light), 0x1a1626, 0.55));
   painter.fill({ x: board.x, y: board.y, w: board.w, h: 1 }, scale(block.color, 1.5));
   painter.fill({ x: board.x, y: board.y + board.h - 1, w: board.w, h: 1 }, 0x0e0c16);
-  // Кронштейны до крыши: щит должен быть на чём-то закреплён.
-  painter.fill({ x: board.x + 4, y: board.y + board.h, w: 1, h: 20 }, 0x14121f);
-  painter.fill({ x: board.x + board.w - 5, y: board.y + board.h, w: 1, h: 20 }, 0x14121f);
   if (ambience.lampsOn) {
-    painter.fill({ x: board.x - 2, y: board.y - 2, w: board.w + 4, h: board.h + 4 }, COLORS.money, 0.14);
+    painter.fill({ x: board.x - 2, y: board.y - 2, w: board.w + 4, h: board.h + 4 }, COLORS.money, 0.16);
   }
   painter.label(board, text, {
     align: 'center',
     color: ambience.lampsOn ? COLORS.money : COLORS.text,
   });
-  void lift;
 }
 
 /**

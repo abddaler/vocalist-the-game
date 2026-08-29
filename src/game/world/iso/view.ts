@@ -2,7 +2,7 @@ import type { GameState, WorldPoint, WorldRect } from '@core/types';
 import { COLORS, CONTENT, LAYOUT } from '@ui/theme';
 import type { Hotspots, Rect } from '@ui/widgets/Hotspots';
 import type { Painter } from '@ui/widgets/Painter';
-import { ambienceOf } from '../ambience';
+import { ambienceOf, mix, scale } from '../ambience';
 import type { Ambience } from '../ambience';
 import { drawSky, drawFarSide, drawWash } from '../backdrop';
 import type { Backdrop } from '../backdrop';
@@ -138,10 +138,10 @@ function drawOutside(
   ambience: Ambience,
   district: NonNullable<IsoScene['district']>,
 ): void {
-  // Небо кладётся на всю высоту кадра, а не на полосу над крышами: землю
-  // сверху всё равно закроет запечённая карта, зато при любом положении
-  // камеры под ней не остаётся дыры в фоне.
-  const horizon = Math.max(24, Math.min(CONTENT.height, SKY_BAND - camera.y));
+  // Небо кладётся на всю высоту кадра: изометрическая карта — ромб, и в
+  // углы кадра она не достаёт. Ниже горизонта — дымка над городом, чтобы
+  // эти углы читались далью, а не дырой в фоне.
+  const horizon = Math.max(20, Math.min(CONTENT.height, SKY_BAND - camera.y));
   const area: Backdrop = {
     sky: { x: 0, y: CONTENT.y, w: CONTENT.width, h: horizon },
     road: { x: 0, y: CONTENT.y + horizon, w: CONTENT.width, h: CONTENT.height - horizon },
@@ -149,13 +149,19 @@ function drawOutside(
     worldWidth: CONTENT.width,
     unit: 2,
   };
-  painter.fill(
-    { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height },
-    ambience.skyLow,
-  );
+
   painter.clip({ x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height });
   drawSky(painter, area, ambience);
   drawFarSide(painter, area, ambience, district);
+
+  const haze = mix(ambience.skyLow, ambience.far, 0.45);
+  const depth = CONTENT.height - horizon;
+  for (let i = 0; i < depth; i += 1) {
+    painter.fill(
+      { x: 0, y: CONTENT.y + horizon + i, w: CONTENT.width, h: 1 },
+      mix(haze, scale(haze, 0.74), Math.min(1, i / 90)),
+    );
+  }
   painter.clip(null);
 }
 

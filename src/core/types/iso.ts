@@ -8,6 +8,7 @@
  */
 export type TileKind =
   | 'road'
+  | 'roadLine'
   | 'pavement'
   | 'plaza'
   | 'deck'

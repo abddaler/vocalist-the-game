@@ -57,6 +57,15 @@ const road: Paint = (ctx) => {
   if (n === 5) line(ctx, 6, 5, 8, false, scale(base, 1.14), 0.5);
 };
 
+/** Осевая разметка: та же мостовая с пунктиром вдоль улицы. */
+const roadLine: Paint = (ctx) => {
+  road(ctx);
+  if (ctx.tx % 2 !== 0) return;
+  const paint = mix(ctx.ambience.kerb, 0xfff0c0, 0.4);
+  line(ctx, -10, 3, 20, true, paint, 0.85);
+  line(ctx, -10, 4, 20, true, scale(paint, 0.7), 0.5);
+};
+
 /** Тротуар: плита со швом по кромке ромба. */
 const pavement: Paint = (ctx) => {
   const base = scale(
@@ -216,6 +225,7 @@ function seam(ctx: TilePaint, color: number): void {
 
 export const TILES: Readonly<Record<TileKind, Paint>> = {
   road,
+  roadLine,
   pavement,
   plaza,
   deck,

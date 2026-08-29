@@ -21,6 +21,7 @@ import { edge, face, tileHalf } from './shapes';
 /** Из чего сложена стенка под плиткой этого покрытия. */
 const WALL: Readonly<Record<TileKind, number>> = {
   road: 0x8a8378,
+  roadLine: 0x8a8378,
   pavement: 0xa89c88,
   plaza: 0xb8a68c,
   deck: 0x8a5f34,
