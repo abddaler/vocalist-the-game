@@ -200,28 +200,29 @@ export const CROWD: readonly CrowdMember[] = [
   stander('diner_2', 'restaurant', 'passer_5', { x: 11.5, y: 5.5 }),
 
   // — клуб —
+  // Зал разведён по углам: танцующие в середине, гости у диванов,
+  // бармен за стойкой. Кучей они сливаются в одно пятно.
   walker('club_guest_1', 'club_vertigo', 'passer_1', [
-    { x: 4.5, y: 8.5 },
-    { x: 10.5, y: 7.5 },
+    { x: 8.5, y: 6.5 },
+    { x: 12.5, y: 7.5 },
   ], 1100),
   walker('club_guest_2', 'club_vertigo', 'passer_5', [
-    { x: 12.5, y: 5.5 },
-    { x: 6.5, y: 8.5 },
+    { x: 13.5, y: 10.5 },
+    { x: 9.5, y: 9.5 },
   ], 1400),
-  stander('bartender', 'club_vertigo', 'passer_3', { x: 2.5, y: 7.5 }),
-  named('promoter', 'club_vertigo', { x: 16.5, y: 4.5 }, 'npc.promoter'),
+  stander('bartender', 'club_vertigo', 'passer_3', { x: 3.5, y: 7.5 }),
+  named('promoter', 'club_vertigo', { x: 17.5, y: 4.5 }, 'npc.promoter'),
   walker('club_guest_3', 'club_vertigo', 'passer_9', [
-    { x: 8.5, y: 8.5 },
-    { x: 12.5, y: 9.5 },
-    { x: 9.5, y: 11.5 },
+    { x: 6.5, y: 12.5 },
+    { x: 11.5, y: 12.5 },
   ], 600, 1.2),
-  stander('club_guest_4', 'club_vertigo', 'passer_10', { x: 11.5, y: 7.5 }),
-  stander('club_guest_5', 'club_vertigo', 'passer_12', { x: 6.5, y: 10.5 }),
+  stander('club_guest_4', 'club_vertigo', 'passer_10', { x: 12.5, y: 5.5 }),
+  stander('club_guest_5', 'club_vertigo', 'passer_12', { x: 8.5, y: 10.5 }),
   walker('club_guest_6', 'club_vertigo', 'passer_2', [
-    { x: 15.5, y: 8.5 },
-    { x: 12.5, y: 6.5 },
+    { x: 17.5, y: 9.5 },
+    { x: 15.5, y: 12.5 },
   ], 900, 1),
-  stander('club_guest_7', 'club_vertigo', 'passer_7', { x: 14.5, y: 11.5 }),
+  stander('club_guest_7', 'club_vertigo', 'passer_7', { x: 5.5, y: 10.5 }),
 
   // — студия звукозаписи —
   named('engineer', 'record_studio', { x: 11.5, y: 4.5 }, 'npc.engineer'),
