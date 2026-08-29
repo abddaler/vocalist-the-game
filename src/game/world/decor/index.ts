@@ -28,8 +28,6 @@ const DRAW: Readonly<Partial<Record<DecorKind, Draw>>> = {
 const SHADOW_WIDTH: Readonly<Partial<Record<DecorKind, number>>> = {
   palm: 10,
   lamp: 6,
-  trafficLight: 7,
-  surfboard: 7,
   dog: 11,
   tree: 16,
   bush: 12,

@@ -136,40 +136,6 @@ const boat: Draw = (ctx) => {
   panel(ctx.painter, ctx.at, 'x', { span: 0.9, top: 31, height: 2 }, rig);
 };
 
-const newsbox: Draw = (ctx) => {
-  shade(ctx, 0.5, 0.4);
-  boxAt(ctx.painter, ctx.at, { w: 0.2, d: 0.2, h: 6 }, skin(ctx, 0x4a4f58));
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 6), { w: 0.5, d: 0.4, h: 12 }, skin(ctx, 0x3f7fa8));
-  // Газета за стеклом — на лицевой грани ящика.
-  panel(
-    ctx.painter,
-    ctx.at,
-    'x',
-    { span: 0.34, across: 0.2, top: 15, height: 5 },
-    scale(0xd8d4c8, ctx.ambience.light),
-  );
-};
-
-const mailbox: Draw = (ctx) => {
-  shade(ctx, 0.5, 0.4);
-  boxAt(ctx.painter, ctx.at, { w: 0.22, d: 0.22, h: 10 }, skin(ctx, 0x4a4f58));
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 10), { w: 0.55, d: 0.42, h: 13 }, skin(ctx, 0x3f6fa8));
-};
-
-const bollard: Draw = (ctx) => {
-  shade(ctx, 0.3, 0.3);
-  boxAt(ctx.painter, ctx.at, { w: 0.22, d: 0.22, h: 11 }, skin(ctx, 0x4a4f58));
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 11), { w: 0.3, d: 0.3, h: 2 }, skin(ctx, 0x6d7481));
-};
-
-const hydrant: Draw = (ctx) => {
-  shade(ctx, 0.35, 0.35);
-  const red = skin(ctx, 0xc9453f);
-  boxAt(ctx.painter, ctx.at, { w: 0.3, d: 0.3, h: 9 }, red);
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 9), { w: 0.44, d: 0.44, h: 2 }, skin(ctx, 0xe05a52));
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 11), { w: 0.2, d: 0.2, h: 3 }, red);
-};
-
 const TOWEL = [0xe8705f, 0x5fc9a8, 0xe8c45f, 0xb87fd0];
 
 const towel: Draw = (ctx) => {
@@ -210,43 +176,7 @@ const bike: Draw = (ctx) => {
   plate(ctx.painter, ctx.at, { w: 0.2, d: 0.2, dx: axis === 'x' ? -0.16 : 0, dy: axis === 'y' ? -0.16 : 0, lift: 22 }, iron.top);
 };
 
-const BILLBOARD_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f];
-
-/** Щит с афишей: две стойки и полотно в плоскости своей стороны улицы. */
-const billboard: Draw = (ctx) => {
-  shade(ctx, 0.5, 0.3);
-  const axis = ctx.facing;
-  const post = skin(ctx, 0x4a4450);
-  for (const a of [-0.3, 0.3]) {
-    boxAt(
-      ctx.painter,
-      shift(ctx.at, axis === 'x' ? a : 0, axis === 'y' ? a : 0),
-      { w: 0.12, d: 0.12, h: 16 },
-      post,
-    );
-  }
-  const art = BILLBOARD_ART[ctx.variant % BILLBOARD_ART.length]!;
-  const lit = ctx.ambience.lampsOn;
-  panel(ctx.painter, ctx.at, axis, { span: 1.7, top: 40, height: 24 }, scale(0x2e3240, ctx.ambience.light));
-  panel(ctx.painter, ctx.at, axis, { span: 1.55, top: 38, height: 20 }, lit ? art : scale(art, ctx.ambience.light));
-  panel(ctx.painter, ctx.at, axis, { span: 1.1, top: 32, height: 2 }, 0xffffff, 0.6);
-  panel(ctx.painter, ctx.at, axis, { span: 0.85, top: 27, height: 2 }, 0xffffff, 0.4);
-};
-
-const RUG = [0x6f3a4c, 0x3a5a6f, 0x6f6238];
-
-/** Ковёр: он лежит на полу, а значит — ромбом, а не прямоугольником. */
-const rug: Draw = (ctx) => {
-  const base = scale(RUG[ctx.variant % RUG.length]!, ctx.ambience.light);
-  patch(ctx, 3.2, 2.4, base);
-  patch(ctx, 2.9, 2.1, scale(base, 1.2), 1, 1);
-  patch(ctx, 2.4, 1.7, base, 1, 2);
-  patch(ctx, 1.6, 1.1, scale(base, 1.35), 1, 3);
-};
-
 export const STREET_PROPS = {
-  billboard,
-  rug,
   bench,
   car,
   bin,
@@ -256,10 +186,6 @@ export const STREET_PROPS = {
   table,
   deckchair,
   boat,
-  newsbox,
-  mailbox,
-  bollard,
-  hydrant,
   towel,
   bike,
 };

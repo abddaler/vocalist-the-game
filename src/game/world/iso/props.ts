@@ -1,6 +1,7 @@
 import type { DecorKind } from '@core/types';
 import { CANOPY_BASE, CANOPY_TOP } from './canopy';
 import { INDOOR_PROPS } from './indoor';
+import { ROADSIDE_PROPS } from './roadside';
 import { STREET_PROPS } from './street';
 import type { Draw } from './prop';
 
@@ -10,6 +11,7 @@ import type { Draw } from './prop';
  */
 export const ISO_PROPS: Partial<Record<DecorKind, Draw>> = {
   ...STREET_PROPS,
+  ...ROADSIDE_PROPS,
   ...INDOOR_PROPS,
   ...CANOPY_BASE,
 };

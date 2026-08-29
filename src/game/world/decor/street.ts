@@ -3,9 +3,9 @@ import type { Draw } from './kit';
 import { mix, scale } from '../ambience';
 
 /**
- * Уличная мелочь, у которой нет объёма: пальма, фонарь, светофор, доска
- * и живность. У тонкого столба нет грани, которую камера показала бы
- * боком, а чайка и собака — те же персонажи, только мельче.
+ * Уличная мелочь, у которой нет объёма: пальма, фонарь и живность. У
+ * тонкого столба нет грани, которую камера показала бы боком, а чайка и
+ * собака — те же персонажи, только мельче.
  */
 const PALM_HEIGHTS = [30, 38, 46];
 /**
@@ -81,17 +81,6 @@ const gull: Draw = (ctx) => {
   box(ctx, -1, 0, 2, 1, body);
 };
 
-const trafficLight: Draw = (ctx) => {
-  const post = tone(ctx, 0x3a3f4a);
-  box(ctx, -1, -34, 3, 34, post);
-  box(ctx, -4, -46, 9, 13, tone(ctx, 0x22242c));
-  const on = ctx.ambience.lampsOn ? 1 : 0.75;
-  box(ctx, -2, -44, 5, 3, 0xe84a4a, on);
-  box(ctx, -2, -40, 5, 3, 0xe8c44a, on * 0.5);
-  box(ctx, -2, -36, 5, 3, 0x4ae87a, on * 0.5);
-  if (ctx.ambience.lampsOn) box(ctx, -7, -47, 15, 16, 0xe84a4a, 0.12);
-};
-
 /** Собака на выгуле: единственное, что здесь двигалось бы само. */
 const dog: Draw = (ctx) => {
   const fur = tone(ctx, ctx.variant % 2 === 0 ? 0xa8814a : 0x585048);
@@ -103,21 +92,4 @@ const dog: Draw = (ctx) => {
   box(ctx, 2, -2, 2, 2, fur);
 };
 
-/** Доска у стены: без неё этот город не отличить от любого другого. */
-const surfboard: Draw = (ctx) => {
-  const deck = tone(ctx, [0xe86a6a, 0x5fc9e8, 0xe8c45f][ctx.variant % 3]!);
-  // Доска сужается к обоим концам, а не стоит бруском: у бруска нет ни
-  // носа, ни хвоста, и в песке он читается коробкой.
-  const height = 32;
-  for (let i = 0; i < height; i += 1) {
-    const t = i / height;
-    const w = 8 * Math.sin(Math.PI * (0.12 + t * 0.76));
-    box(ctx, -w / 2, -i - 1, w, 1, scale(deck, 1 - Math.abs(0.5 - t) * 0.22));
-  }
-  // Стрингер и кант.
-  box(ctx, -0.5, -28, 1, 24, 0xffffff, 0.45);
-  box(ctx, -3, -26, 1, 20, scale(deck, 0.7), 0.6);
-  box(ctx, 2, -26, 1, 20, scale(deck, 1.25), 0.5);
-};
-
-export const STREET = { palm, lamp, gull, trafficLight, dog, surfboard };
+export const STREET = { palm, lamp, gull, dog };
