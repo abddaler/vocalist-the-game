@@ -81,6 +81,14 @@ window.addEventListener('unhandledrejection', (event) => {
   reportFailure(String(event.reason));
 });
 
+/**
+ * Сторожу в index.html нужно знать, что игра всё-таки завелась: иначе он
+ * посчитает страницу протухшей и перезагрузит её.
+ */
+game.events.once('ready', () => {
+  (window as unknown as { __vsBooted?: () => void }).__vsBooted?.();
+});
+
 // Двух секунд движку хватает с запасом; если канваса нет — что-то не так.
 window.setTimeout(() => {
   if (!game.canvas) {
