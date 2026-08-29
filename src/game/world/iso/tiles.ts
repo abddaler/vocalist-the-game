@@ -168,22 +168,26 @@ const steps: Paint = (ctx) => {
 
 /** Дощатый пол помещения: доски вдоль оси x, тёплые и тёмные. */
 const wood: Paint = (ctx) => {
-  const base = scale(0x8a5f38, ctx.ambience.light * jitter(ctx.tx, ctx.ty, 0.08));
+  const base = scale(0x8a5f38, ctx.ambience.light * jitter(ctx.tx, ctx.ty, 0.09));
   tile(ctx.painter, ctx.at, base);
-  for (const [dx, dy, len] of [[-14, 8, 14], [-8, 5, 22], [0, 2, 16]] as const) {
-    line(ctx, dx, dy, len, true, scale(base, 0.7), 0.8);
-    line(ctx, dx, dy + 1, len, true, scale(base, 1.15), 0.3);
+  // Швы сдвигаются от ряда к ряду: одинаковый рисунок в каждой плитке
+  // складывается в рябь и выдаёт сетку.
+  const phase = ((ctx.tx * 2 + ctx.ty * 5) % 3) - 1;
+  for (const [dx, dy, len] of [[-13, 8, 12], [-6, 4, 20]] as const) {
+    line(ctx, dx + phase * 2, dy + phase, len, true, scale(base, 0.76), 0.7);
+    line(ctx, dx + phase * 2, dy + phase + 1, len, true, scale(base, 1.14), 0.25);
   }
 };
 
 /** Полированный камень: шов по кромке и блик наискось. */
 const marble: Paint = (ctx) => {
-  const base = scale(0xd8d0c4, ctx.ambience.light * jitter(ctx.tx, ctx.ty, 0.03));
-  tile(ctx.painter, ctx.at, (ctx.tx + ctx.ty) % 2 === 0 ? base : scale(base, 0.93));
-  seam(ctx, scale(base, 0.82));
-  if ((ctx.tx * 5 + ctx.ty * 3) % 4 === 0) {
-    line(ctx, -6, 9, 10, true, 0xffffff, 0.18);
-  }
+  const base = scale(0xd8d0c4, ctx.ambience.light * jitter(ctx.tx, ctx.ty, 0.025));
+  tile(ctx.painter, ctx.at, (ctx.tx + ctx.ty) % 2 === 0 ? base : scale(base, 0.92));
+  seam(ctx, scale(base, 0.8));
+  // Прожилки камня: короткие светлые росчерки поперёк плиты.
+  const n = (ctx.tx * 17 + ctx.ty * 11) % 6;
+  if (n < 2) line(ctx, -8 + n * 3, 6 + n, 12, true, 0xffffff, 0.16);
+  if (n === 4) line(ctx, 5, 5, 9, false, scale(base, 0.86), 0.4);
 };
 
 /** Танцпол: тёмная плита, по которой ходят пятна света. */
@@ -209,10 +213,16 @@ const stage: Paint = (ctx) => {
 
 /** Ковёр в комнате: кайма и узор. */
 const rug: Paint = (ctx) => {
-  const base = scale(0x8f3f5a, ctx.ambience.light);
+  const base = scale(0x8f3f5a, ctx.ambience.light * jitter(ctx.tx, ctx.ty, 0.03));
   tile(ctx.painter, ctx.at, base);
-  seam(ctx, scale(base, 1.45));
-  line(ctx, -6, 9, 12, true, scale(base, 1.3), 0.6);
+  // Узор ковра: ромб в ромбе и точки по углам — иначе это заливка.
+  const inner = scale(base, (ctx.tx + ctx.ty) % 2 === 0 ? 1.16 : 0.88);
+  for (let r = 4; r < 12; r += 1) {
+    const w = 2 + 4 * Math.min(r, 15 - r) - 12;
+    if (w > 0) ctx.painter.fill({ x: ctx.at.x - w / 2, y: ctx.at.y + r, w, h: 1 }, inner);
+  }
+  ctx.painter.fill({ x: ctx.at.x - 1, y: ctx.at.y + 7, w: 2, h: 2 }, scale(base, 1.5));
+  seam(ctx, scale(base, 1.35));
 };
 
 const SEAM_ALPHA = 0.55;

@@ -61,7 +61,15 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
   });
 
   const camera = cameraOn(params.position, scene.map, origin, size, sky);
-  if (outdoors) drawOutside(params.back, camera, ambience, scene.district!);
+  if (outdoors) {
+    drawOutside(params.back, camera, ambience, scene.district!);
+  } else {
+    // За стенами комнаты — не пустота интерфейса, а полумрак помещения.
+    params.back.fill(
+      { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height },
+      mix(scene.floorColor, 0x0b0a12, 0.72),
+    );
+  }
   params.canvas.place(-camera.x, CONTENT.y - camera.y);
 
   const toView = (point: WorldPoint, z: number): ScreenPoint => {

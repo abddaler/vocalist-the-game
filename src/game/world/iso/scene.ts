@@ -46,6 +46,8 @@ export interface IsoScene {
   /** Под открытым небом: район задаёт небо и дальний план, комната — нет. */
   readonly district: DistrictId | null;
   readonly slot: Slot;
+  /** Гамма помещения: ею красится и полумрак за стенами комнаты. */
+  readonly floorColor: number;
   /** Ключ запечённой подложки: пока он тот же, текстуру не переделывают. */
   readonly key: string;
 }
@@ -99,6 +101,7 @@ export function districtScene(state: GameState, districtId: DistrictId): IsoScen
     pointColors: new Map(district.points.map((point) => [point.id, point.color])),
     decor: district.decor,
     district: district.id,
+    floorColor: 0x1a1626,
     slot,
     key: `${district.id}:${slot}`,
   };
@@ -128,6 +131,7 @@ export function roomScene(room: RoomDef, slot: Slot): IsoScene {
     pointColors: new Map(room.points.map((point) => [point.id, point.color])),
     decor: room.decor,
     district: null,
+    floorColor: room.floor,
     slot,
     key: `${room.locationId}:${slot}`,
   };

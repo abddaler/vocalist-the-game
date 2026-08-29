@@ -10,7 +10,7 @@ import { drawIsoProp } from './furniture';
 import { heightAt } from './height';
 import { TILE } from './project';
 import type { ScreenPoint } from './project';
-import { box } from './shapes';
+import { boxAt } from './shapes';
 import type { IsoScene } from './scene';
 import { centerOf } from './walk';
 
@@ -63,7 +63,9 @@ export function drawMarks(
       drawDoorGlow(painter, at, ambience);
     }
 
-    if (active && target.kind !== 'door') {
+    // Подпись только у площадок: у двери, выхода и створа и так есть
+    // подсказка внизу экрана, и вторая надпись только спорит с ней.
+    if (active && target.kind === 'point') {
       drawCaption(painter, at, target);
     }
 
@@ -86,16 +88,41 @@ function drawDoorGlow(painter: Painter, at: ScreenPoint, ambience: Ambience): vo
   painter.fill({ x: at.x - 9, y: at.y - 2, w: 18, h: 2 }, glow, 0.5);
 }
 
-/** Порог выхода из комнаты: светлая плита в полу. */
+/**
+ * Выход из комнаты: дверной проём с косяками и светом снаружи. Плита в
+ * полу читалась листом бумаги, а выход должен быть виден с порога.
+ */
 function drawDoorstep(painter: Painter, at: ScreenPoint, active: boolean, ambience: Ambience): void {
-  const stone = scale(mix(ambience.pavement, 0xffffff, 0.3), ambience.light);
-  box(
-    painter,
-    { x: 0, y: 0, w: 1, d: 1, h: 2 },
-    { top: stone, left: scale(stone, 0.7), right: scale(stone, 0.85) },
+  const stone = scale(mix(ambience.pavement, 0xffffff, 0.28), ambience.light);
+  const frame = {
+    top: stone,
+    left: scale(stone, 0.62),
+    right: scale(stone, 0.84),
+    outline: mix(stone, 0x0d0b14, 0.6),
+  };
+  // Коврик под ногами.
+  boxAt(painter, at, { w: 1.1, d: 1.1, h: 2 }, {
+    top: scale(stone, 0.72),
+    left: scale(stone, 0.5),
+    right: scale(stone, 0.6),
+  });
+  // Проём: тёмная створка между двумя косяками под перемычкой.
+  const height = 40;
+  painter.fill({ x: at.x - 13, y: at.y - height, w: 26, h: height - 2 }, 0x14121c);
+  painter.fill(
+    { x: at.x - 11, y: at.y - height + 4, w: 22, h: height - 8 },
+    active ? mix(ambience.skyLow, 0xffffff, 0.4) : mix(ambience.skyLow, 0x14121c, 0.35),
   );
-  void at;
-  void active;
+  boxAt(painter, { x: at.x - 14, y: at.y }, { w: 0.2, d: 0.9, h: height }, frame);
+  boxAt(painter, { x: at.x + 14, y: at.y }, { w: 0.2, d: 0.9, h: height }, frame);
+  painter.fill({ x: at.x - 17, y: at.y - height - 5, w: 34, h: 6 }, stone);
+  painter.fill({ x: at.x - 17, y: at.y - height - 5, w: 34, h: 1 }, scale(stone, 1.3));
+
+  const tip = active ? COLORS.borderFocus : COLORS.accent;
+  for (let i = 0; i < 5; i += 1) {
+    painter.fill({ x: at.x - 5 + i, y: at.y - 14 + i, w: 2, h: 1 }, tip);
+    painter.fill({ x: at.x + 4 - i, y: at.y - 14 + i, w: 2, h: 1 }, tip);
+  }
 }
 
 /** Створ в соседний район: арка со стойками, а не грань экрана. */
