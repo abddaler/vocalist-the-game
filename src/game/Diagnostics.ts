@@ -16,6 +16,7 @@ export class Diagnostics {
   private worst = 0;
   private shown = 0;
   private last = 0;
+  private objects = 0;
 
   constructor(private readonly game: Phaser.Game) {}
 
@@ -38,13 +39,22 @@ export class Diagnostics {
     return true;
   }
 
-  /** Что показать: кадры, худший кадр, рендерер и размер холста. */
+  /**
+   * Сколько объектов ушло в прошлый кадр. Тормозящий телефон надо
+   * отличать от телефона, которому подсунули втрое больше работы, чем
+   * эмулятору, — а по одним кадрам в секунду это неразличимо.
+   */
+  count(drawn: number): void {
+    this.objects = drawn;
+  }
+
+  /** Что показать: кадры, худший кадр, объекты, рендерер и размер холста. */
   line(): string {
     const canvas = this.game.canvas;
     const renderer = this.game.renderer.type === 2 ? 'gl' : 'cv';
     const dpr = Math.round(window.devicePixelRatio * 10) / 10;
     const view = canvas ? `${canvas.width}x${canvas.height}` : '?';
     const css = canvas ? `${Math.round(canvas.clientWidth)}` : '?';
-    return `${this.fps} fps · ${this.shown} ms · ${renderer} · ${view}→${css} · dpr ${dpr}`;
+    return `${this.fps} fps · ${this.shown} ms · ${this.objects} об · ${renderer} · ${view}→${css} · dpr ${dpr}`;
   }
 }

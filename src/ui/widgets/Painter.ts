@@ -49,6 +49,15 @@ export class Painter {
     private readonly layer: Phaser.GameObjects.Container,
   ) {}
 
+  /**
+   * Сколько объектов ушло в последний кадр. Нужно строке диагностики:
+   * тормозящий телефон надо отличать от телефона, которому подсунули
+   * втрое больше работы, чем эмулятору.
+   */
+  drawn(): { canvases: number; sprites: number; labels: number } {
+    return { ...this.used };
+  }
+
   clear(): void {
     for (const item of this.canvases) item.clear();
     for (const item of this.sprites) item.setVisible(false);

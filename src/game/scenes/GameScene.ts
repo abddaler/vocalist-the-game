@@ -229,6 +229,11 @@ export class GameScene extends Phaser.Scene {
 
   private render(): void {
     this.dirty = false;
+    // Счёт снимается до очистки: это работа прошлого кадра, и сложить её
+    // можно только пока кисти ещё её помнят.
+    this.diagnostics.count(
+      total(this.backPainter.drawn()) + total(this.worldPainter.drawn()) + total(this.painter.drawn()),
+    );
     this.backPainter.clear();
     this.worldPainter.clear();
     this.painter.clear();
@@ -344,4 +349,9 @@ export class GameScene extends Phaser.Scene {
         });
     }
   }
+}
+
+/** Сколько всего объектов у одной кисти. */
+function total(drawn: { canvases: number; sprites: number; labels: number }): number {
+  return drawn.canvases + drawn.sprites + drawn.labels;
 }
