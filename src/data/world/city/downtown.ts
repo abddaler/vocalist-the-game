@@ -67,6 +67,12 @@ export const DOWNTOWN: DistrictDef = {
     decor('lamp', 30.5, 4.5),
     decor('billboard', 13.5, 2.5, 1),
     decor('billboard', 32.5, 2.5, 0),
+    decor('stall', 9.5, 4.5, 2),
+    decor('kiosk', 28.5, 4.5),
+    decor('bin', 19.5, 4.5),
+    decor('bench', 17.5, 4.5),
+    decor('planter', 27.5, 2.5),
+    decor('planter', 12.5, 2.5),
 
     // Тротуар под площадью.
     decor('newsbox', 3.5, 6.5),

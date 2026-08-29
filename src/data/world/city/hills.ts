@@ -81,6 +81,13 @@ export const HILLS: DistrictDef = {
     decor('lamp', 2.5, 3.5),
     decor('lamp', 17.5, 3.5),
     decor('lamp', 34.5, 3.5),
+    decor('kiosk', 28.5, 3.5),
+    decor('bin', 12.5, 3.5),
+    decor('bench', 20.5, 3.5),
+    decor('planter', 37.5, 3.5),
+    decor('hydrant', 25.5, 5.5),
+    decor('mailbox', 32.5, 5.5),
+    decor('bench', 8.5, 5.5),
 
     // Тротуар под террасой.
     decor('hydrant', 13.5, 5.5),

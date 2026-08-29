@@ -13,7 +13,20 @@ export type { DecorContext } from './kit';
  * а связь «вид предмета — процедура» держится здесь, чтобы забытый вид
  * не собрался.
  */
-const DRAW: Readonly<Record<DecorKind, Draw>> = { ...STREET, ...INDOOR, ...NATURE };
+const VOLUME_ONLY: Draw = () => undefined;
+
+/**
+ * Реестр щитовых рисунков. Лоток, киоск и хижина рисуются только
+ * объёмом — щита у них нет и быть не может.
+ */
+const DRAW: Readonly<Record<DecorKind, Draw>> = {
+  ...STREET,
+  ...INDOOR,
+  ...NATURE,
+  stall: VOLUME_ONLY,
+  kiosk: VOLUME_ONLY,
+  hut: VOLUME_ONLY,
+};
 
 /** Насколько широкую тень отбрасывает предмет. Ноль — тени нет. */
 const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
@@ -40,6 +53,9 @@ const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
   dog: 11,
   surfboard: 7,
   towel: 0,
+  stall: 0,
+  kiosk: 0,
+  hut: 0,
   table: 20,
   tree: 16,
   bush: 12,
@@ -82,6 +98,9 @@ const FOOTPRINT: Readonly<Record<DecorKind, readonly [number, number]>> = {
   surfboard: [0.3, 0.3],
   // Полотенце лежит плашмя: через него переступают.
   towel: [0, 0],
+  stall: [2.2, 1.4],
+  kiosk: [1.4, 1.2],
+  hut: [3.2, 2.4],
   table: [0.9, 0.7],
   tree: [0.5, 0.5],
   bush: [0.6, 0.5],

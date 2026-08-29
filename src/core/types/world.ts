@@ -106,6 +106,9 @@ export type DecorKind =
   | 'dog'
   | 'surfboard'
   | 'towel'
+  | 'stall'
+  | 'kiosk'
+  | 'hut'
   | 'table';
 
 export interface DecorDef {

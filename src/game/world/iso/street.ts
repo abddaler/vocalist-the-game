@@ -298,3 +298,80 @@ export const ISO_PROPS: Partial<Record<DecorKind, Draw>> = {
   bike,
   shelf,
 };
+
+const AWNING = [0xe85f6a, 0x4f9fd8, 0xe8c45f, 0x5fc9a8];
+
+/** Торговый лоток: прилавок, полосатый навес и товар на нём. */
+const stall: Draw = (ctx) => {
+  shade(ctx, 2.2, 1.4);
+  const wood = skin(ctx, 0xa8804a);
+  const post = skin(ctx, 0x6a4f34);
+  const cloth = AWNING[ctx.variant % AWNING.length]!;
+
+  boxAt(ctx.painter, ctx.at, { w: 2, d: 1, h: 16 }, wood);
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 16), { w: 2.2, d: 1.15, h: 3 }, skin(ctx, 0xd8c8a8));
+  // Товар на прилавке: пятна цвета, по которым лоток и узнают.
+  for (let i = 0; i < 6; i += 1) {
+    const at = shift(ctx.at, -0.7 + (i % 3) * 0.7, -0.25 + Math.floor(i / 3) * 0.5, 19);
+    ctx.painter.fill(
+      { x: at.x - 4, y: at.y - 5, w: 8, h: 5 },
+      scale([0xe8705f, 0xe8c45f, 0x7fc95f, 0xd85f9a][i % 4]!, ctx.ambience.light),
+    );
+  }
+  // Стойки и навес.
+  for (const [dx, dy] of [[-0.95, -0.5], [0.95, -0.5], [-0.95, 0.5], [0.95, 0.5]] as const) {
+    boxAt(ctx.painter, shift(ctx.at, dx, dy), { w: 0.12, d: 0.12, h: 34 }, post);
+  }
+  const roof = shift(ctx.at, 0, 0, 34);
+  for (let i = 0; i < 5; i += 1) {
+    const w = 2.4 - i * 0.06;
+    boxAt(
+      ctx.painter,
+      shift(ctx.at, 0, 0, 34 + i * 2),
+      { w, d: 1.5 - i * 0.05, h: 2 },
+      skin(ctx, i % 2 === 0 ? cloth : scale(cloth, 1.25), 0.45),
+    );
+  }
+  void roof;
+};
+
+/** Киоск: будка с окошком и вывеской. */
+const kiosk: Draw = (ctx) => {
+  shade(ctx, 1.4, 1.2);
+  const shell = skin(ctx, 0x6a7f9a);
+  boxAt(ctx.painter, ctx.at, { w: 1.3, d: 1.1, h: 40 }, shell);
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 40), { w: 1.55, d: 1.35, h: 4 }, skin(ctx, 0x3f4a5c));
+  const front = shift(ctx.at, 0, 0.55, 16);
+  const glass = mix(scale(0x9fd0e8, ctx.ambience.light), ctx.ambience.skyLow, 0.3);
+  ctx.painter.fill({ x: front.x - 11, y: front.y - 16, w: 22, h: 14 }, glass);
+  ctx.painter.fill({ x: front.x - 11, y: front.y - 16, w: 22, h: 2 }, scale(glass, 1.4));
+  ctx.painter.fill({ x: front.x - 13, y: front.y - 24, w: 26, h: 6 }, scale(0xe8c45f, ctx.ambience.light));
+};
+
+/** Хижина у воды: соломенная крыша на столбах и стойка под ней. */
+const hut: Draw = (ctx) => {
+  shade(ctx, 3.2, 2.4);
+  const post = skin(ctx, 0x8a6a3f);
+  const straw = scale(0xd8b45f, ctx.ambience.light);
+
+  for (const [dx, dy] of [[-1.4, -1], [1.4, -1], [-1.4, 1], [1.4, 1]] as const) {
+    boxAt(ctx.painter, shift(ctx.at, dx, dy), { w: 0.2, d: 0.2, h: 40 }, post);
+  }
+  boxAt(ctx.painter, shift(ctx.at, 0, 0.6, 12), { w: 2.4, d: 0.7, h: 14 }, skin(ctx, 0xb08a52));
+  // Соломенная крыша: несколько ярусов, сужающихся кверху.
+  for (let i = 0; i < 6; i += 1) {
+    boxAt(
+      ctx.painter,
+      shift(ctx.at, 0, 0, 40 + i * 3),
+      { w: 3.4 - i * 0.45, d: 2.6 - i * 0.34, h: 4 },
+      {
+        top: scale(straw, 1.16 - i * 0.02),
+        left: scale(straw, 0.7),
+        right: scale(straw, 0.9),
+        outline: mix(straw, 0x2a1f10, 0.6),
+      },
+    );
+  }
+};
+
+Object.assign(ISO_PROPS, { stall, kiosk, hut });

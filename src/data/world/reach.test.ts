@@ -69,6 +69,15 @@ describe('по району можно пройти ногами', () => {
   for (const district of CITY) {
     const map = parseMap(district.tiles);
 
+    it(`${district.id}: игрок появляется на свободном месте`, () => {
+      // Поставленный на спавн киоск запирает игрока в первом же кадре,
+      // и по картинке этого не видно — только ногами.
+      const { free } = reachable(district);
+      const x = Math.floor(district.spawn.x);
+      const y = Math.floor(district.spawn.y);
+      expect(free.has(y * map.width + x), `${district.id} @ ${x},${y}`).toBe(true);
+    });
+
     it(`${district.id}: до каждой двери, площадки и створа есть дорога`, () => {
       const { seen } = reachable(district);
       const near = (rect: WorldRect): boolean => {
