@@ -1,3 +1,4 @@
+import { devFlag } from '@platform/devtools';
 import { PORTRAIT_SIZE, PORTRAIT_TEXTURE, portraitFrame } from '../../game/art/portrait';
 import { COLORS } from '../theme';
 import type { Painter } from './Painter';
@@ -43,7 +44,16 @@ export const SPEAKER_HEIGHT = PORTRAIT_SIZE + HEADER.frame * 2;
 export function drawSpeaker(painter: Painter, at: Rect, speaker: Speaker): number {
   const box = { x: at.x, y: at.y, w: SPEAKER_HEIGHT, h: SPEAKER_HEIGHT };
   painter.plate(box, COLORS.panelDeep, COLORS.border);
-  painter.stamp(box.x + HEADER.frame, box.y + HEADER.frame, PORTRAIT_TEXTURE, portraitFrame(speaker.look));
+  if (devFlag('plain')) {
+    // Заглушка портрета — квадрат с первой буквой имени: по ней видно,
+    // что портрет подставился правильному человеку.
+    painter.fill({ x: box.x + HEADER.frame, y: box.y + HEADER.frame, w: PORTRAIT_SIZE, h: PORTRAIT_SIZE },
+      COLORS.panelAlt);
+    painter.label({ x: box.x, y: box.y + PORTRAIT_SIZE / 2 - 6, w: box.w, h: 12 },
+      speaker.name.slice(0, 1), { align: 'center', color: COLORS.text });
+  } else {
+    painter.stamp(box.x + HEADER.frame, box.y + HEADER.frame, PORTRAIT_TEXTURE, portraitFrame(speaker.look));
+  }
 
   const textX = box.x + box.w + HEADER.gap;
   const textW = at.x + at.w - textX;

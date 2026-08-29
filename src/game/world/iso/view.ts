@@ -15,6 +15,7 @@ import type { PropAtlas } from '../PropAtlas';
 import type { CrowdActor } from '../Crowd';
 import type { Facing } from '../actorSprite';
 import { drawIsoDebug } from './debug';
+import { paintPlainBlock, paintPlainGround } from './plain';
 import { drawPieces, inhabitantPieces } from './people';
 import { drawBlock, drawBlockSign } from './blocks';
 import { drawGround } from './ground';
@@ -132,10 +133,18 @@ function paintStatic(
   ambience: Ambience,
   origin: ScreenPoint,
 ): void {
-  drawGround(painter, scene.map, ambience, origin);
   const blocks = [...scene.blocks].sort(
     (a, b) => a.rect.x + a.rect.y + a.rect.h - (b.rect.x + b.rect.y + b.rect.h),
   );
+
+  if (devFlag('plain')) {
+    paintPlainGround(painter, scene.map, ambience, origin);
+    for (const block of blocks) paintPlainBlock(painter, block, ambience, origin);
+    for (const block of blocks) drawBlockSign({ painter, ambience, origin }, block);
+    return;
+  }
+
+  drawGround(painter, scene.map, ambience, origin);
   for (const block of blocks) drawBlock({ painter, ambience, origin }, block);
   for (const block of blocks) drawBlockSign({ painter, ambience, origin }, block);
 }

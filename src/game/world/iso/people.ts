@@ -1,8 +1,9 @@
 import type { WorldPoint } from '@core/types';
+import { devFlag } from '@platform/devtools';
 import { t } from '@ui/i18n';
 import { COLORS } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
-import { ACTOR_SPRITE, ACTOR_TEXTURE, PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
+import { ACTOR_SPRITE, ACTOR_TEXTURE, LOOKS, PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
 import { BUBBLE_CELL, BUBBLE_TEXTURE, bubbleFrame } from '../../art/bubble';
 import type { ActorPose } from '../../art';
 import type { Ambience } from '../ambience';
@@ -16,6 +17,7 @@ import type { Facing } from '../actorSprite';
 import type { ScreenPoint } from './project';
 import type { IsoScene } from './scene';
 import { heightAt } from './height';
+import { paintPlainPerson, paintPlainProp } from './plain';
 
 export interface Inhabitants {
   /** Атлас мелочи. Без него предметы рисуются каждый кадр заново. */
@@ -62,6 +64,7 @@ export function inhabitantPieces(
   ambience: Ambience,
 ): Piece[] {
   const pieces: Piece[] = [];
+  const plain = devFlag('plain');
 
   const place = (point: WorldPoint): ScreenPoint =>
     toView(point, heightAt(scene.map, point));
@@ -72,6 +75,12 @@ export function inhabitantPieces(
    * помещается не всё, и не попавшее рисуется как прежде.
    */
   const stamp = (id: string, at: ScreenPoint): void => {
+    if (plain) {
+      // Навес выше столбика: у заглушки высота — единственное, чем
+      // отличается зонт от люка.
+      paintPlainProp(painter, at, id, id.endsWith('|t') ? PLAIN_TALL : PLAIN_LOW);
+      return;
+    }
     const frame = params.props?.frameOf(id);
     if (frame && params.props) {
       painter.stamp(at.x - PROP_ANCHOR.x, at.y - PROP_ANCHOR.y, params.props.textureKey, frame);
@@ -100,7 +109,11 @@ export function inhabitantPieces(
     const at = place(point);
     // Тень остаётся на земле: подскакивает человек, а не его след.
     drawShadow(painter, at.x, at.y, ACTOR_SPRITE.width * 0.7, ambience);
-    painter.sprite(at.x, at.y - pose.lift, ACTOR_TEXTURE, pose.flipX, actorTexture(look, pose.pose));
+    if (plain) {
+      paintPlainPerson(painter, at, plainColor(look), pose, ACTOR_SPRITE.height * 0.8);
+    } else {
+      painter.sprite(at.x, at.y - pose.lift, ACTOR_TEXTURE, pose.flipX, actorTexture(look, pose.pose));
+    }
     if (nameKey) drawNamePlate(painter, at, nameKey);
     if (mood) drawBubble(painter, at, mood, nameKey !== undefined);
   };
@@ -204,4 +217,18 @@ function drawBubble(painter: Painter, at: ScreenPoint, mood: Mood, named: boolea
   painter.fill({ x: x + 2, y: y + height - 1, w: 3, h: 2 }, BUBBLE.fill, alpha);
   painter.fill({ x, y: y + height + 1, w: 2, h: 2 }, BUBBLE.fill, alpha);
   painter.stamp(x + BUBBLE.padX, y + BUBBLE.padY, BUBBLE_TEXTURE, bubbleFrame(mood.icon), alpha);
+}
+
+/** Высота столбика заглушки: под навесом и без него. */
+const PLAIN_TALL = 24;
+const PLAIN_LOW = 12;
+
+/**
+ * Цвет капсулы заглушки — цвет одежды этого человека. Один цвет на всех
+ * превратил бы толпу в стадо одинаковых столбиков, а именно по толпе и
+ * проверяют, что каждый идёт своим маршрутом.
+ */
+function plainColor(look: number): number {
+  const colors = LOOKS[look]?.colors;
+  return colors ? Number.parseInt(colors.cloth.slice(1), 16) : 0x888888;
 }
