@@ -1,7 +1,6 @@
 import type { DecorDef, DecorKind, WorldRect } from '@core/types';
 import type { Painter } from '@ui/widgets/Painter';
 import type { Ambience } from '../ambience';
-import { INDOOR } from './indoor';
 import { NATURE } from './nature';
 import { STREET } from './street';
 import type { Draw } from './kit';
@@ -9,75 +8,31 @@ import type { Draw } from './kit';
 export type { DecorContext } from './kit';
 
 /**
- * Реестр мелочи. Рисунки разведены по двум файлам — улица и помещение, —
- * а связь «вид предмета — процедура» держится здесь, чтобы забытый вид
- * не собрался.
+ * Реестр щитовых рисунков. Здесь остались только предметы без объёма:
+ * пальма, фонарь, светофор, доска и живность. Всё остальное рисуется
+ * изометрическими объёмами из ISO_PROPS, и щита у него нет.
+ *
+ * Реестр неполон намеренно, а полноту каталога — «у каждого вида есть
+ * либо объём, либо щит» — держит проверка в тестах: пустой Record тут
+ * лишь заставлял бы дописывать заглушку на каждый новый вид.
  */
-const VOLUME_ONLY: Draw = () => undefined;
-
-/**
- * Реестр щитовых рисунков. Лоток, киоск и хижина рисуются только
- * объёмом — щита у них нет и быть не может.
- */
-const DRAW: Readonly<Record<DecorKind, Draw>> = {
+const DRAW: Readonly<Partial<Record<DecorKind, Draw>>> = {
   ...STREET,
-  ...INDOOR,
   ...NATURE,
-  stall: VOLUME_ONLY,
-  kiosk: VOLUME_ONLY,
-  hut: VOLUME_ONLY,
-  seat: VOLUME_ONLY,
-  screen: VOLUME_ONLY,
-  stool: VOLUME_ONLY,
-  counter: VOLUME_ONLY,
-  speaker: VOLUME_ONLY,
-  weights: VOLUME_ONLY,
-  window: VOLUME_ONLY,
 };
 
-/** Насколько широкую тень отбрасывает предмет. Ноль — тени нет. */
-const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
+/**
+ * Насколько широкую тень отбрасывает щитовой предмет. У объёмной мелочи
+ * тень своя, по следу на земле, и сюда она не попадает.
+ */
+const SHADOW_WIDTH: Readonly<Partial<Record<DecorKind, number>>> = {
   palm: 10,
   lamp: 6,
-  bench: 22,
-  car: 34,
-  billboard: 9,
-  hydrant: 8,
-  planter: 14,
-  bin: 11,
-  busStop: 38,
-  crate: 13,
-  bollard: 7,
-  newsbox: 12,
-  parasol: 24,
-  gull: 0,
-  rug: 0,
-  poster: 0,
-  shelf: 0,
-  bike: 22,
   trafficLight: 7,
-  mailbox: 14,
-  dog: 11,
   surfboard: 7,
-  towel: 0,
-  stall: 0,
-  kiosk: 0,
-  hut: 0,
-  seat: 0,
-  screen: 0,
-  stool: 0,
-  counter: 0,
-  speaker: 0,
-  weights: 0,
-  window: 0,
-  table: 20,
+  dog: 11,
   tree: 16,
   bush: 12,
-  flowerbed: 20,
-  lifeguard: 22,
-  deckchair: 15,
-  umbrella: 22,
-  boat: 30,
 };
 
 /**
@@ -147,7 +102,7 @@ export function drawDecor(
   ambience: Ambience,
   unit = 1,
 ): void {
-  DRAW[item.kind]({
+  DRAW[item.kind]?.({
     painter,
     ambience,
     x: screenX,
@@ -157,4 +112,7 @@ export function drawDecor(
   });
 }
 
-export const shadowWidth = (kind: DecorKind): number => SHADOW_WIDTH[kind];
+export const shadowWidth = (kind: DecorKind): number => SHADOW_WIDTH[kind] ?? 0;
+
+/** Есть ли у вида щитовой рисунок. Нужно проверке полноты каталога. */
+export const hasBillboard = (kind: DecorKind): boolean => DRAW[kind] !== undefined;

@@ -165,7 +165,30 @@ const parasolTop: Draw = (ctx) => {
   dome(ctx, 1.15, 46, scale(PARASOL[ctx.variant % PARASOL.length]!, ctx.ambience.light));
 };
 
-export const CANOPY_BASE = { stall, kiosk, hut, busStop, umbrella, parasol };
+/** Вышка спасателя: сваи, лестница и будка под козырьком. */
+const lifeguard: Draw = (ctx) => {
+  shade(ctx, 1, 0.9);
+  const wood = skin(ctx, 0xd8b070);
+  for (const [dx, dy] of [[-0.4, -0.35], [0.4, -0.35], [-0.4, 0.35], [0.4, 0.35]] as const) {
+    boxAt(ctx.painter, shift(ctx.at, dx, dy), { w: 0.12, d: 0.12, h: 22 }, wood);
+  }
+  // Лестница сбоку: без неё в будку не подняться.
+  for (let i = 0; i < 5; i += 1) {
+    boxAt(ctx.painter, shift(ctx.at, -0.75, 0, 3 + i * 4), { w: 0.42, d: 0.1, h: 2 }, wood);
+  }
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 22), { w: 1.1, d: 1, h: 4 }, wood);
+  boxAt(ctx.painter, shift(ctx.at, 0, -0.15, 26), { w: 1, d: 0.7, h: 14 }, skin(ctx, 0xb08a52));
+  panel(ctx.painter, ctx.at, 'x', { span: 0.8, across: 0.2, top: 38, height: 8 }, scale(0x2b2417, ctx.ambience.light));
+};
+
+const lifeguardRoof: Draw = (ctx) => {
+  const roof = scale(0xe05f5f, ctx.ambience.light);
+  ramp(ctx.painter, ctx.at, { w: 1.5, d: 1.3, far: 48, near: 42 }, roof);
+  panel(ctx.painter, ctx.at, 'x', { span: 1.5, across: 0.65, top: 42, height: 3 }, scale(roof, 0.72));
+  mast(ctx.painter, shift(ctx.at, 0, 0, 48), 8, scale(0xd8b070, ctx.ambience.light), 1);
+};
+
+export const CANOPY_BASE = { stall, kiosk, hut, busStop, umbrella, parasol, lifeguard };
 export const CANOPY_TOP = {
   stall: stallRoof,
   kiosk: kioskRoof,
@@ -173,4 +196,5 @@ export const CANOPY_TOP = {
   busStop: busStopRoof,
   umbrella: umbrellaTop,
   parasol: parasolTop,
+  lifeguard: lifeguardRoof,
 };

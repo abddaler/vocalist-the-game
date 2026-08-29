@@ -3,13 +3,11 @@ import type { Draw } from './kit';
 import { mix, scale } from '../ambience';
 
 /**
- * Уличная мелочь: пальмы, фонари, машины, щиты, светофор, велосипед,
- * почтовый ящик, чайки. Всё рисуется процедурами по точке опоры.
+ * Уличная мелочь, у которой нет объёма: пальма, фонарь, светофор, доска
+ * и живность. У тонкого столба нет грани, которую камера показала бы
+ * боком, а чайка и собака — те же персонажи, только мельче.
  */
 const PALM_HEIGHTS = [30, 38, 46];
-const CAR_BODIES = [0xd9534f, 0x4f7fd9, 0xe8c46a, 0xe8e8ee];
-const BILLBOARD_ART = [0xe85f8a, 0x5fb8e8, 0xe8c25f];
-const PARASOL_COLORS = [0xe8705f, 0xe8c25f, 0x5fb8a8];
 /**
  * Пальма. Рисуется в долях мировой клетки, поэтому ствол получает кольца
  * в один экранный пиксель, а лист — сужающуюся кромку: на целой клетке
@@ -75,151 +73,12 @@ const lamp: Draw = (ctx) => {
   }
 };
 
-const bench: Draw = (ctx) => {
-  const wood = tone(ctx, 0xa87a4a);
-  const iron = tone(ctx, 0x3f4450);
-  box(ctx, -12, -4, 24, 3, wood);
-  box(ctx, -12, -10, 24, 3, wood);
-  box(ctx, -11, -2, 2, 2, iron);
-  box(ctx, 9, -2, 2, 2, iron);
-  box(ctx, -11, -10, 2, 7, iron);
-  box(ctx, 9, -10, 2, 7, iron);
-};
-
-const car: Draw = (ctx) => {
-  const body = tone(ctx, CAR_BODIES[ctx.variant % CAR_BODIES.length]!);
-  const glass = tone(ctx, 0x9fd0ea);
-  const tyre = tone(ctx, 0x1e2029);
-
-  box(ctx, -18, -9, 36, 7, body);
-  box(ctx, -12, -15, 23, 7, scale(body, 0.88));
-  box(ctx, -10, -14, 8, 5, glass);
-  box(ctx, 0, -14, 8, 5, glass);
-  box(ctx, -18, -5, 36, 3, scale(body, 0.7));
-  box(ctx, -13, -3, 6, 3, tyre);
-  box(ctx, 7, -3, 6, 3, tyre);
-  // Габариты горят, когда стемнело: улица оживает без единого спрайта.
-  const front = ctx.ambience.lampsOn ? 0xfff0c0 : tone(ctx, 0xd8d8d0);
-  const back = ctx.ambience.lampsOn ? 0xff6a5c : tone(ctx, 0x8f4a44);
-  box(ctx, 15, -8, 3, 2, front);
-  box(ctx, -18, -8, 3, 2, back);
-};
-
-const billboard: Draw = (ctx) => {
-  const post = tone(ctx, 0x4a4450);
-  box(ctx, -2, -14, 2, 14, post);
-  box(ctx, 3, -14, 2, 14, post);
-
-  const w = 26;
-  const h = 17;
-  const frame = tone(ctx, 0x2e3240);
-  box(ctx, -w / 2 + 2, -14 - h, w, h, frame);
-  const art = BILLBOARD_ART[ctx.variant % BILLBOARD_ART.length]!;
-  box(ctx, -w / 2 + 3, -13 - h, w - 2, h - 3, ctx.ambience.lampsOn ? art : tone(ctx, art));
-  // Пара полос вместо текста: надпись в 4 пикселя всё равно не прочесть.
-  box(ctx, -w / 2 + 6, -9 - h, w - 12, 2, 0xffffff, 0.6);
-  box(ctx, -w / 2 + 6, -5 - h, w - 16, 2, 0xffffff, 0.4);
-  if (ctx.ambience.lampsOn) box(ctx, -w / 2 + 1, -15 - h, w + 2, h + 2, art, 0.18);
-};
-
-const hydrant: Draw = (ctx) => {
-  const red = tone(ctx, 0xc9453f);
-  box(ctx, -3, -9, 6, 9, red);
-  box(ctx, -5, -7, 10, 3, scale(red, 0.85));
-  box(ctx, -2, -11, 4, 2, scale(red, 1.15));
-};
-
-const planter: Draw = (ctx) => {
-  const pot = tone(ctx, 0xa89078);
-  const leaf = tone(ctx, 0x4f9f5f);
-  box(ctx, -7, -7, 14, 7, pot);
-  box(ctx, -6, -13, 12, 6, leaf);
-  box(ctx, -4, -16, 8, 4, scale(leaf, 1.15));
-  box(ctx, -1, -18, 3, 3, tone(ctx, 0xe86a9a));
-};
-
-const bin: Draw = (ctx) => {
-  const metal = tone(ctx, 0x545a66);
-  box(ctx, -5, -12, 10, 12, metal);
-  box(ctx, -6, -14, 12, 3, scale(metal, 1.25));
-  box(ctx, -3, -11, 2, 9, scale(metal, 0.8));
-  box(ctx, 1, -11, 2, 9, scale(metal, 0.8));
-};
-
-const busStop: Draw = (ctx) => {
-  const frame = tone(ctx, 0x39404d);
-  const glass = mix(tone(ctx, 0x9fd0e8), ctx.ambience.skyLow, 0.35);
-
-  // Навес с козырьком, стекло с бликом, лавка и афиша сбоку: серый ящик
-  // без них читался трансформаторной будкой.
-  box(ctx, -17, -23, 34, 17, glass, 0.5);
-  box(ctx, -15, -21, 6, 13, 0xffffff, 0.22);
-  box(ctx, -21, -27, 42, 3, frame);
-  box(ctx, -21, -24, 42, 1, scale(frame, 1.5));
-  box(ctx, -20, -24, 3, 24, frame);
-  box(ctx, 17, -24, 3, 24, frame);
-  // Лавка под навесом.
-  box(ctx, -14, -10, 27, 2.5, tone(ctx, 0xb08a52));
-  box(ctx, -14, -10, 27, 0.5, tone(ctx, 0xd8ac6a));
-  box(ctx, -13, -7.5, 2, 7.5, frame);
-  box(ctx, 10, -7.5, 2, 7.5, frame);
-  // Афиша в торце и табличка маршрута на крыше.
-  box(ctx, 13, -22, 6, 13, tone(ctx, 0xd8506a));
-  box(ctx, 14, -20, 4, 4, 0xffffff, 0.7);
-  box(ctx, -6, -30, 12, 3, tone(ctx, 0x2f7fb8));
-  box(ctx, -4, -29, 8, 1, 0xffffff, 0.8);
-  if (ctx.ambience.lampsOn) box(ctx, -17, -23, 34, 17, 0xffe6a8, 0.22);
-};
-
-const bollard: Draw = (ctx) => {
-  const iron = tone(ctx, 0x4a4f58);
-  box(ctx, -3, -10, 6, 10, iron);
-  box(ctx, -4, -12, 8, 3, scale(iron, 1.2));
-};
-
-const newsbox: Draw = (ctx) => {
-  const shell = tone(ctx, 0x3f7fa8);
-  box(ctx, -6, -16, 12, 16, shell);
-  box(ctx, -4, -14, 8, 6, tone(ctx, 0xd8d4c8));
-  box(ctx, -6, -3, 12, 3, scale(shell, 0.7));
-};
-
-const parasol: Draw = (ctx) => {
-  const cloth = tone(ctx, PARASOL_COLORS[ctx.variant % PARASOL_COLORS.length]!);
-  box(ctx, -1, -24, 2, 24, tone(ctx, 0x8f7a5a));
-  box(ctx, -13, -28, 26, 4, cloth);
-  box(ctx, -10, -31, 20, 3, scale(cloth, 1.15));
-  box(ctx, -5, -33, 10, 2, scale(cloth, 1.25));
-  // Столик под зонтом: зонт сам по себе висит в воздухе.
-  box(ctx, -8, -8, 16, 2, tone(ctx, 0xd8d0c4));
-  box(ctx, -1, -7, 2, 7, tone(ctx, 0x8f8a80));
-};
-
 const gull: Draw = (ctx) => {
   const body = mix(0xffffff, ctx.ambience.skyLow, 0.3);
   const span = ctx.variant % 2 === 0 ? 1 : -1;
   box(ctx, -4, span, 4, 1, body);
   box(ctx, 0, span, 4, 1, body);
   box(ctx, -1, 0, 2, 1, body);
-};
-
-/** Велосипед у столба: примета живой улицы, а не декорации. */
-const bike: Draw = (ctx) => {
-  const frame = tone(ctx, 0x3f6f9a);
-  const tyre = tone(ctx, 0x22242a);
-  const wheel = (cx: number): void => {
-    box(ctx, cx - 5, -11, 10, 2, tyre);
-    box(ctx, cx - 5, -3, 10, 2, tyre);
-    box(ctx, cx - 6, -10, 2, 8, tyre);
-    box(ctx, cx + 4, -10, 2, 8, tyre);
-  };
-  wheel(-8);
-  wheel(8);
-  box(ctx, -8, -8, 17, 2, frame);
-  box(ctx, -2, -14, 2, 8, frame);
-  box(ctx, -5, -15, 8, 2, frame);
-  box(ctx, 6, -16, 5, 2, frame);
-  box(ctx, 8, -15, 2, 6, frame);
 };
 
 const trafficLight: Draw = (ctx) => {
@@ -231,15 +90,6 @@ const trafficLight: Draw = (ctx) => {
   box(ctx, -2, -40, 5, 3, 0xe8c44a, on * 0.5);
   box(ctx, -2, -36, 5, 3, 0x4ae87a, on * 0.5);
   if (ctx.ambience.lampsOn) box(ctx, -7, -47, 15, 16, 0xe84a4a, 0.12);
-};
-
-const mailbox: Draw = (ctx) => {
-  const blue = tone(ctx, 0x3a5f9a);
-  box(ctx, -6, -16, 13, 13, blue);
-  box(ctx, -6, -18, 13, 3, scale(blue, 1.25));
-  box(ctx, -4, -13, 9, 2, scale(blue, 0.6));
-  box(ctx, -3, -3, 3, 3, tone(ctx, 0x2a2c34));
-  box(ctx, 2, -3, 3, 3, tone(ctx, 0x2a2c34));
 };
 
 /** Собака на выгуле: единственное, что здесь двигалось бы само. */
@@ -270,4 +120,4 @@ const surfboard: Draw = (ctx) => {
   box(ctx, 2, -26, 1, 20, scale(deck, 1.25), 0.5);
 };
 
-export const STREET = { palm, lamp, bench, car, billboard, hydrant, planter, bin, busStop, bollard, newsbox, parasol, gull, bike, trafficLight, mailbox, dog, surfboard };
+export const STREET = { palm, lamp, gull, trafficLight, dog, surfboard };

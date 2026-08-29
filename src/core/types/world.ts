@@ -76,49 +76,20 @@ export interface SceneryDef {
 /**
  * Мелочь на улице. Рисуется параметрически по типу и месту: пальма у
  * пирса и пальма на бульваре — одна процедура с разной высотой.
+ *
+ * Список, а не объединение строк: по нему проверяется, что у каждого
+ * вида есть рисунок — объёмный или щитовой.
  */
-export type DecorKind =
-  | 'palm'
-  | 'lamp'
-  | 'bench'
-  | 'car'
-  | 'billboard'
-  | 'hydrant'
-  | 'planter'
-  | 'bin'
-  | 'busStop'
-  | 'crate'
-  | 'bollard'
-  | 'newsbox'
-  | 'parasol'
-  | 'gull'
-  | 'rug'
-  | 'poster'
-  | 'shelf'
-  | 'tree'
-  | 'bush'
-  | 'flowerbed'
-  | 'lifeguard'
-  | 'deckchair'
-  | 'umbrella'
-  | 'boat'
-  | 'bike'
-  | 'trafficLight'
-  | 'mailbox'
-  | 'dog'
-  | 'surfboard'
-  | 'towel'
-  | 'stall'
-  | 'kiosk'
-  | 'hut'
-  | 'seat'
-  | 'screen'
-  | 'stool'
-  | 'counter'
-  | 'speaker'
-  | 'weights'
-  | 'window'
-  | 'table';
+export const DECOR_KINDS = [
+  'palm', 'lamp', 'bench', 'car', 'billboard', 'hydrant', 'planter',
+  'bin', 'busStop', 'crate', 'bollard', 'newsbox', 'parasol', 'gull',
+  'rug', 'poster', 'shelf', 'tree', 'bush', 'flowerbed', 'lifeguard',
+  'deckchair', 'umbrella', 'boat', 'bike', 'trafficLight', 'mailbox',
+  'dog', 'surfboard', 'towel', 'stall', 'kiosk', 'hut', 'seat', 'screen',
+  'stool', 'counter', 'speaker', 'weights', 'window', 'table',
+] as const;
+
+export type DecorKind = (typeof DECOR_KINDS)[number];
 
 export interface DecorDef {
   readonly kind: DecorKind;
