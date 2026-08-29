@@ -135,15 +135,15 @@ const TOWEL = [0xe8705f, 0x5fc9a8, 0xe8c45f, 0xb87fd0];
 /** Полотенце на песке: полоски поперёк и брошенная рядом сумка. */
 export const towel: Draw = (ctx) => {
   const cloth = tone(ctx, TOWEL[ctx.variant % TOWEL.length]!);
-  box(ctx, -9, -4, 18, 4, scale(cloth, 0.82));
-  box(ctx, -9, -4, 18, 3, cloth);
+  box(ctx, -10, -6, 20, 6, scale(cloth, 0.8));
+  box(ctx, -10, -6, 20, 5, cloth);
   for (let i = 0; i < 4; i += 1) {
-    box(ctx, -7 + i * 4.5, -4, 1.5, 3, scale(cloth, 1.25));
+    box(ctx, -8 + i * 5, -6, 2, 5, scale(cloth, 1.25));
   }
-  box(ctx, -9, -4, 18, 0.5, scale(cloth, 1.4));
+  box(ctx, -10, -6, 20, 1, scale(cloth, 1.4));
   // Сумка у края: без неё полотенце читается ковриком из комнаты.
-  box(ctx, 8, -6, 4, 3, tone(ctx, 0xd8c8a8));
-  box(ctx, 9, -7, 2, 1, tone(ctx, 0x9a8a6a));
+  box(ctx, 9, -9, 5, 4, tone(ctx, 0xd8c8a8));
+  box(ctx, 10, -10, 3, 1, tone(ctx, 0x9a8a6a));
 };
 
 export const NATURE = { tree, bush, flowerbed, lifeguard, deckchair, umbrella, boat, towel };
