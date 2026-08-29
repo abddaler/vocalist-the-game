@@ -4,9 +4,10 @@ import { COLORS } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
 import { mix, scale } from '../ambience';
 import type { Ambience } from '../ambience';
-import { TILE, toScreen } from './project';
+import { toScreen } from './project';
 import type { ScreenPoint } from './project';
 import { face, tile } from './shapes';
+import { signWidth } from './sign';
 import type { IsoBlock } from './scene';
 
 /**
@@ -272,7 +273,7 @@ function drawSign(
 ): void {
   const { painter, ambience } = ctx;
   const text = t(block.nameKey ?? '');
-  const width = Math.min(block.rect.w * TILE.halfW * 1.7, text.length * 6 + 18);
+  const width = signWidth(block.nameKey ?? '', block.rect.w);
   const top = Math.min(14, Math.max(6, lift - 40));
   const mid = along(west, south, 0.5, top);
   const board = { x: Math.round(mid.x - width / 2), y: mid.y, w: Math.round(width), h: 15 };

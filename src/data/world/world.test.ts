@@ -8,6 +8,7 @@ import { crowdIn } from './crowd';
 import type { DistrictDef, RoomDef, WorldRect } from '@core/types';
 import { cellAt, parseMap } from '../../game/world/iso/map';
 import { CANVAS_SIZE, SKY_BAND, mapSize } from '../../game/world/iso/project';
+import { signReach } from '../../game/world/iso/sign';
 import { footprintOf } from '../../game/world/decor';
 
 const overlaps = (a: WorldRect, b: WorldRect): boolean =>
@@ -161,16 +162,21 @@ describe('город', () => {
     ]);
     for (const district of CITY) {
       const blocks = [
-        ...district.buildings.map((b) => ({ rect: b.rect, id: b.locationId })),
-        ...district.scenery.filter((h) => h.signKey).map((h) => ({ rect: h.rect, id: h.signKey! })),
+        ...district.buildings.map((b) => ({
+          rect: b.rect,
+          id: b.locationId,
+          reach: signReach(b.signKey, b.rect.w),
+        })),
+        ...district.scenery
+          .filter((h) => h.signKey)
+          .map((h) => ({ rect: h.rect, id: h.signKey!, reach: signReach(h.signKey!, h.rect.w) })),
       ];
       for (const item of district.decor) {
         if (!TALL.has(item.kind) || item.y > STREET.frontY + 2) continue;
         for (const block of blocks) {
           const center = block.rect.x + block.rect.w / 2;
-          const half = block.rect.w * 0.35;
           expect(
-            Math.abs(item.x - center) >= half,
+            Math.abs(item.x - center) >= block.reach,
             `${district.id}: ${item.kind} @ ${item.x} закрывает вывеску ${block.id}`,
           ).toBe(true);
         }

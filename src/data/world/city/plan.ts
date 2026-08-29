@@ -36,6 +36,7 @@ export function house(
 ): BuildingDef {
   return {
     locationId,
+    signKey: `sign.${locationId}`,
     kind,
     color,
     tall,

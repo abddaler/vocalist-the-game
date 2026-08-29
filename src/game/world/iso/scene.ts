@@ -72,7 +72,7 @@ export function districtScene(state: GameState, districtId: DistrictId): IsoScen
         tall: building.tall,
         color: open(building.locationId) ? building.color : dim(building.color),
         kind: building.kind,
-        nameKey: getLocation(building.locationId).nameKey,
+        nameKey: building.signKey,
         doorRect: building.door,
       })),
     ],

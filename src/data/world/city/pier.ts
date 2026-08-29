@@ -64,22 +64,22 @@ export const PIER: DistrictDef = {
   ],
 
   decor: [
-    // Улица у ангаров. Пальмы и фонари — в разрывах между складами:
-    // напротив фасада они закрывают вывеску.
+    // Улица у ангаров. Пальмы и фонари — в разрывах между вывесками:
+    // напротив щита они срезают надпись.
     decor('palm', 0.4, 2.5, 2),
-    decor('palm', 6.5, 2.5, 1),
-    decor('palm', 13.5, 2.5, 2),
-    decor('palm', 20.5, 2.5, 0),
+    decor('palm', 6.8, 2.5, 1),
+    decor('palm', 13.6, 2.5, 2),
+    decor('palm', 20.4, 2.5, 0),
     decor('palm', 27.5, 2.5, 1),
-    decor('palm', 33.5, 2.5, 2),
-    decor('palm', 38.5, 2.5, 0),
-    decor('lamp', 6.5, 3.5),
-    decor('lamp', 20.5, 3.5),
-    decor('lamp', 33.5, 3.5),
+    decor('palm', 33.0, 2.5, 2),
+    decor('palm', 39.1, 2.5, 0),
     decor('crate', 3.5, 3.5, 0),
     decor('crate', 4.4, 3.4, 1),
     decor('surfboard', 17.3, 3.5, 0),
     decor('surfboard', 17.9, 3.5, 2),
+    decor('lamp', 6.8, 3.5),
+    decor('lamp', 20.4, 3.5),
+    decor('lamp', 33.0, 3.5),
     ...group.rest(10.5, 3.5),
     ...group.rest(30.5, 3.5),
     decor('bike', 24.5, 3.5),

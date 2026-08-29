@@ -52,32 +52,30 @@ export const DOWNTOWN: DistrictDef = {
   ],
 
   decor: [
-    // Площадь у башен. Высокое стоит в разрывах между башнями: перед
-    // фасадом оно закрывает вывеску.
+    // Площадь у башен. Высокое — в разрывах между вывесками; остальное
+    // рядом с ними, на ряду у самой кромки, где щиты уже не задеть.
     decor('tree', 5.5, 2.5, 1),
-    decor('tree', 11.5, 2.5, 2),
-    decor('tree', 16.5, 2.5, 1),
-    decor('tree', 27.5, 2.5, 0),
-    decor('tree', 33.5, 2.5, 2),
-    decor('billboard', 21.5, 2.5, 1),
+    decor('tree', 11.4, 2.5, 2),
+    decor('tree', 27.3, 2.5, 0),
+    decor('tree', 33.4, 2.5, 2),
     decor('flowerbed', 9.5, 2.5),
     decor('flowerbed', 24.5, 2.5),
     decor('planter', 2.5, 2.5),
-    decor('planter', 30.5, 2.5),
+    decor('planter', 16.5, 2.5),
+    decor('planter', 20.5, 2.5),
     decor('planter', 36.5, 2.5),
 
-    decor('lamp', 5.5, 4.5),
-    decor('lamp', 11.5, 4.5),
+    decor('lamp', 4.5, 4.5),
+    decor('lamp', 10.5, 4.5),
     decor('lamp', 16.5, 4.5),
-    decor('lamp', 21.5, 4.5),
-    decor('lamp', 27.5, 4.5),
-    decor('lamp', 33.5, 4.5),
+    decor('lamp', 22.5, 4.5),
+    decor('lamp', 28.5, 4.5),
+    decor('lamp', 34.5, 4.5),
+    decor('billboard', 19.5, 4.5, 1),
     ...group.rest(7.5, 4.5),
-    ...group.rest(24.5, 4.5),
-    decor('planter', 3.5, 4.5),
-    decor('planter', 35.5, 4.5),
-    ...group.market(12.5, 4.5, 2),
-    decor('kiosk', 30.5, 4.5),
+    ...group.rest(25.5, 4.5),
+    ...group.market(13.5, 4.5, 2),
+    decor('kiosk', 31.5, 4.5),
 
     // Тротуар под площадью: остановка, светофор у перехода, столбики
     // вдоль него.

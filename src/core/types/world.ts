@@ -50,6 +50,8 @@ export type BuildingKind =
  */
 export interface BuildingDef {
   readonly locationId: string;
+  /** Короткая вывеска на фасаде: полное имя локации туда не влезает. */
+  readonly signKey: string;
   readonly kind: BuildingKind;
   readonly rect: WorldRect;
   readonly tall: number;

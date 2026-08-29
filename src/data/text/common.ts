@@ -24,6 +24,19 @@ export const COMMON_RU = {
   'district.boulevard.note': 'Клуб, ресторан, витрины и неон',
   'district.pier.note': 'Набережная, репбаза и студия записи',
 
+  // Вывески рабочих домов: короткие, как на настоящей улице. Полное имя
+  // локации живёт в панели и в подсказке — на фасаде оно не помещается и
+  // закрывает собой всё, что стоит рядом.
+  'sign.apartment': 'Sunset Apts',
+  'sign.vocal_studio': 'Vocal Lab',
+  'sign.rehearsal_base': 'Rehearsal',
+  'sign.restaurant': 'Sonata',
+  'sign.club_vertigo': 'Vertigo',
+  'sign.record_studio': 'Sound Lab',
+  'sign.clothes_shop': 'Threads',
+  'sign.phoniatrist': 'Clinic',
+  'sign.gym': 'Gym',
+
   'sign.villa': 'Vista Villas',
   'sign.terrace': 'Terraces',
   'sign.laundry': 'Wash & Fold',
