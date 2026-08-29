@@ -1,0 +1,45 @@
+<!doctype html><meta charset="utf-8"><title>Портреты</title>
+<!--
+  Лист портретов диалога. Портрет — та же фигура, снятая крупнее и
+  обрезанная по грудь, поэтому промах в кадрировании виден только здесь:
+  в игре до нужного разговора ещё надо дожить.
+
+  Открывается на dev-сервере: /tools/portraits.html. В сборку не попадает.
+-->
+<style>body{margin:0;background:#5a6a7a}canvas{image-rendering:auto}</style>
+<canvas id="c"></canvas>
+<script type="module">
+import { PORTRAIT_SIZE } from '/src/game/art/portrait.ts';
+import { POSE } from '/src/game/art/figure/pose.ts';
+import { paintFigure } from '/src/game/art/figure/paint.ts';
+import { EXTRA } from '/src/game/art/figure/extra.ts';
+import { LOOKS } from '/src/game/art/looks.ts';
+
+const Z = Number(new URLSearchParams(location.search).get('zoom') ?? 4);
+const COLUMNS = 8, PAD = 3, S = PORTRAIT_SIZE;
+const rows = Math.ceil(LOOKS.length / COLUMNS);
+const c = document.getElementById('c');
+c.width = (S + PAD) * COLUMNS * Z;
+c.height = (S + PAD) * rows * Z;
+const g = c.getContext('2d');
+
+// Те же числа, что в portrait.ts: кадрирование по грудь.
+const CROP = { top: 2, bottom: 24, middle: 18 };
+const zoom = S / (CROP.bottom - CROP.top);
+const joints = POSE.downA;
+
+LOOKS.forEach((look, i) => {
+  const figure = { colors: look.colors, hair: look.hair, outfit: look.outfit, accessory: look.accessory };
+  g.save();
+  g.translate((S + PAD) * (i % COLUMNS) * Z, (S + PAD) * Math.floor(i / COLUMNS) * Z);
+  g.beginPath();
+  g.rect(0, 0, S * Z, S * Z);
+  g.clip();
+  g.translate((S / 2 - CROP.middle * zoom) * Z, -CROP.top * zoom * Z);
+  const brush = { ctx: g, scale: zoom * Z };
+  paintFigure(brush, figure, joints);
+  EXTRA[figure.accessory]?.(brush, figure, joints, joints.lift);
+  g.restore();
+});
+document.title = 'portraits ' + LOOKS.length;
+</script>

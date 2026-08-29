@@ -9,6 +9,7 @@ import type {
   EventCondition,
   GameEventDef,
   GameState,
+  NpcId,
   NumericRange,
   SkillKey,
 } from '../types';
@@ -64,6 +65,23 @@ export function availableChoices(state: GameState, event: GameEventDef): EventCh
   return event.choices.filter(
     (choice) => !choice.requires || matchesCondition(state, choice.requires),
   );
+}
+
+/**
+ * Кто перед игроком в этом событии. В данных события собеседник нигде
+ * не записан, но он в них есть: разговор, который двигает отношения с
+ * одним человеком, — разговор с ним. Если событие трогает нескольких
+ * или никого, собеседника нет, и диалог идёт без портрета.
+ */
+export function speakerOf(event: GameEventDef): NpcId | null {
+  const seen = new Set<NpcId>();
+  for (const npc of Object.keys(event.trigger.relation ?? {})) seen.add(npc as NpcId);
+  for (const choice of event.choices) {
+    for (const npc of Object.keys(choice.requires?.relation ?? {})) seen.add(npc as NpcId);
+    for (const effect of choice.effects) if (effect.kind === 'relation') seen.add(effect.npc);
+    for (const effect of choice.risk?.effects ?? []) if (effect.kind === 'relation') seen.add(effect.npc);
+  }
+  return seen.size === 1 ? ([...seen][0] as NpcId) : null;
 }
 
 /**

@@ -27,6 +27,7 @@ import { initialUiState } from '@ui/screens/types';
 import type { RenderContext, UiState } from '@ui/screens/types';
 import { buildActorTextures } from '../art';
 import { buildBubbleTextures } from '../art/bubble';
+import { buildPortraitTextures } from '../art/portrait';
 import { WorldCanvas, WorldController, renderIso } from '../world';
 import { PropAtlas } from '../world/PropAtlas';
 import { Diagnostics } from '../Diagnostics';
@@ -88,6 +89,7 @@ export class GameScene extends Phaser.Scene {
 
     buildActorTextures(this);
     buildBubbleTextures(this);
+    buildPortraitTextures(this);
     this.world = new WorldController({
       getState: () => this.store.getState(),
       getLocationId: () => this.ui.locationId,

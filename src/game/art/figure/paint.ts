@@ -295,16 +295,19 @@ function hairOver(brush: Brush, figure: Figure, joints: Joints, up: number): voi
   ctx.clip();
   ctx.fillStyle = fill;
   const drop = back ? BUILD.headRy : style === 'cap' ? -3 : -1.8;
-  ctx.fillRect(0, 0, ctx.canvas.width, (head.y + drop) * scale);
+  // Прямоугольник задаётся в координатах кадра, а не холста: портрет
+  // рисует ту же фигуру со сдвигом и увеличением, и заливка «от нуля до
+  // ширины холста» промахнулась бы мимо головы.
+  ctx.fillRect((head.x - 30) * scale, (head.y - 30) * scale, 60 * scale, (30 + drop) * scale);
   // Прядь у виска: без неё чёлка обрывается ровной линией.
   if (!back) {
     const edge = side ? [-1] : [-1, 1];
     for (const dir of edge) {
       ctx.fillRect(
         (head.x + dir * (rx - 1.9)) * scale,
-        0,
+        (head.y - 30) * scale,
         dir * 2.6 * scale,
-        (head.y + 3) * scale,
+        33 * scale,
       );
     }
   }

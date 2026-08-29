@@ -8,7 +8,7 @@ export const RANDOM_SCENE: readonly GameEventDef[] = [
     kind: 'random',
     weight: 12,
     trigger: { vocalHealth: { lt: 55 }, relation: { teacher: { gte: 15 } } },
-    title: 'Ирина слышит по телефону',
+    title: 'Дайан слышит по телефону',
     text: '«Ты опять пел на связках. Я по одному "алло" слышу. Неделю — молчать».',
     choices: [
       {
@@ -39,8 +39,8 @@ export const RANDOM_SCENE: readonly GameEventDef[] = [
     kind: 'random',
     weight: 14,
     trigger: { fame: { gte: 35 } },
-    title: 'Гринь забрал площадку',
-    text: 'Тот вечер, на который ты рассчитывал, отдали Артёму. Промоутер разводит руками.',
+    title: 'Беллами забрал площадку',
+    text: 'Тот вечер, на который ты рассчитывал, отдали Чейзу. Промоутер разводит руками.',
     choices: [
       {
         text: 'Предложить сыграть вдвоём',

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_EVENTS, RANDOM_EVENTS, STORY_EVENTS, getEvent } from '@data/events';
+import { COMMON_RU } from '@data/text';
 import { cloneState } from '../state';
 import { alwaysRng, makeRng, makeState, neverRng } from '../testing/fixtures';
 import type { GameState } from '../types';
-import { applyEffects, availableChoices, matchesCondition, pickEvent, resolveEvent, rollEvent } from './events';
+import { applyEffects, availableChoices, matchesCondition, pickEvent, resolveEvent, rollEvent, speakerOf } from './events';
 
 describe('условия срабатывания', () => {
   const state = makeState({
@@ -153,6 +154,74 @@ describe('контент событий', () => {
         expect(choice.risk.chance).toBeGreaterThan(0);
         expect(choice.risk.chance).toBeLessThanOrEqual(1);
       }
+    }
+  });
+});
+
+describe('собеседник события', () => {
+  const base = { id: 'x', kind: 'random' as const, weight: 1, trigger: {}, titleKey: 't', textKey: 'b' };
+
+  it('один затронутый NPC — он и есть собеседник', () => {
+    expect(
+      speakerOf({
+        ...base,
+        choices: [{ textKey: 'a', effects: [{ kind: 'relation', npc: 'teacher', delta: 5 }] }],
+      }),
+    ).toBe('teacher');
+  });
+
+  it('риск считается тем же разговором', () => {
+    expect(
+      speakerOf({
+        ...base,
+        choices: [
+          {
+            textKey: 'a',
+            effects: [{ kind: 'mood', delta: 5 }],
+            risk: {
+              chance: 0.3,
+              textKey: 'r',
+              effects: [{ kind: 'relation', npc: 'promoter', delta: -5 }],
+            },
+          },
+        ],
+      }),
+    ).toBe('promoter');
+  });
+
+  it('условие по отношению тоже называет собеседника', () => {
+    expect(
+      speakerOf({
+        ...base,
+        trigger: { relation: { blogger: { gte: 20 } } },
+        choices: [{ textKey: 'a', effects: [{ kind: 'fans', delta: 10 }] }],
+      }),
+    ).toBe('blogger');
+  });
+
+  it('двое затронутых — собеседника нет', () => {
+    expect(
+      speakerOf({
+        ...base,
+        choices: [
+          { textKey: 'a', effects: [{ kind: 'relation', npc: 'teacher', delta: 5 }] },
+          { textKey: 'b', effects: [{ kind: 'relation', npc: 'rival', delta: -5 }] },
+        ],
+      }),
+    ).toBeNull();
+  });
+
+  it('никого не затронуто — собеседника нет', () => {
+    expect(speakerOf({ ...base, choices: [{ textKey: 'a', effects: [{ kind: 'money', delta: 10 }] }] }))
+      .toBeNull();
+  });
+
+  it('у каждого названного собеседника есть внешность, имя и роль', () => {
+    for (const event of ALL_EVENTS) {
+      const npc = speakerOf(event);
+      if (!npc) continue;
+      expect(COMMON_RU[`npc.${npc}` as keyof typeof COMMON_RU]).toBeTypeOf('string');
+      expect(COMMON_RU[`npc.${npc}.role` as keyof typeof COMMON_RU]).toBeTypeOf('string');
     }
   });
 });

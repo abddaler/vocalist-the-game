@@ -154,7 +154,7 @@ export const RANDOM_STAGE: readonly GameEventDef[] = [
     kind: 'random',
     weight: 6,
     trigger: { fame: { gte: 70 }, relation: { rival: { gte: 20 } } },
-    title: 'У Гриня сорвался голос',
+    title: 'У Чейза сорвался голос',
     text: 'Пишет ночью: отменил три даты, врач говорит про узелки. Просит не рассказывать.',
     choices: [
       {
