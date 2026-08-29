@@ -131,9 +131,10 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 18.5, y: 11.5 },
     { x: 4.5, y: 11.5 },
   ], 1100),
-  stander('blvd_3', 'boulevard', 'passer_3', { x: 5.5, y: 2.5 }),
-  stander('blvd_4', 'boulevard', 'passer_10', { x: 6.5, y: 3.5 }),
-  stander('blvd_5', 'boulevard', 'passer_2', { x: 7.5, y: 2.5 }),
+  // Очередь у клуба стоит цепочкой вдоль фасада, а не кучей в дверях.
+  stander('blvd_3', 'boulevard', 'passer_3', { x: 6.5, y: 2.5 }),
+  stander('blvd_4', 'boulevard', 'passer_10', { x: 8.5, y: 2.5 }),
+  stander('blvd_5', 'boulevard', 'passer_2', { x: 10.5, y: 2.5 }),
   walker('blvd_6', 'boulevard', 'passer_4', [
     { x: 14.5, y: 3.5 },
     { x: 14.5, y: 11.5 },
@@ -162,7 +163,7 @@ export const CROWD: readonly CrowdMember[] = [
     { x: 25.5, y: 13.5 },
   ], 2000, 1.1),
   stander('pier_3', 'pier', 'passer_2', { x: 12.5, y: 6.5 }),
-  stander('pier_4', 'pier', 'passer_7', { x: 13.5, y: 7.5 }),
+  stander('pier_4', 'pier', 'passer_7', { x: 15.5, y: 7.5 }),
   walker('pier_5', 'pier', 'passer_1', [
     { x: 36.5, y: 9.5 },
     { x: 20.5, y: 10.5 },

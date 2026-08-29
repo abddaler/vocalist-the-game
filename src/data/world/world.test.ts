@@ -185,6 +185,24 @@ describe('город', () => {
     }
   });
 
+  it('прохожие не стоят друг в друге', () => {
+    // Двое на одной плитке сливаются в одну кляксу, и понять, что это
+    // два человека, нельзя.
+    for (const district of CITY) {
+      const standing = crowdIn(district.id).filter((member) => member.path.length === 1);
+      for (let i = 0; i < standing.length; i += 1) {
+        for (let j = i + 1; j < standing.length; j += 1) {
+          const a = standing[i]!.path[0]!;
+          const b = standing[j]!.path[0]!;
+          expect(
+            Math.hypot(a.x - b.x, a.y - b.y),
+            `${standing[i]!.id} и ${standing[j]!.id}`,
+          ).toBeGreaterThan(1.6);
+        }
+      }
+    }
+  });
+
   it('мелочь стоит на земле, а не висит в воздухе', () => {
     for (const district of CITY) {
       for (const item of district.decor) {
