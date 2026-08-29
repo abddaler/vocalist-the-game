@@ -26,6 +26,8 @@ const DRAW: Readonly<Record<DecorKind, Draw>> = {
   stall: VOLUME_ONLY,
   kiosk: VOLUME_ONLY,
   hut: VOLUME_ONLY,
+  seat: VOLUME_ONLY,
+  screen: VOLUME_ONLY,
 };
 
 /** Насколько широкую тень отбрасывает предмет. Ноль — тени нет. */
@@ -56,6 +58,8 @@ const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
   stall: 0,
   kiosk: 0,
   hut: 0,
+  seat: 0,
+  screen: 0,
   table: 20,
   tree: 16,
   bush: 12,
@@ -101,6 +105,8 @@ const FOOTPRINT: Readonly<Record<DecorKind, readonly [number, number]>> = {
   stall: [2.2, 1.4],
   kiosk: [1.4, 1.2],
   hut: [3.2, 2.4],
+  seat: [1.4, 1],
+  screen: [0, 0],
   table: [0.9, 0.7],
   tree: [0.5, 0.5],
   bush: [0.6, 0.5],

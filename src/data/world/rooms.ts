@@ -130,13 +130,17 @@ export const ROOMS: readonly RoomDef[] = [
     point('open_mic', 'point.openMic', { x: 3.5, y: 2.5, w: 2, h: 2 }, 0x74468a, 'stage', [], { venues: ['bar_stage'] }),
     point('main_stage', 'point.mainStage', { x: 13, y: 2.5, w: 3, h: 2 }, 0x9a4fb8, 'stage', [], { venues: ['club_stage'] }),
   ], [
+    decor('screen', 7.5, 1.1, 0),
+    decor('screen', 16.5, 1.1, 2),
+    decor('seat', 3.5, 6.5, 0),
+    decor('seat', 3.5, 9.5, 1),
+    decor('seat', 17.5, 6.5, 2),
+    decor('seat', 17.5, 9.5, 3),
+    decor('seat', 7.5, 12.5, 1),
+    decor('seat', 13.5, 12.5, 0),
+    decor('table', 10.5, 5.5),
     decor('bin', 18.5, 12.5),
-    decor('bench', 15.5, 11.5),
-    decor('bench', 8.5, 12.5),
     decor('bollard', 2.5, 12.5),
-    decor('poster', 6.5, 1.2, 0),
-    decor('poster', 16.5, 1.2, 1),
-    decor('table', 6.5, 9.5),
   ]),
 
   room('record_studio', 0x243440, floorOf('wood'), [

@@ -109,6 +109,8 @@ export type DecorKind =
   | 'stall'
   | 'kiosk'
   | 'hut'
+  | 'seat'
+  | 'screen'
   | 'table';
 
 export interface DecorDef {

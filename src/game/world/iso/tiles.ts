@@ -3,7 +3,7 @@ import type { Painter } from '@ui/widgets/Painter';
 import { mix, scale } from '../ambience';
 import type { Ambience } from '../ambience';
 import { TILE } from './project';
-import { tile, tileHalf } from './shapes';
+import { tile } from './shapes';
 import type { ScreenPoint } from './project';
 
 /**
@@ -196,11 +196,21 @@ const dance: Paint = (ctx) => {
   tile(ctx.painter, ctx.at, scale(base, jitter(ctx.tx, ctx.ty, 0.06)));
   seam(ctx, scale(base, 1.6));
   // Пятно прожектора: редкое, но яркое — по нему клуб и узнаётся.
+  // Пятно прожектора: мягкое, с растушёванным краем — залитая целиком
+  // плитка читается наклейкой, а не светом.
   const n = (ctx.tx * 37 + ctx.ty * 11) % 9;
   if (n === 0 || n === 4) {
     const glow = [0x4f7fff, 0xff5fb8, 0x5fffc9][(ctx.tx + ctx.ty) % 3]!;
-    tile(ctx.painter, ctx.at, glow, 0.3);
-    tileHalf(ctx.painter, ctx.at, glow, 'near', 0.18);
+    const rows = TILE.halfH * 2;
+    for (let r = 0; r < rows; r += 1) {
+      const full = 2 + 4 * Math.min(r, rows - 1 - r);
+      for (const [inset, alpha] of [[0, 0.12], [8, 0.16], [16, 0.2]] as const) {
+        const w = full - inset;
+        if (w > 0) {
+          ctx.painter.fill({ x: ctx.at.x - w / 2, y: ctx.at.y + r, w, h: 1 }, glow, alpha);
+        }
+      }
+    }
   }
 };
 

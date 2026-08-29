@@ -15,7 +15,7 @@ import type { Facing } from './actorSprite';
 import { blockedIn, districtScene, doorOf, roomScene } from './iso/scene';
 import type { IsoScene } from './iso/scene';
 import { WALK_TILES, centerOf, step, stepToward, withinReach } from './iso/walk';
-import { freeSpotNear } from './iso/route';
+import { findPath, freeSpotNear } from './iso/route';
 import type { WorldTarget } from './targets';
 import { screenToWorld } from './iso/view';
 
@@ -166,7 +166,8 @@ export class WorldController {
   /** Тап по пустому месту — приказ идти туда. */
   walkTo(tap: WorldPoint): void {
     const scene = this.scene();
-    this.route = [screenToWorld(tap, this.position, scene)];
+    const goal = screenToWorld(tap, this.position, scene);
+    this.route = findPath(scene, this.position, freeSpotNear(scene, goal, this.position));
     this.pendingTarget = null;
   }
 
@@ -180,10 +181,11 @@ export class WorldController {
       return;
     }
     // Идём не в саму цель, а на свободную плитку рядом с ней: дверь и
-    // стойка стоят в стене, внутрь них ходить некуда.
+    // стойка стоят в стене, внутрь них ходить некуда. Путь ищется по
+    // сетке — иначе дорогу перекрывает первый же лоток.
     const scene = this.scene();
     const goal = freeSpotNear(scene, centerOf(target.rect), this.position);
-    this.route = [goal];
+    this.route = findPath(scene, this.position, goal);
     this.pendingTarget = target;
   }
 

@@ -467,4 +467,43 @@ const parasol: Draw = (ctx) => {
   canopy(ctx, 1.15, 46, tone);
 };
 
-Object.assign(ISO_PROPS, { stall, kiosk, hut, umbrella, parasol });
+const NEON = [0x2fd8a8, 0x7f5fff, 0xff5fb8, 0x5fc9ff];
+
+/**
+ * Пуф в клубе: низкий блок со светящейся кромкой. Именно из таких
+ * островков света и собран зал в Miami Nights.
+ */
+const seat: Draw = (ctx) => {
+  shade(ctx, 1.4, 1);
+  const glow = NEON[ctx.variant % NEON.length]!;
+  const body = mix(glow, 0x14121f, 0.55);
+  boxAt(ctx.painter, ctx.at, { w: 1.3, d: 0.95, h: 12 }, {
+    top: scale(body, 1.35),
+    left: scale(body, 0.6),
+    right: scale(body, 0.85),
+    outline: 0x0b0a12,
+  });
+  // Светящаяся кромка по верхнему ребру и отсвет на полу.
+  const top = shift(ctx.at, 0, 0, 12);
+  ctx.painter.fill({ x: top.x - 20, y: top.y - 1, w: 40, h: 2 }, glow, 0.85);
+  patch(ctx, 2, 1.6, glow, 0.14);
+};
+
+/** Светодиодная стена: узор из ярких клеток, по которому узнают клуб. */
+const screen: Draw = (ctx) => {
+  const at = ctx.at;
+  ctx.painter.fill({ x: at.x - 30, y: at.y - 54, w: 60, h: 48 }, 0x0d0b16);
+  for (let i = 0; i < 48; i += 1) {
+    const cx = at.x - 27 + (i % 8) * 7;
+    const cy = at.y - 51 + Math.floor(i / 8) * 8;
+    const on = (i * 7 + ctx.variant * 3) % 5 !== 0;
+    ctx.painter.fill(
+      { x: cx, y: cy, w: 5, h: 6 },
+      on ? NEON[(i + ctx.variant) % NEON.length]! : 0x1a1730,
+      on ? 0.9 : 1,
+    );
+  }
+  ctx.painter.fill({ x: at.x - 31, y: at.y - 55, w: 62, h: 2 }, 0x3a3556);
+};
+
+Object.assign(ISO_PROPS, { stall, kiosk, hut, umbrella, parasol, seat, screen });

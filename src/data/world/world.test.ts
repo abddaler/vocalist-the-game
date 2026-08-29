@@ -7,6 +7,7 @@ import { ROOMS, getRoom, hasRoom } from './rooms';
 import { crowdIn } from './crowd';
 import type { DistrictDef, RoomDef, WorldRect } from '@core/types';
 import { cellAt, parseMap } from '../../game/world/iso/map';
+import { footprintOf } from '../../game/world/decor';
 
 const overlaps = (a: WorldRect, b: WorldRect): boolean =>
   a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -124,6 +125,24 @@ describe('город', () => {
             const y = from.y + ((to.y - from.y) * k) / Math.max(1, steps);
             expect(onGround(district, x, y), `${member.id} @ ${x.toFixed(1)},${y.toFixed(1)}`).toBe(true);
           }
+        }
+      }
+    }
+  });
+
+  it('порог двери свободен: на него не поставили фонарь', () => {
+    // Предмет ровно на пороге отрезает дверь, и понять это по картинке
+    // нельзя — только упереться в неё ногами.
+    for (const district of CITY) {
+      for (const building of district.buildings) {
+        const { door } = building;
+        for (const item of district.decor) {
+          const rect = footprintOf(item);
+          if (!rect) continue;
+          expect(
+            overlaps(rect, door),
+            `${district.id}: ${item.kind} на пороге ${building.locationId}`,
+          ).toBe(false);
         }
       }
     }
