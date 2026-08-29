@@ -28,6 +28,7 @@ import type { RenderContext, UiState } from '@ui/screens/types';
 import { buildActorTextures } from '../art';
 import { WorldCanvas, WorldController, renderIso } from '../world';
 import { PropAtlas } from '../world/PropAtlas';
+import { Diagnostics } from '../Diagnostics';
 import type { WorldTarget } from '../world';
 
 /**
@@ -54,6 +55,7 @@ export class GameScene extends Phaser.Scene {
   /** Запечённая подложка района: она и делает кадр дешёвым. */
   private canvas!: WorldCanvas;
   private props!: PropAtlas;
+  private diagnostics!: Diagnostics;
 
   private readonly activity = new ActivityRunner();
 
@@ -102,6 +104,7 @@ export class GameScene extends Phaser.Scene {
     this.backPainter = new Painter(this, backLayer);
     this.canvas = new WorldCanvas(this, canvasLayer);
     this.props = new PropAtlas(this);
+    this.diagnostics = new Diagnostics(this.game);
     this.worldPainter = new Painter(this, worldLayer);
     this.painter = new Painter(this, uiLayer);
     this.hotspots = new Hotspots();
@@ -131,8 +134,11 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  override update(_time: number, delta: number): void {
+  override update(time: number, delta: number): void {
     this.input$.update();
+    // Счётчик кадров живёт всегда: он должен показать именно тот кадр,
+    // который тормозит, а не тот, что был бы при включённой отладке.
+    if (this.diagnostics.tick(time, delta)) this.dirty = true;
 
     if (this.activity.busy) {
       const done = this.activity.tick(delta);
@@ -238,7 +244,7 @@ export class GameScene extends Phaser.Scene {
 
     if (this.world.fadeAlpha > 0) {
       this.renderScreen(ctx);
-      renderHud(this.painter, state, this.placeKey());
+      renderHud(this.painter, state, this.placeKey(), this.diagnostics.line());
       this.painter.fill(
         { x: 0, y: 0, w: SCREEN.width, h: SCREEN.height },
         0x000000,
@@ -247,7 +253,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    renderHud(this.painter, state, this.placeKey());
+    renderHud(this.painter, state, this.placeKey(), this.diagnostics.line());
 
     const activity = this.activity.view();
     if (activity) {

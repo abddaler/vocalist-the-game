@@ -1,8 +1,6 @@
 import { palette } from './palettes';
 import type { ActorPalette, Colors } from './palettes';
-import type { HairStyle } from './hair';
-import type { OutfitStyle } from './outfit';
-import type { Accessory } from './accessory';
+import type { Accessory, HairStyle, OutfitStyle } from './style';
 
 /**
  * Внешность персонажа: палитра, стрижка, одежда и примета. Четыре

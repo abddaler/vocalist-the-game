@@ -15,7 +15,12 @@ import type { Painter } from '../widgets/Painter';
  * «сколько у меня» и «что со мной» — а по цвету рамки видно, что важно
  * прямо сейчас.
  */
-export function renderHud(painter: Painter, state: GameState, placeKey?: string): void {
+export function renderHud(
+  painter: Painter,
+  state: GameState,
+  placeKey?: string,
+  diagnostics?: string,
+): void {
   const bar = { x: 0, y: 0, w: SCREEN.width, h: LAYOUT.hudHeight };
   painter.fill(bar, COLORS.panelDeep);
   painter.fill({ x: 0, y: LAYOUT.hudHeight - 1, w: SCREEN.width, h: 1 }, COLORS.border);
@@ -31,6 +36,19 @@ export function renderHud(painter: Painter, state: GameState, placeKey?: string)
     const place = { x: 116, y: 2, w: SCREEN.width - 232, h: 13 };
     painter.plate(place, COLORS.panelAlt, COLORS.borderFocus);
     painter.label(place, t(placeKey), { align: 'center', color: COLORS.text });
+  }
+
+  // Строка отладки поверх панели: по ней видно, чем игра рисует и
+  // сколько у неё кадров на том телефоне, где она тормозит.
+  if (diagnostics) {
+    // Подложка обязательна: без неё строка ложится прямо на улицу и
+    // на светлом асфальте её не прочесть — а нужна она именно затем,
+    // чтобы её сняли на телефоне и прислали.
+    const line = { x: 2, y: LAYOUT.hudHeight + 1, w: painter.measure(diagnostics) + 8, h: 10 };
+    painter.fill(line, COLORS.panelDeep);
+    painter.label({ x: line.x + 4, y: line.y, w: line.w - 8, h: line.h }, diagnostics, {
+      color: COLORS.textMuted,
+    });
   }
 
   const slot = SLOTS[state.slotIndex] ?? 'morning';
