@@ -71,3 +71,50 @@ export function gateLeft(to: GateDef['to'], y: number): GateDef {
 export function gateRight(to: GateDef['to'], width: number, y: number): GateDef {
   return { to, rect: { x: width - STREET.gateW, y, w: STREET.gateW, h: 2 } };
 }
+
+/**
+ * Готовые наборы мелочи. Предметы на улице стоят группами, а не поштучно
+ * вразброс: скамейка идёт с урной, лежак — с зонтом и полотенцем, фонари
+ * — ровным рядом вдоль бордюра. Набор задаёт эту связь один раз, и на
+ * карте её уже нельзя случайно нарушить.
+ */
+export const group = {
+  /** Место отдыха: скамейка и урна рядом с ней. */
+  rest(x: number, y: number): DecorDef[] {
+    return [decor('bench', x, y), decor('bin', x + 1.4, y)];
+  },
+
+  /** Пляжное место: зонт, пара лежаков и полотенце под ними. */
+  beach(x: number, y: number, variant: number): DecorDef[] {
+    return [
+      decor('umbrella', x, y, variant),
+      decor('deckchair', x - 0.8, y + 0.7, variant),
+      decor('deckchair', x + 0.8, y + 0.7, variant + 1),
+      decor('towel', x, y + 1.6, variant),
+    ];
+  },
+
+  /** Столик кафе: зонт со столом под ним и стул рядом. */
+  cafe(x: number, y: number, variant: number): DecorDef[] {
+    return [decor('parasol', x, y, variant), decor('bin', x + 1.6, y)];
+  },
+
+  /** Ряд фонарей вдоль бордюра: ровный шаг, а не случайные точки. */
+  lamps(from: number, to: number, step: number, y: number): DecorDef[] {
+    const list: DecorDef[] = [];
+    for (let x = from; x <= to; x += step) list.push(decor('lamp', x, y));
+    return list;
+  },
+
+  /** Короткий ряд столбиков: они всегда стоят цепочкой, а не по одному. */
+  bollards(from: number, count: number, step: number, y: number): DecorDef[] {
+    const list: DecorDef[] = [];
+    for (let i = 0; i < count; i += 1) list.push(decor('bollard', from + i * step, y));
+    return list;
+  },
+
+  /** Торговый ряд: лоток и ящики позади него. */
+  market(x: number, y: number, variant: number): DecorDef[] {
+    return [decor('stall', x, y, variant), decor('crate', x + 1.6, y - 0.6, variant)];
+  },
+};

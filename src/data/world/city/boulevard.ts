@@ -1,5 +1,5 @@
 import type { DistrictDef } from '@core/types';
-import { decor, fill, gateLeft, gateRight, house } from './plan';
+import { decor, fill, gateLeft, gateRight, group, house } from './plan';
 
 /**
  * Neon Boulevard: клуб, ресторан и витрины. Ночная часть карьеры целиком
@@ -54,34 +54,40 @@ export const BOULEVARD: DistrictDef = {
   ],
 
   decor: [
-    // Тротуар у витрин: терраса кафе, очередь, афиши. Мебель стоит
-    // вразбежку по двум рядам — сплошная линия предметов запирает
-    // тротуар не хуже стены.
-    decor('palm', 0.5, 2.5, 1),
-    decor('palm', 12.5, 2.5, 0),
-    decor('palm', 23.5, 2.5, 1),
-    decor('palm', 35.5, 2.5, 0),
-    decor('tree', 7.5, 2.5, 1),
-    decor('tree', 31.5, 2.5, 0),
-    decor('billboard', 17.5, 2.5, 0),
-    decor('billboard', 27.5, 2.5, 2),
-    decor('lamp', 3.5, 4.5),
-    decor('lamp', 15.5, 4.5),
-    decor('lamp', 28.5, 4.5),
-    decor('lamp', 38.5, 4.5),
-    decor('parasol', 12.5, 4.5),
-    decor('parasol', 14.5, 3.5),
-    decor('bench', 9.5, 4.5),
-    decor('bench', 33.5, 4.5),
-    decor('bin', 20.5, 4.5),
-    decor('bollard', 5.5, 4.5),
-    decor('newsbox', 25.5, 4.5),
-    decor('stall', 6.5, 3.5, 1),
-    decor('stall', 30.5, 3.5, 3),
-    decor('kiosk', 24.5, 3.5),
-    decor('table', 13.5, 3.5),
-    decor('hydrant', 36.5, 4.5),
-    decor('trafficLight', 18.5, 4.5),
+    // Тротуар у витрин. Высокое — по швам между домами: напротив фасада
+    // оно срезает вывеску.
+    decor('palm', 0.4, 2.5, 1),
+    decor('palm', 7.5, 2.5, 0),
+    decor('tree', 12.5, 2.5, 1),
+    decor('palm', 18.5, 2.5, 1),
+    decor('tree', 23.5, 2.5, 0),
+    decor('palm', 29.5, 2.5, 0),
+    decor('palm', 35.5, 2.5, 1),
+    decor('billboard', 41.5, 2.5, 0),
+    decor('bush', 5.5, 2.5),
+    decor('bush', 16.5, 2.5),
+    decor('bush', 32.5, 2.5),
+    decor('bush', 38.5, 2.5),
+    ...group.cafe(12.5, 3.5, 0),
+    decor('table', 14.5, 4.5),
+    ...group.market(7.5, 3.5, 1),
+    ...group.market(29.5, 3.5, 3),
+    decor('kiosk', 23.5, 3.5),
+
+    // Бордюр: фонари по тем же швам, скамьи с урнами, столбики у входа
+    // в клуб.
+    decor('lamp', 7.5, 4.5),
+    decor('lamp', 12.5, 4.5),
+    decor('lamp', 18.5, 4.5),
+    decor('lamp', 23.5, 4.5),
+    decor('lamp', 29.5, 4.5),
+    decor('lamp', 35.5, 4.5),
+    ...group.rest(4.5, 4.5),
+    ...group.rest(33.5, 4.5),
+    ...group.bollards(1.5, 3, 0.9, 4.5),
+    decor('newsbox', 20.5, 4.5),
+    decor('trafficLight', 26.5, 4.5),
+    decor('hydrant', 39.5, 4.5),
 
     // Первая проезжая часть.
     decor('car', 4.5, 6.5, 2),
@@ -103,9 +109,8 @@ export const BOULEVARD: DistrictDef = {
     // Дальняя полоса и тротуар у нижнего края.
     decor('car', 9.5, 10.5, 3),
     decor('car', 28.5, 10.5, 2),
-    decor('lamp', 13.5, 13.5),
-    decor('lamp', 32.5, 13.5),
-    decor('bin', 23.5, 13.5),
+    ...group.lamps(6.5, 38.5, 8, 13.5),
+    ...group.rest(19.5, 13.5),
   ],
 
   gates: [gateLeft('downtown', 6), gateRight('pier', 42, 6)],

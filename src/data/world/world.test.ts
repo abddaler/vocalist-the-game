@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ACTIVITIES, hasActivity } from '../activities';
 import { LOCATIONS } from '../locations';
 import { hasVenue } from '../venues';
-import { CITY, HOME_DISTRICT, getDistrict } from './city';
+import { CITY, HOME_DISTRICT, STREET, getDistrict } from './city';
 import { ROOMS, getRoom, hasRoom } from './rooms';
 import { crowdIn } from './crowd';
 import type { DistrictDef, RoomDef, WorldRect } from '@core/types';
@@ -144,6 +144,35 @@ describe('город', () => {
             overlaps(rect, door),
             `${district.id}: ${item.kind} на пороге ${building.locationId}`,
           ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('перед вывеской не растёт пальма', () => {
+    /*
+     * Высокая мелочь рисуется поверх запечённого фасада, поэтому дерево
+     * или фонарь напротив вывески срезает ей полнадписи. Место высокому —
+     * в разрывах между домами.
+     */
+    const TALL = new Set([
+      'palm', 'tree', 'lamp', 'billboard', 'trafficLight',
+      'umbrella', 'parasol', 'kiosk', 'stall', 'hut', 'busStop',
+    ]);
+    for (const district of CITY) {
+      const blocks = [
+        ...district.buildings.map((b) => ({ rect: b.rect, id: b.locationId })),
+        ...district.scenery.filter((h) => h.signKey).map((h) => ({ rect: h.rect, id: h.signKey! })),
+      ];
+      for (const item of district.decor) {
+        if (!TALL.has(item.kind) || item.y > STREET.frontY + 2) continue;
+        for (const block of blocks) {
+          const center = block.rect.x + block.rect.w / 2;
+          const half = block.rect.w * 0.35;
+          expect(
+            Math.abs(item.x - center) >= half,
+            `${district.id}: ${item.kind} @ ${item.x} закрывает вывеску ${block.id}`,
+          ).toBe(true);
         }
       }
     }

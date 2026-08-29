@@ -27,18 +27,31 @@ export interface Inhabitants {
 }
 
 /**
- * Живность и обстановка рисуются одним списком по удалению от камеры:
- * тот, кто ближе, заслоняет того, кто дальше. В изометрии удаление —
- * это x + y, а не одна координата.
+ * Кусок сцены со своим удалением от камеры. В изометрии удаление — это
+ * x + y, а не одна координата.
  */
-export function drawInhabitants(
+export interface Piece {
+  readonly depth: number;
+  readonly draw: () => void;
+}
+
+/** Рисует куски от дальнего к ближнему: ближний заслоняет дальний. */
+export function drawPieces(pieces: readonly Piece[]): void {
+  [...pieces].sort((a, b) => a.depth - b.depth).forEach((piece) => piece.draw());
+}
+
+/**
+ * Мелочь, прохожие и игрок. Возвращает куски, а не рисует их: цели сцены
+ * сортируются вместе с ними, иначе человек всегда оказывается поверх
+ * лестницы перехода, даже когда стоит за ней.
+ */
+export function inhabitantPieces(
   painter: Painter,
   params: Inhabitants,
   scene: IsoScene,
   toView: (point: WorldPoint, z: number) => ScreenPoint,
   ambience: Ambience,
-): void {
-  type Piece = { depth: number; draw: () => void };
+): Piece[] {
   const pieces: Piece[] = [];
 
   const place = (point: WorldPoint): ScreenPoint =>
@@ -94,8 +107,7 @@ export function drawInhabitants(
       person(params.position, PLAYER_LOOK, lookFor(params.facing, params.walked, params.moving)),
   });
 
-  pieces.sort((a, b) => a.depth - b.depth);
-  for (const piece of pieces) piece.draw();
+  return pieces;
 }
 
 /**

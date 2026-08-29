@@ -13,6 +13,7 @@ import type { ScreenPoint } from './project';
 import { boxAt } from './shapes';
 import type { IsoScene } from './scene';
 import { centerOf } from './walk';
+import type { Piece } from './people';
 
 /**
  * Цели на сцене: дверь, створ в соседний район и площадка с предметом.
@@ -36,7 +37,7 @@ export function markRect(
   return { x: Math.round(at.x - w / 2), y: Math.round(at.y - h + 6), w: Math.round(w), h };
 }
 
-export function drawMarks(
+export function markPieces(
   painter: Painter,
   hotspots: Hotspots,
   scene: IsoScene,
@@ -44,29 +45,36 @@ export function drawMarks(
   toView: (point: WorldPoint, z: number) => ScreenPoint,
   focus: WorldTarget | null,
   ambience: Ambience,
-): void {
+): Piece[] {
+  const pieces: Piece[] = [];
+
   for (const target of scene.targets) {
     const center = centerOf(target.rect);
     const at = toView(center, heightAt(scene.map, center));
     const active = focus?.id === target.id;
 
-    if (target.kind === 'gate') {
-      drawGate(painter, at, target.rect.h, active, ambience);
-    } else if (target.kind === 'point' || target.kind === 'exit') {
-      const color = scene.pointColors.get(target.id);
-      if (target.prop && color !== undefined) {
-        drawIsoProp(painter, target, at, color, active, ambience);
-      } else {
-        drawDoorstep(painter, at, active, ambience);
-      }
-    } else if (active) {
-      drawDoorGlow(painter, at, ambience);
-    }
+    pieces.push({
+      depth: center.x + center.y,
+      draw: () => {
+        if (target.kind === 'gate') {
+          drawGate(painter, at, target.rect.h, active, ambience);
+        } else if (target.kind === 'point' || target.kind === 'exit') {
+          const color = scene.pointColors.get(target.id);
+          if (target.prop && color !== undefined) {
+            drawIsoProp(painter, target, at, color, active, ambience);
+          } else {
+            drawDoorstep(painter, at, active, ambience);
+          }
+        } else if (active) {
+          drawDoorGlow(painter, at, ambience);
+        }
+      },
+    });
 
-    // Подпись только у площадок: у двери, выхода и створа и так есть
-    // подсказка внизу экрана, и вторая надпись только спорит с ней.
+    // Подпись поверх всего: она нужна, чтобы прочесть, а не чтобы стоять
+    // в очереди по глубине.
     if (active && target.kind === 'point') {
-      drawCaption(painter, at, target);
+      pieces.push({ depth: Number.POSITIVE_INFINITY, draw: () => drawCaption(painter, at, target) });
     }
 
     hotspots.add({
@@ -76,6 +84,7 @@ export function drawMarks(
       onActivate: () => params.onActivate(target),
     });
   }
+  return pieces;
 }
 
 /** Подсветка порога, когда игрок рядом с дверью. */

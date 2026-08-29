@@ -10,10 +10,10 @@ import { interiorLight } from '../interior';
 import type { WorldCanvas } from '../WorldCanvas';
 import type { CrowdActor } from '../Crowd';
 import type { Facing } from '../actorSprite';
-import { drawInhabitants } from './people';
-import { drawBlock } from './blocks';
+import { drawPieces, inhabitantPieces } from './people';
+import { drawBlock, drawBlockSign } from './blocks';
 import { drawGround } from './ground';
-import { drawMarks, markRect, promptFor } from './marks';
+import { markPieces, markRect, promptFor } from './marks';
 import { heightAt } from './height';
 import { kindAt } from './map';
 import type { IsoMap } from './map';
@@ -78,8 +78,10 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
   };
 
   const focus = nearest(position, scene.targets);
-  drawMarks(painter, hotspots, scene, params, toView, focus, ambience);
-  drawInhabitants(painter, params, scene, toView, ambience);
+  drawPieces([
+    ...markPieces(painter, hotspots, scene, params, toView, focus, ambience),
+    ...inhabitantPieces(painter, params, scene, toView, ambience),
+  ]);
 
   drawWash(painter, { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height }, ambience);
 
@@ -112,6 +114,7 @@ function paintStatic(
     (a, b) => a.rect.x + a.rect.y + a.rect.h - (b.rect.x + b.rect.y + b.rect.h),
   );
   for (const block of blocks) drawBlock({ painter, ambience, origin }, block);
+  for (const block of blocks) drawBlockSign({ painter, ambience, origin }, block);
 }
 
 /** Сдвиг камеры: держит человека по центру и не выходит за карту. */

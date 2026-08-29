@@ -91,7 +91,19 @@ export function drawBlock(ctx: BlockPaint, block: IsoBlock): void {
   drawRoofEdge(ctx, style, { west, south, east, north }, wall);
   drawFront(ctx, block, style, west, south, lift, front);
   drawSideWindows(ctx, style, east, south, lift, side);
-  if (block.nameKey) drawSign(ctx, block, west, south, lift);
+}
+
+/**
+ * Вывески кладутся отдельным проходом, после всех домов: щит шире своего
+ * фасада, и сосед, нарисованный следом, срезал ему полнадписи.
+ */
+export function drawBlockSign(ctx: BlockPaint, block: IsoBlock): void {
+  if (!block.nameKey || block.wall) return;
+  const r = block.rect;
+  const lift = block.tall;
+  const west = at(ctx, r.x, r.y + r.h, lift);
+  const south = at(ctx, r.x + r.w, r.y + r.h, lift);
+  drawSign(ctx, block, west, south, lift);
 }
 
 interface Corners {

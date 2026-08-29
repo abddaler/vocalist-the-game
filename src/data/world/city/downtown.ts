@@ -1,5 +1,5 @@
 import type { DistrictDef } from '@core/types';
-import { decor, fill, gateLeft, gateRight, house } from './plan';
+import { decor, fill, gateLeft, gateRight, group, house } from './plan';
 
 /**
  * Downtown: конторы, стекло и подземный переход, в котором начинается
@@ -52,47 +52,50 @@ export const DOWNTOWN: DistrictDef = {
   ],
 
   decor: [
-    // Площадь у башен.
-    decor('tree', 4.5, 2.5, 1),
-    decor('tree', 14.5, 2.5, 2),
-    decor('tree', 25.5, 2.5, 1),
-    decor('tree', 36.5, 2.5, 0),
-    decor('flowerbed', 20.5, 2.5),
-    decor('planter', 5.5, 4.5),
-    decor('planter', 33.5, 4.5),
-    decor('bench', 7.5, 4.5),
-    decor('bench', 22.5, 4.5),
-    decor('bin', 15.5, 4.5),
-    decor('lamp', 11.5, 4.5),
-    decor('lamp', 30.5, 4.5),
-    decor('billboard', 13.5, 2.5, 1),
-    decor('billboard', 32.5, 2.5, 0),
-    decor('stall', 9.5, 4.5, 2),
-    decor('kiosk', 28.5, 4.5),
-    decor('bin', 19.5, 4.5),
-    decor('bench', 17.5, 4.5),
-    decor('planter', 27.5, 2.5),
-    decor('planter', 12.5, 2.5),
+    // Площадь у башен. Высокое стоит в разрывах между башнями: перед
+    // фасадом оно закрывает вывеску.
+    decor('tree', 5.5, 2.5, 1),
+    decor('tree', 11.5, 2.5, 2),
+    decor('tree', 16.5, 2.5, 1),
+    decor('tree', 27.5, 2.5, 0),
+    decor('tree', 33.5, 2.5, 2),
+    decor('billboard', 21.5, 2.5, 1),
+    decor('flowerbed', 9.5, 2.5),
+    decor('flowerbed', 24.5, 2.5),
+    decor('planter', 2.5, 2.5),
+    decor('planter', 30.5, 2.5),
+    decor('planter', 36.5, 2.5),
 
-    // Тротуар под площадью.
-    decor('newsbox', 3.5, 6.5),
+    decor('lamp', 5.5, 4.5),
+    decor('lamp', 11.5, 4.5),
+    decor('lamp', 16.5, 4.5),
+    decor('lamp', 21.5, 4.5),
+    decor('lamp', 27.5, 4.5),
+    decor('lamp', 33.5, 4.5),
+    ...group.rest(7.5, 4.5),
+    ...group.rest(24.5, 4.5),
+    decor('planter', 3.5, 4.5),
+    decor('planter', 35.5, 4.5),
+    ...group.market(12.5, 4.5, 2),
+    decor('kiosk', 30.5, 4.5),
+
+    // Тротуар под площадью: остановка, светофор у перехода, столбики
+    // вдоль него.
     decor('busStop', 14.5, 6.5),
+    decor('trafficLight', 20.5, 6.5),
+    ...group.bollards(18.5, 3, 1.4, 7.5),
+    decor('newsbox', 3.5, 6.5),
     decor('mailbox', 6.5, 6.5),
     decor('bike', 23.5, 6.5),
     decor('hydrant', 28.5, 6.5),
-    decor('trafficLight', 20.5, 6.5),
-    decor('bollard', 19.5, 7.5),
-    decor('bollard', 21.5, 7.5),
 
     // Мостовая и дальний тротуар.
     decor('car', 7.5, 9.5, 1),
     decor('car', 26.5, 9.5, 1),
     decor('car', 34.5, 9.5, 2),
-    decor('lamp', 4.5, 12.5),
-    decor('lamp', 18.5, 12.5),
-    decor('lamp', 33.5, 12.5),
-    decor('bin', 11.5, 12.5),
-    decor('bench', 25.5, 12.5),
+    ...group.lamps(4.5, 33.5, 7.25, 12.5),
+    ...group.rest(11.5, 12.5),
+    ...group.rest(25.5, 12.5),
   ],
 
   gates: [gateLeft('hills', 7), gateRight('boulevard', 38, 7)],
