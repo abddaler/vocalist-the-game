@@ -2,6 +2,7 @@ import type { GameState } from '@core/types';
 import { t } from '../i18n';
 import { COLORS, CONTENT, SCREEN } from '../theme';
 import type { Painter } from '../widgets/Painter';
+import { ACTOR_TEXTURE } from '@game/art';
 
 /**
  * Сцена занятия: пока идёт дело, экран не подменяется мгновенно новым
@@ -88,6 +89,7 @@ export interface ActivityView {
   readonly progress: number;
   /** Миллисекунды с начала: по ним живут значки. */
   readonly elapsed: number;
+  /** Имя кадра в атласе персонажей. */
   readonly actorTexture: string;
 }
 
@@ -133,7 +135,7 @@ export function renderActivity(
   const feetY = card.y + 88;
   const width = 24 - Math.abs(bob) * 2;
   painter.fill({ x: feetX - width / 2, y: feetY - 1, w: width, h: 3 }, 0x000000, 0.3);
-  painter.sprite(feetX + sway, feetY + bob, view.actorTexture, false);
+  painter.sprite(feetX + sway, feetY + bob, ACTOR_TEXTURE, false, view.actorTexture);
 
   drawMotes(painter, view, feetX, feetY - 44);
 

@@ -1,13 +1,14 @@
-import type { DecorDef, WorldPoint } from '@core/types';
+import type { WorldPoint } from '@core/types';
 import { t } from '@ui/i18n';
 import { COLORS } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
-import { ACTOR_SPRITE, PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
+import { ACTOR_SPRITE, ACTOR_TEXTURE, PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
 import type { ActorPose } from '../../art';
 import type { Ambience } from '../ambience';
 import { drawShadow } from '../backdrop';
-import { drawDecor, shadowWidth } from '../decor';
-import { ISO_OVERHEAD, ISO_PROPS } from './props';
+import { ISO_OVERHEAD, paintProp, propId } from './props';
+import { PROP_ANCHOR } from '../PropAtlas';
+import type { PropAtlas } from '../PropAtlas';
 import { lookFor } from '../actorSprite';
 import type { CrowdActor } from '../Crowd';
 import type { Facing } from '../actorSprite';
@@ -15,14 +16,9 @@ import type { ScreenPoint } from './project';
 import type { IsoScene } from './scene';
 import { heightAt } from './height';
 
-/**
- * Во сколько раз щитовая мелочь крупнее собственных пикселей. Человек
- * рисуется один к одному: его кадр 28x48 и так занимает на экране
- * столько же, сколько прежние 14x24 вдвое крупнее.
- */
-export const UNIT = 2;
-
 export interface Inhabitants {
+  /** Атлас мелочи. Без него предметы рисуются каждый кадр заново. */
+  readonly props?: PropAtlas | undefined;
   readonly position: WorldPoint;
   readonly facing: Facing;
   readonly walked: number;
@@ -69,32 +65,28 @@ export function inhabitantPieces(
   const place = (point: WorldPoint): ScreenPoint =>
     toView(point, heightAt(scene.map, point));
 
+  /**
+   * Мелочь ставится готовой картинкой из атласа: собирать её из сотни
+   * заливок на каждый кадр — то, на чём телефон и вставал. В атлас
+   * помещается не всё, и не попавшее рисуется как прежде.
+   */
+  const stamp = (id: string, at: ScreenPoint): void => {
+    const frame = params.props?.frameOf(id);
+    if (frame && params.props) {
+      painter.stamp(at.x - PROP_ANCHOR.x, at.y - PROP_ANCHOR.y, params.props.textureKey, frame);
+      return;
+    }
+    paintProp(painter, ambience, id, at);
+  };
+
   for (const item of scene.decor) {
     const at = place(item);
-    const ctx = {
-      painter,
-      ambience,
-      at,
-      variant: item.variant ?? 0,
-      facing: item.facing ?? ('x' as const),
-    };
-    pieces.push({
-      depth: item.x + item.y,
-      draw: () => {
-        // У объёмной мелочи своя тень по следу на земле; у щитов —
-        // прежняя полоска под ногами.
-        const volume = ISO_PROPS[item.kind];
-        if (volume) {
-          volume(ctx);
-          return;
-        }
-        const width = shadowWidth(item.kind) * UNIT;
-        if (width > 0) drawShadow(painter, at.x, at.y, width, ambience);
-        drawDecor(painter, item as DecorDef, at.x, at.y, ambience, UNIT);
-      },
-    });
-    const roof = ISO_OVERHEAD[item.kind];
-    if (roof) pieces.push({ depth: item.x + item.y, over: true, draw: () => roof(ctx) });
+    const ground = propId(item);
+    pieces.push({ depth: item.x + item.y, draw: () => stamp(ground, at) });
+
+    if (!ISO_OVERHEAD[item.kind]) continue;
+    const roof = propId(item, true);
+    pieces.push({ depth: item.x + item.y, over: true, draw: () => stamp(roof, at) });
   }
 
   const person = (
@@ -106,7 +98,7 @@ export function inhabitantPieces(
     const at = place(point);
     // Тень остаётся на земле: подскакивает человек, а не его след.
     drawShadow(painter, at.x, at.y, ACTOR_SPRITE.width * 0.7, ambience);
-    painter.sprite(at.x, at.y - pose.lift, actorTexture(look, pose.pose), pose.flipX);
+    painter.sprite(at.x, at.y - pose.lift, ACTOR_TEXTURE, pose.flipX, actorTexture(look, pose.pose));
     if (nameKey) drawNamePlate(painter, at, nameKey);
   };
 

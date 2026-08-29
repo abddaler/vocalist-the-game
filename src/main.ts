@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '@platform/config';
 import { attachDisplay } from '@platform/display';
+import { pickRenderer } from '@platform/renderer';
 import { LocalStorageSaveAdapter } from '@platform/SaveAdapter';
 import { MenuScene } from '@game/scenes/MenuScene';
 import { GameScene } from '@game/scenes/GameScene';
@@ -11,7 +12,7 @@ import { t } from '@ui/i18n';
  * Режим NONE плюс подбор зума вручную: см. platform/display.ts.
  */
 const game = new Phaser.Game({
-  type: Phaser.AUTO,
+  type: pickRenderer(),
   parent: 'game',
   width: INTERNAL_WIDTH,
   height: INTERNAL_HEIGHT,

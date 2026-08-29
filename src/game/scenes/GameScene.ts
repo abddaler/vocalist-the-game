@@ -27,6 +27,7 @@ import { initialUiState } from '@ui/screens/types';
 import type { RenderContext, UiState } from '@ui/screens/types';
 import { buildActorTextures } from '../art';
 import { WorldCanvas, WorldController, renderIso } from '../world';
+import { PropAtlas } from '../world/PropAtlas';
 import type { WorldTarget } from '../world';
 
 /**
@@ -52,6 +53,7 @@ export class GameScene extends Phaser.Scene {
   private world!: WorldController;
   /** Запечённая подложка района: она и делает кадр дешёвым. */
   private canvas!: WorldCanvas;
+  private props!: PropAtlas;
 
   private readonly activity = new ActivityRunner();
 
@@ -99,6 +101,7 @@ export class GameScene extends Phaser.Scene {
     const uiLayer = this.add.container(0, 0);
     this.backPainter = new Painter(this, backLayer);
     this.canvas = new WorldCanvas(this, canvasLayer);
+    this.props = new PropAtlas(this);
     this.worldPainter = new Painter(this, worldLayer);
     this.painter = new Painter(this, uiLayer);
     this.hotspots = new Hotspots();
@@ -121,6 +124,7 @@ export class GameScene extends Phaser.Scene {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.markDirty);
       this.input$.destroy();
       this.canvas.destroy();
+      this.props.destroy();
       this.backPainter.destroy();
       this.worldPainter.destroy();
       this.painter.destroy();
@@ -278,6 +282,7 @@ export class GameScene extends Phaser.Scene {
         painter: this.worldPainter,
         back: this.backPainter,
         canvas: this.canvas,
+        props: this.props,
         hotspots: this.hotspots,
         state,
         position: this.world.position,

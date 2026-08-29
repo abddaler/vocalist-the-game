@@ -8,6 +8,9 @@ import { drawSky, drawFarSide, drawWash } from '../backdrop';
 import type { Backdrop } from '../backdrop';
 import { interiorLight } from '../interior';
 import type { WorldCanvas } from '../WorldCanvas';
+import { paintProp, propId } from './props';
+import { ISO_OVERHEAD } from './props';
+import type { PropAtlas } from '../PropAtlas';
 import type { CrowdActor } from '../Crowd';
 import type { Facing } from '../actorSprite';
 import { drawPieces, inhabitantPieces } from './people';
@@ -27,6 +30,7 @@ export interface IsoViewParams {
   readonly painter: Painter;
   readonly back: Painter;
   readonly canvas: WorldCanvas;
+  readonly props: PropAtlas;
   readonly hotspots: Hotspots;
   readonly state: GameState;
   readonly position: WorldPoint;
@@ -56,6 +60,11 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
   params.canvas.ensure(scene.key, (into) => {
     paintStatic(into, scene, ambience, { x: origin.x, y: origin.y + sky });
   });
+  // Атлас мелочи живёт по тому же ключу, что и подложка: и то и другое
+  // зависит только от места и времени суток.
+  params.props.ensure(scene.key, propKeys(scene), (into, id, at) =>
+    paintProp(into, ambience, id, at),
+  );
 
   const camera = cameraOn(params.position, scene.map, origin, size, sky);
   if (outdoors) {
@@ -102,6 +111,16 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
   }
 }
 
+/** Какие предметы нужны этой сцене: одинаковые делят клетку атласа. */
+function propKeys(scene: IsoScene): string[] {
+  const keys = new Set<string>();
+  for (const item of scene.decor) {
+    keys.add(propId(item));
+    if (ISO_OVERHEAD[item.kind]) keys.add(propId(item, true));
+  }
+  return [...keys];
+}
+
 /** Неподвижная часть: земля и дома, в координатах текстуры. */
 function paintStatic(
   painter: Painter,
@@ -139,6 +158,9 @@ function cameraOn(
 const clamp = (value: number, min: number, max: number): number =>
   value < min ? min : value > max ? max : value;
 
+/** Полос в дымке под горизонтом. */
+const HAZE_BANDS = 16;
+
 /** Небо и дальний план: они едут медленнее мира, поэтому не запекаются. */
 function drawOutside(
   painter: Painter,
@@ -162,12 +184,21 @@ function drawOutside(
   drawSky(painter, area, ambience);
   drawFarSide(painter, area, ambience, district);
 
+  // Дымка полосами, а не построчно. Построчная растяжка стоила полутора
+  // сотен заливок в кадре — больше, чем весь остальной мир вместе взятый,
+  // а на глаз шестнадцать полос от неё не отличить.
   const haze = mix(ambience.skyLow, ambience.far, 0.45);
   const depth = CONTENT.height - horizon;
-  for (let i = 0; i < depth; i += 1) {
+  const step = depth / HAZE_BANDS;
+  for (let i = 0; i < HAZE_BANDS; i += 1) {
     painter.fill(
-      { x: 0, y: CONTENT.y + horizon + i, w: CONTENT.width, h: 1 },
-      mix(haze, scale(haze, 0.74), Math.min(1, i / 90)),
+      {
+        x: 0,
+        y: CONTENT.y + horizon + Math.round(i * step),
+        w: CONTENT.width,
+        h: Math.ceil(step) + 1,
+      },
+      mix(haze, scale(haze, 0.74), Math.min(1, (i * step) / 90)),
     );
   }
   painter.clip(null);

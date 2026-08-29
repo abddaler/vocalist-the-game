@@ -1,6 +1,6 @@
 import type Phaser from 'phaser';
 import { ACCESSORY } from './accessory';
-import { BODY, BODY_ROWS, FACING_OF, POSES } from './body';
+import { ACTOR_SPRITE, BODY, BODY_ROWS, FACING_OF, POSES } from './body';
 import type { Frame } from './body';
 import { HAIR } from './hair';
 import { LOOKS, PALETTES } from './looks';
@@ -12,9 +12,18 @@ export type { ActorPose } from './body';
 export { LOOKS, lookIndex } from './looks';
 export type { Look } from './looks';
 
-/** Ключ текстуры: внешность плюс поза. */
+/**
+ * Все кадры персонажей лежат в одной текстуре. Отдельная текстура на
+ * каждую пару «внешность + поза» — это полторы сотни текстур, и каждый
+ * прохожий в кадре заставлял видеокарту переключаться на свою: батч
+ * рвался на каждом человеке. С общим атласом вся толпа рисуется одним
+ * вызовом.
+ */
+export const ACTOR_TEXTURE = 'actors';
+
+/** Имя кадра в атласе: внешность плюс поза. */
 export function actorTexture(lookIndex: number, pose: string): string {
-  return `actor-${lookIndex}-${pose}`;
+  return `${lookIndex}-${pose}`;
 }
 
 /** Индекс внешности игрока. Прохожие идут дальше по списку. */
@@ -151,13 +160,21 @@ function paint(
  * в исходниках, читается в диффах и не требует шага сборки.
  */
 export function buildActorTextures(scene: Phaser.Scene): void {
+  if (scene.textures.exists(ACTOR_TEXTURE)) return;
+
+  const columns = POSES.length;
+  const atlas = scene.textures.createCanvas(
+    ACTOR_TEXTURE,
+    columns * ACTOR_SPRITE.width,
+    LOOKS.length * ACTOR_SPRITE.height,
+  );
+  if (!atlas) return;
+  const target = atlas.getContext();
+
   LOOKS.forEach((look, index) => {
     const colors = PALETTES[index]!;
 
-    for (const pose of POSES) {
-      const key = actorTexture(index, pose);
-      if (scene.textures.exists(key)) continue;
-
+    POSES.forEach((pose, column) => {
       const facing = FACING_OF[pose];
       const accessory = ACCESSORY[look.accessory];
       // Порядок слоёв: одежда поверх тела, волосы поверх головы, примета
@@ -168,12 +185,23 @@ export function buildActorTextures(scene: Phaser.Scene): void {
       data = overlay(data, HAIR[look.hair][facing]);
       data = overlay(data, accessory[facing], accessory.top);
 
-      scene.textures.generate(key, {
+      // Кадр собирается во временную текстуру и переносится в атлас:
+      // строковые раскладки Phaser умеет превращать только в текстуру.
+      const scratch = `actor-scratch-${index}-${pose}`;
+      const made = scene.textures.generate(scratch, {
         data: [...rimmed(data)],
         pixelWidth: 1,
         pixelHeight: 1,
         palette: colors,
       });
-    }
+
+      const x = column * ACTOR_SPRITE.width;
+      const y = index * ACTOR_SPRITE.height;
+      if (made) target.drawImage(made.getSourceImage() as CanvasImageSource, x, y);
+      scene.textures.remove(scratch);
+      atlas.add(actorTexture(index, pose), 0, x, y, ACTOR_SPRITE.width, ACTOR_SPRITE.height);
+    });
   });
+
+  atlas.refresh();
 }
