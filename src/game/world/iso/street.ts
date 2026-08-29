@@ -44,6 +44,30 @@ const shift = (at: ScreenPoint, dx: number, dy: number, lift = 0): ScreenPoint =
   y: at.y + (dx + dy) * TILE.halfH - lift,
 });
 
+/**
+ * Наклонная плоскость по четырём углам с разной высотой: навес, козырёк,
+ * скат крыши. Ступенчатая стопка коробок вместо ската читается слоёным
+ * пирогом, а не тканью.
+ */
+const slope = (
+  ctx: IsoProp,
+  w: number,
+  d: number,
+  far: number,
+  near: number,
+  color: number,
+): void => {
+  const c = (sx: number, sy: number, lift: number): ScreenPoint => ({
+    x: ctx.at.x + (sx - sy) * TILE.halfW,
+    y: ctx.at.y + (sx + sy) * TILE.halfH - lift,
+  });
+  quad(
+    ctx.painter,
+    [c(-w / 2, -d / 2, far), c(w / 2, -d / 2, far), c(w / 2, d / 2, near), c(-w / 2, d / 2, near)],
+    color,
+  );
+};
+
 /** Плоское пятно на земле: тень, полотенце, клумба. */
 const patch = (
   ctx: IsoProp,
@@ -318,22 +342,43 @@ const stall: Draw = (ctx) => {
       scale([0xe8705f, 0xe8c45f, 0x7fc95f, 0xd85f9a][i % 4]!, ctx.ambience.light),
     );
   }
-  // Стойки и навес.
+  // Стойки и полосатый навес со скатом к покупателю.
   for (const [dx, dy] of [[-0.95, -0.5], [0.95, -0.5], [-0.95, 0.5], [0.95, 0.5]] as const) {
     boxAt(ctx.painter, shift(ctx.at, dx, dy), { w: 0.12, d: 0.12, h: 34 }, post);
   }
-  const roof = shift(ctx.at, 0, 0, 34);
+  const tone = scale(cloth, ctx.ambience.light);
+  slope(ctx, 2.5, 1.6, 42, 32, scale(tone, 0.86));
   for (let i = 0; i < 5; i += 1) {
-    const w = 2.4 - i * 0.06;
-    boxAt(
-      ctx.painter,
-      shift(ctx.at, 0, 0, 34 + i * 2),
-      { w, d: 1.5 - i * 0.05, h: 2 },
-      skin(ctx, i % 2 === 0 ? cloth : scale(cloth, 1.25), 0.45),
-    );
+    const from = -1.25 + i * 0.5;
+    slopeStripe(ctx, from, from + 0.25, 1.6, 42, 32, tone);
   }
-  void roof;
+  // Кромка навеса с фестонами.
+  for (let i = 0; i < 9; i += 1) {
+    const at = shift(ctx.at, -1.1 + i * 0.28, 0.8, 32);
+    ctx.painter.fill({ x: at.x - 3, y: at.y, w: 6, h: 3 }, scale(tone, i % 2 === 0 ? 1.2 : 0.8));
+  }
 };
+
+/** Полоса ткани на скате: узкий четырёхугольник вдоль ската. */
+function slopeStripe(
+  ctx: IsoProp,
+  fromX: number,
+  toX: number,
+  d: number,
+  far: number,
+  near: number,
+  color: number,
+): void {
+  const c = (sx: number, sy: number, lift: number): ScreenPoint => ({
+    x: ctx.at.x + (sx - sy) * TILE.halfW,
+    y: ctx.at.y + (sx + sy) * TILE.halfH - lift,
+  });
+  quad(
+    ctx.painter,
+    [c(fromX, -d / 2, far), c(toX, -d / 2, far), c(toX, d / 2, near), c(fromX, d / 2, near)],
+    color,
+  );
+}
 
 /** Киоск: будка с окошком и вывеской. */
 const kiosk: Draw = (ctx) => {
@@ -374,4 +419,52 @@ const hut: Draw = (ctx) => {
   }
 };
 
-Object.assign(ISO_PROPS, { stall, kiosk, hut });
+const SHADE = [0xe8705f, 0x5fc9a8, 0xe8c45f];
+
+/** Зонт: шест и купол конусом из ромбов, а не плоский гриб. */
+function canopy(ctx: IsoProp, radius: number, base: number, tone: number): void {
+  const layers = 5;
+  for (let i = 0; i < layers; i += 1) {
+    const t = i / layers;
+    slope(
+      ctx,
+      radius * 2 * (1 - t * 0.78),
+      radius * 2 * (1 - t * 0.78),
+      base + i * 4 + 4,
+      base + i * 4,
+      scale(tone, 0.9 + t * 0.34),
+    );
+  }
+  // Фестоны по кромке купола.
+  for (let i = 0; i < 10; i += 1) {
+    const at = shift(ctx.at, -radius + (i * radius * 2) / 9, radius * 0.55, base);
+    ctx.painter.fill({ x: at.x - 2, y: at.y, w: 4, h: 3 }, scale(tone, i % 2 === 0 ? 1.15 : 0.82));
+  }
+}
+
+const umbrella: Draw = (ctx) => {
+  shade(ctx, 0.5, 0.5);
+  const tone = scale(SHADE[ctx.variant % SHADE.length]!, ctx.ambience.light);
+  ctx.painter.fill(
+    { x: ctx.at.x - 1, y: ctx.at.y - 44, w: 2, h: 44 },
+    scale(0xd8c8a8, ctx.ambience.light),
+  );
+  canopy(ctx, 1.1, 44, tone);
+};
+
+const PARASOL = [0xe8705f, 0xe8c25f, 0x5fb8a8];
+
+/** Зонт со столиком: терраса кафе узнаётся именно по ним. */
+const parasol: Draw = (ctx) => {
+  shade(ctx, 0.9, 0.7);
+  const tone = scale(PARASOL[ctx.variant % PARASOL.length]!, ctx.ambience.light);
+  boxAt(ctx.painter, ctx.at, { w: 0.18, d: 0.18, h: 11 }, skin(ctx, 0x8f8a80));
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 11), { w: 0.9, d: 0.7, h: 2 }, skin(ctx, 0xd8d0c4));
+  ctx.painter.fill(
+    { x: ctx.at.x - 1, y: ctx.at.y - 46, w: 2, h: 46 },
+    scale(0x8f7a5a, ctx.ambience.light),
+  );
+  canopy(ctx, 1.15, 46, tone);
+};
+
+Object.assign(ISO_PROPS, { stall, kiosk, hut, umbrella, parasol });
