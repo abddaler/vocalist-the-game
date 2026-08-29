@@ -12,13 +12,12 @@ import { spawnCrowd, updateCrowd } from './Crowd';
 import type { CrowdActor } from './Crowd';
 import { facingFrom } from './actorSprite';
 import type { Facing } from './actorSprite';
-import { districtLayer, doorOf, groundOf, roomLayer, solidsOf } from './layers';
-import type { Layer } from './layers';
-import { ACTOR, WALK_SPEED, centerOf, step, stepToward } from './movement';
-import { groundBelow, stairRoute } from './terrain';
-import { withinReach } from './targets';
+import { blockedIn, districtScene, doorOf, roomScene } from './iso/scene';
+import type { IsoScene } from './iso/scene';
+import { WALK_TILES, centerOf, step, stepToward, withinReach } from './iso/walk';
+import { freeSpotNear } from './iso/route';
 import type { WorldTarget } from './targets';
-import { screenToWorld } from './WorldView';
+import { screenToWorld } from './iso/view';
 
 /** Сколько миллисекунд длится половина затемнения при смене локации. */
 const FADE_MS = 190;
@@ -91,11 +90,11 @@ export class WorldController {
     return id && hasRoom(id) ? getRoom(id) : null;
   }
 
-  layer(): Layer {
+  scene(): IsoScene {
     const state = this.deps.getState();
     const slot = SLOTS[state.slotIndex] ?? 'morning';
     const room = this.room;
-    return room ? roomLayer(room, slot) : districtLayer(state, this.districtId);
+    return room ? roomScene(room, slot) : districtScene(state, this.districtId);
   }
 
   /** Живность идёт и во время затемнения: замирающая комната выдаёт декорацию. */
@@ -128,28 +127,23 @@ export class WorldController {
   }
 
   private walk(delta: number, input: InputController): void {
-    const layer = this.layer();
-    const solids = solidsOf(layer);
-    const ground = groundOf(layer);
-    const distance = (WALK_SPEED * delta) / 1000;
+    const scene = this.scene();
+    const blocked = blockedIn(scene);
+    const distance = (WALK_TILES * delta) / 1000;
     const before = this.position;
 
     const { x, y } = input.move;
     if (x !== 0 || y !== 0) {
-      // Клавиши отменяют цель, поставленную тапом.
+      // Клавиши отменяют цель, поставленную тапом. Экранные оси
+      // переводятся в оси сетки: «вправо» на экране — это вдоль улицы.
       this.route = [];
       this.pendingTarget = null;
       const length = Math.hypot(x, y) || 1;
-      this.position = step(
-        before,
-        (x / length) * distance,
-        (y / length) * distance,
-        solids,
-        layer.bounds,
-        ground,
-      );
+      const ax = (x / length + y / length) / 2;
+      const ay = (y / length - x / length) / 2;
+      this.position = step(scene.map, before, ax * distance * 1.4, ay * distance * 1.4, blocked);
     } else if (this.route.length > 0) {
-      const result = stepToward(before, this.route[0]!, distance, solids, layer.bounds, ground);
+      const result = stepToward(scene.map, before, this.route[0]!, distance, blocked);
       this.position = result.position;
       if (result.arrived) {
         this.route.shift();
@@ -171,9 +165,8 @@ export class WorldController {
 
   /** Тап по пустому месту — приказ идти туда. */
   walkTo(tap: WorldPoint): void {
-    const layer = this.layer();
-    const goal = screenToWorld(tap, this.position, layer);
-    this.route = [...stairRoute(layer.terrain, this.position, goal), goal];
+    const scene = this.scene();
+    this.route = [screenToWorld(tap, this.position, scene)];
     this.pendingTarget = null;
   }
 
@@ -186,14 +179,11 @@ export class WorldController {
       this.enter(target);
       return;
     }
-    // Сначала спуск или подъём по ближайшей лестнице, если цель на другом
-    // ярусе; потом вдоль улицы до нужной колонки и только потом поперёк к
-    // самой цели — иначе путь упирается в угол соседнего дома.
-    const layer = this.layer();
-    const center = centerOf(target.rect);
-    const legs = stairRoute(layer.terrain, this.position, center);
-    const from = legs.at(-1) ?? this.position;
-    this.route = [...legs, { x: center.x, y: from.y }, center];
+    // Идём не в саму цель, а на свободную плитку рядом с ней: дверь и
+    // стойка стоят в стене, внутрь них ходить некуда.
+    const scene = this.scene();
+    const goal = freeSpotNear(scene, centerOf(target.rect), this.position);
+    this.route = [goal];
     this.pendingTarget = target;
   }
 
@@ -218,13 +208,13 @@ export class WorldController {
       const district = districtOfLocation(target.id) ?? getDistrict(this.districtId);
       const door = doorOf(district, target.id);
       const at = door ? centerOf(door) : district.spawn;
-      // Вышедший встаёт на первую плиту под дверью, а не на глазок ниже:
-      // под дверью может быть обрыв, и тогда он окажется в воздухе.
-      const below = door ? door.y + door.h + ACTOR.h : district.spawn.y;
-      const feet = groundBelow(district.terrain, at.x, below, district.height);
+      // Вышедший встаёт на свободную плитку перед дверью, а не в стену.
       this.transition(() => {
         this.districtId = district.id;
-        this.position = { x: at.x, y: feet ?? district.spawn.y };
+        this.position = freeSpotNear(districtScene(this.deps.getState(), district.id), at, {
+          x: at.x,
+          y: at.y + 2,
+        });
         this.route = [];
         this.facing = 'down';
         this.crowd = spawnCrowd(district.id);
@@ -274,8 +264,7 @@ function arrival(district: ReturnType<typeof getDistrict>, from: DistrictId): Wo
   const back = district.gates.find((gate) => gate.to === from);
   if (!back) return { ...district.spawn };
   const center = centerOf(back.rect);
-  const inward = center.x < district.width / 2 ? 22 : -22;
-  const x = center.x + inward;
-  const feet = groundBelow(district.terrain, x, center.y, district.height);
-  return { x, y: feet ?? district.spawn.y };
+  // На шаг внутрь квартала, иначе пришедший тут же уйдёт обратно.
+  const inward = center.x < 4 ? 2 : -2;
+  return { x: center.x + inward, y: center.y };
 }

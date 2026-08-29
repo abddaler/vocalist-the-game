@@ -4,10 +4,12 @@ import type { WorldPoint } from '@core/types';
  * Прохожие и завсегдатаи (ориентир — Nights: локация обжитая, в ней
  * кто-то занят своим делом). Симуляции они не касаются вовсе: это
  * оформление, у него нет ни статов, ни влияния на баланс.
+ *
+ * Координаты — в плитках сетки района, как и всё остальное в мире.
  */
 export interface CrowdMember {
   readonly id: string;
-  /** Локация: 'district' — улица, иначе id комнаты. */
+  /** Локация: id района или id комнаты. */
   readonly locationId: string;
   /** Имя внешности (см. game/art/looks.ts). Слой отображения её и разрешает. */
   readonly look: string;
@@ -15,7 +17,7 @@ export interface CrowdMember {
   readonly path: readonly WorldPoint[];
   /** Пауза на точке, миллисекунды. */
   readonly dwell: number;
-  /** Скорость, внутренних пикселей в секунду. */
+  /** Скорость, плиток в секунду. */
   readonly speed: number;
   /**
    * Табличка над головой. Есть только у названных: в толпе безымянных
@@ -30,7 +32,7 @@ const walker = (
   look: string,
   path: readonly WorldPoint[],
   dwell = 1200,
-  speed = 26,
+  speed = 1.5,
 ): CrowdMember => ({ id, locationId, look, path, dwell, speed });
 
 const stander = (id: string, locationId: string, look: string, at: WorldPoint): CrowdMember =>
@@ -45,194 +47,189 @@ const named = (
 ): CrowdMember => ({ ...stander(id, locationId, id, at), nameKey });
 
 export const CROWD: readonly CrowdMember[] = [
-  // — Холмы: соседи, выгул собак, бегуны —
+  // — Холмы: терраса наверху (ряды 2–4), улица внизу (ряды 5–11) —
   walker('hills_1', 'hills', 'passer_1', [
-    { x: 60, y: 128 },
-    { x: 320, y: 122 },
-    { x: 620, y: 130 },
-  ], 900),
+    { x: 3.5, y: 8.5 },
+    { x: 19.5, y: 8.5 },
+    { x: 36.5, y: 8.5 },
+  ], 900, 1.8),
   walker('hills_2', 'hills', 'passer_2', [
-    { x: 650, y: 142 },
-    { x: 380, y: 146 },
-    { x: 120, y: 140 },
+    { x: 37.5, y: 10.5 },
+    { x: 22.5, y: 10.5 },
+    { x: 6.5, y: 10.5 },
   ], 1500),
   walker('hills_3', 'hills', 'passer_3', [
-    { x: 240, y: 152 },
-    { x: 240, y: 110 },
+    { x: 14.5, y: 10.5 },
+    { x: 14.5, y: 5.5 },
   ], 2600),
   walker('hills_4', 'hills', 'passer_7', [
-    { x: 470, y: 110 },
-    { x: 560, y: 144 },
-    { x: 430, y: 144 },
-  ], 800, 34),
-  stander('hills_5', 'hills', 'passer_4', { x: 552, y: 132 }),
+    { x: 28.5, y: 5.5 },
+    { x: 33.5, y: 9.5 },
+    { x: 25.5, y: 9.5 },
+  ], 800, 2),
+  stander('hills_5', 'hills', 'passer_4', { x: 32.5, y: 7.5 }),
   walker('hills_6', 'hills', 'passer_8', [
-    { x: 96, y: 112 },
-    { x: 160, y: 134 },
-  ], 2000, 18),
-
+    { x: 5.5, y: 6.5 },
+    { x: 9.5, y: 9.5 },
+  ], 2000, 1.1),
   walker('hills_7', 'hills', 'passer_11', [
-    { x: 420, y: 82 },
-    { x: 560, y: 86 },
-    { x: 380, y: 80 },
-  ], 1100, 30),
-  stander('hills_8', 'hills', 'staff_apron', { x: 160, y: 86 }),
+    { x: 24.5, y: 3.5 },
+    { x: 33.5, y: 3.5 },
+    { x: 22.5, y: 3.5 },
+  ], 1100, 1.7),
+  stander('hills_8', 'hills', 'staff_apron', { x: 9.5, y: 3.5 }),
   walker('hills_9', 'hills', 'passer_12', [
-    { x: 640, y: 108 },
-    { x: 460, y: 112 },
-  ], 1900, 22),
-  stander('hills_10', 'hills', 'passer_8', { x: 214, y: 116 }),
+    { x: 37.5, y: 5.5 },
+    { x: 27.5, y: 5.5 },
+  ], 1900, 1.3),
+  stander('hills_10', 'hills', 'passer_8', { x: 13.5, y: 6.5 }),
 
-  // — Даунтаун: поток служащих, у перехода всегда кто-то стоит —
+  // — Даунтаун: площадь наверху (ряды 2–5), улица внизу (ряды 6–12) —
   walker('dt_1', 'downtown', 'passer_7', [
-    { x: 40, y: 124 },
-    { x: 600, y: 128 },
-  ], 400, 32),
+    { x: 2.5, y: 6.5 },
+    { x: 34.5, y: 6.5 },
+  ], 400, 1.9),
   walker('dt_2', 'downtown', 'passer_2', [
-    { x: 590, y: 142 },
-    { x: 60, y: 138 },
-  ], 400, 30),
+    { x: 34.5, y: 11.5 },
+    { x: 3.5, y: 11.5 },
+  ], 400, 1.8),
   walker('dt_3', 'downtown', 'passer_1', [
-    { x: 190, y: 110 },
-    { x: 190, y: 152 },
-  ], 1200, 26),
+    { x: 11.5, y: 6.5 },
+    { x: 11.5, y: 12.5 },
+  ], 1200, 1.5),
   walker('dt_4', 'downtown', 'passer_3', [
-    { x: 420, y: 146 },
-    { x: 500, y: 112 },
-    { x: 380, y: 118 },
+    { x: 24.5, y: 12.5 },
+    { x: 29.5, y: 7.5 },
+    { x: 22.5, y: 8.5 },
   ], 700),
-  stander('dt_5', 'downtown', 'passer_5', { x: 268, y: 132 }),
-  named('rival', 'downtown', { x: 356, y: 136 }, 'npc.rival'),
+  stander('dt_5', 'downtown', 'passer_5', { x: 15.5, y: 9.5 }),
+  named('rival', 'downtown', { x: 20.5, y: 10.5 }, 'npc.rival'),
   walker('dt_7', 'downtown', 'passer_9', [
-    { x: 620, y: 114 },
-    { x: 470, y: 122 },
-  ], 1600, 22),
-
+    { x: 35.5, y: 8.5 },
+    { x: 27.5, y: 9.5 },
+  ], 1600, 1.3),
   walker('dt_8', 'downtown', 'passer_6', [
-    { x: 90, y: 110 },
-    { x: 300, y: 114 },
-    { x: 520, y: 112 },
-  ], 500, 34),
-  stander('dt_9', 'downtown', 'passer_12', { x: 118, y: 86 }),
-  stander('dt_10', 'downtown', 'passer_11', { x: 440, y: 82 }),
+    { x: 4.5, y: 3.5 },
+    { x: 17.5, y: 3.5 },
+    { x: 30.5, y: 3.5 },
+  ], 500, 2),
+  stander('dt_9', 'downtown', 'passer_12', { x: 8.5, y: 4.5 }),
+  stander('dt_10', 'downtown', 'passer_11', { x: 26.5, y: 2.5 }),
   walker('dt_11', 'downtown', 'passer_3', [
-    { x: 600, y: 82 },
-    { x: 600, y: 88 },
-  ], 1500, 24),
+    { x: 35.5, y: 2.5 },
+    { x: 35.5, y: 4.5 },
+  ], 1500, 1.4),
 
   // — Бульвар: очередь в клуб, гуляющие, кто-то курит у входа —
   walker('blvd_1', 'boulevard', 'passer_5', [
-    { x: 60, y: 130 },
-    { x: 340, y: 124 },
-    { x: 690, y: 132 },
+    { x: 3.5, y: 7.5 },
+    { x: 20.5, y: 7.5 },
+    { x: 39.5, y: 7.5 },
   ], 800),
   walker('blvd_2', 'boulevard', 'passer_1', [
-    { x: 680, y: 144 },
-    { x: 300, y: 148 },
-    { x: 70, y: 142 },
+    { x: 39.5, y: 11.5 },
+    { x: 18.5, y: 11.5 },
+    { x: 4.5, y: 11.5 },
   ], 1100),
-  // Очередь у клуба: стоят на дорожке, а не на проезжей части.
-  stander('blvd_3', 'boulevard', 'passer_3', { x: 90, y: 84 }),
-  stander('blvd_4', 'boulevard', 'passer_10', { x: 104, y: 92 }),
-  stander('blvd_5', 'boulevard', 'passer_2', { x: 122, y: 86 }),
+  stander('blvd_3', 'boulevard', 'passer_3', { x: 5.5, y: 2.5 }),
+  stander('blvd_4', 'boulevard', 'passer_10', { x: 6.5, y: 3.5 }),
+  stander('blvd_5', 'boulevard', 'passer_2', { x: 7.5, y: 2.5 }),
   walker('blvd_6', 'boulevard', 'passer_4', [
-    { x: 262, y: 110 },
-    { x: 262, y: 144 },
-  ], 1800, 20),
+    { x: 14.5, y: 3.5 },
+    { x: 14.5, y: 11.5 },
+  ], 1800, 1.2),
   walker('blvd_7', 'boulevard', 'passer_8', [
-    { x: 560, y: 146 },
-    { x: 460, y: 112 },
+    { x: 32.5, y: 11.5 },
+    { x: 26.5, y: 5.5 },
   ], 1300),
-  named('blogger', 'boulevard', { x: 348, y: 88 }, 'npc.blogger'),
-
-  stander('blvd_9', 'boulevard', 'passer_9', { x: 268, y: 88 }),
-  stander('blvd_10', 'boulevard', 'passer_12', { x: 306, y: 88 }),
+  named('blogger', 'boulevard', { x: 20.5, y: 3.5 }, 'npc.blogger'),
+  stander('blvd_9', 'boulevard', 'passer_9', { x: 16.5, y: 2.5 }),
+  stander('blvd_10', 'boulevard', 'passer_12', { x: 18.5, y: 2.5 }),
   walker('blvd_11', 'boulevard', 'passer_11', [
-    { x: 660, y: 80 },
-    { x: 480, y: 94 },
-    { x: 620, y: 96 },
-  ], 900, 28),
-  stander('blvd_12', 'boulevard', 'staff_apron', { x: 226, y: 82 }),
+    { x: 38.5, y: 2.5 },
+    { x: 29.5, y: 4.5 },
+    { x: 36.5, y: 6.5 },
+  ], 900, 1.7),
+  stander('blvd_12', 'boulevard', 'staff_apron', { x: 13.5, y: 2.5 }),
 
-  // — Причал: грузчики, курьер, чайки и их люди —
+  // — Причал: улица наверху (ряды 2–7), берег внизу (ряды 8–14) —
   walker('pier_1', 'pier', 'passer_9', [
-    { x: 80, y: 152 },
-    { x: 300, y: 148 },
-  ], 2400, 16),
+    { x: 4.5, y: 9.5 },
+    { x: 18.5, y: 9.5 },
+  ], 2400, 1),
   walker('pier_2', 'pier', 'passer_3', [
-    { x: 400, y: 146 },
-    { x: 400, y: 164 },
-  ], 2000, 18),
-  stander('pier_3', 'pier', 'passer_2', { x: 168, y: 120 }),
-  stander('pier_4', 'pier', 'passer_7', { x: 182, y: 126 }),
+    { x: 25.5, y: 8.5 },
+    { x: 25.5, y: 13.5 },
+  ], 2000, 1.1),
+  stander('pier_3', 'pier', 'passer_2', { x: 12.5, y: 6.5 }),
+  stander('pier_4', 'pier', 'passer_7', { x: 13.5, y: 7.5 }),
   walker('pier_5', 'pier', 'passer_1', [
-    { x: 560, y: 146 },
-    { x: 300, y: 152 },
-    { x: 540, y: 160 },
-  ], 900, 28),
-
+    { x: 36.5, y: 9.5 },
+    { x: 20.5, y: 10.5 },
+    { x: 34.5, y: 12.5 },
+  ], 900, 1.7),
   walker('pier_6', 'pier', 'passer_12', [
-    { x: 60, y: 80 },
-    { x: 240, y: 84 },
-  ], 2100, 20),
-  stander('pier_7', 'pier', 'passer_11', { x: 470, y: 80 }),
-  stander('pier_8', 'pier', 'passer_6', { x: 500, y: 82 }),
+    { x: 3.5, y: 2.5 },
+    { x: 15.5, y: 2.5 },
+  ], 2100, 1.2),
+  stander('pier_7', 'pier', 'passer_11', { x: 30.5, y: 2.5 }),
+  stander('pier_8', 'pier', 'passer_6', { x: 32.5, y: 3.5 }),
 
   // — квартира: соседка за стеной не нужна, дом должен быть пустым —
 
   // — вокальная студия —
-  stander('studio_pupil', 'vocal_studio', 'passer_10', { x: 150, y: 68 }),
-  named('teacher', 'vocal_studio', { x: 118, y: 55 }, 'npc.teacher'),
+  stander('studio_pupil', 'vocal_studio', 'passer_10', { x: 9.5, y: 5.5 }),
+  named('teacher', 'vocal_studio', { x: 7.5, y: 3.5 }, 'npc.teacher'),
 
   // — репбаза —
-  stander('band_guitar', 'rehearsal_base', 'passer_1', { x: 150, y: 58 }),
-  stander('band_drums', 'rehearsal_base', 'passer_4', { x: 186, y: 57 }),
+  stander('band_guitar', 'rehearsal_base', 'passer_1', { x: 6.5, y: 4.5 }),
+  stander('band_drums', 'rehearsal_base', 'passer_4', { x: 11.5, y: 4.5 }),
   walker('base_sound', 'rehearsal_base', 'passer_3', [
-    { x: 40, y: 85 },
-    { x: 100, y: 80 },
-  ], 3000, 12),
+    { x: 2.5, y: 7.5 },
+    { x: 6.5, y: 6.5 },
+  ], 3000, 0.8),
 
   // — ресторан —
   walker('waiter', 'restaurant', 'passer_6', [
-    { x: 40, y: 83 },
-    { x: 200, y: 80 },
-    { x: 120, y: 98 },
-  ], 700, 22),
-  stander('diner_1', 'restaurant', 'passer_2', { x: 60, y: 68 }),
-  stander('diner_2', 'restaurant', 'passer_5', { x: 176, y: 75 }),
+    { x: 2.5, y: 6.5 },
+    { x: 12.5, y: 5.5 },
+    { x: 7.5, y: 8.5 },
+  ], 700, 1.3),
+  stander('diner_1', 'restaurant', 'passer_2', { x: 3.5, y: 4.5 }),
+  stander('diner_2', 'restaurant', 'passer_5', { x: 11.5, y: 5.5 }),
 
   // — клуб —
   walker('club_guest_1', 'club_vertigo', 'passer_1', [
-    { x: 60, y: 97 },
-    { x: 170, y: 94 },
+    { x: 4.5, y: 8.5 },
+    { x: 10.5, y: 7.5 },
   ], 1100),
   walker('club_guest_2', 'club_vertigo', 'passer_5', [
-    { x: 200, y: 90 },
-    { x: 110, y: 101 },
+    { x: 12.5, y: 5.5 },
+    { x: 6.5, y: 8.5 },
   ], 1400),
-  stander('bartender', 'club_vertigo', 'passer_3', { x: 48, y: 65 }),
-  named('promoter', 'club_vertigo', { x: 214, y: 75 }, 'npc.promoter'),
+  stander('bartender', 'club_vertigo', 'passer_3', { x: 2.5, y: 5.5 }),
+  named('promoter', 'club_vertigo', { x: 13.5, y: 4.5 }, 'npc.promoter'),
 
   // — студия звукозаписи —
-  named('engineer', 'record_studio', { x: 180, y: 55 }, 'npc.engineer'),
+  named('engineer', 'record_studio', { x: 11.5, y: 4.5 }, 'npc.engineer'),
 
   // — магазин одежды —
-  stander('shop_clerk', 'clothes_shop', 'staff_apron', { x: 118, y: 55 }),
+  stander('shop_clerk', 'clothes_shop', 'staff_apron', { x: 6.5, y: 3.5 }),
   walker('shopper', 'clothes_shop', 'passer_1', [
-    { x: 60, y: 85 },
-    { x: 180, y: 81 },
-  ], 1800, 18),
+    { x: 3.5, y: 7.5 },
+    { x: 11.5, y: 6.5 },
+  ], 1800, 1.1),
 
   // — фониатр —
-  stander('doctor', 'phoniatrist', 'passer_7', { x: 96, y: 54 }),
-  stander('patient', 'phoniatrist', 'passer_5', { x: 40, y: 88 }),
+  stander('doctor', 'phoniatrist', 'passer_7', { x: 6.5, y: 3.5 }),
+  stander('patient', 'phoniatrist', 'passer_5', { x: 2.5, y: 7.5 }),
 
   // — спортзал —
   walker('gym_runner', 'gym', 'passer_3', [
-    { x: 60, y: 88 },
-    { x: 180, y: 88 },
-  ], 400, 34),
-  stander('gym_coach', 'gym', 'staff_coach', { x: 200, y: 68 }),
+    { x: 3.5, y: 6.5 },
+    { x: 11.5, y: 6.5 },
+  ], 400, 2),
+  stander('gym_coach', 'gym', 'staff_coach', { x: 9.5, y: 3.5 }),
 ];
 
 export function crowdIn(locationId: string): CrowdMember[] {

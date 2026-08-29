@@ -6,6 +6,6 @@ export {
   findStreetPoint,
   getDistrict,
 } from './city';
-export { ROOMS, getRoom, hasRoom } from './rooms';
+export { ROOMS, ROOM_WALL_H, getRoom, hasRoom } from './rooms';
 export { CROWD, crowdIn } from './crowd';
 export type { CrowdMember } from './crowd';

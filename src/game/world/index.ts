@@ -1,7 +1,7 @@
-export { renderWorld, screenToWorld } from './WorldView';
-export { districtLayer, roomLayer, solidsOf } from './layers';
-export type { Layer } from './layers';
-export { REACH, withinReach } from './targets';
+export { renderIso, screenToWorld } from './iso/view';
+export { districtScene, roomScene, blockedIn, doorOf } from './iso/scene';
+export type { IsoScene } from './iso/scene';
+export { withinReach, centerOf, WALK_TILES, REACH_TILES } from './iso/walk';
 export type { WorldTarget } from './targets';
 export { WorldController } from './WorldController';
 export { spawnCrowd, updateCrowd } from './Crowd';

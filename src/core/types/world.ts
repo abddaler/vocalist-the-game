@@ -1,3 +1,5 @@
+import type { TileDef } from './iso';
+
 /**
  * Геометрия мира (раздел 8). Мир — это презентация: на симуляцию он не
  * влияет, время на ходьбу не тратится (раздел 4). Типы лежат в core/types
@@ -41,11 +43,16 @@ export type BuildingKind =
   | 'bar'
   | 'shack';
 
-/** Дом на экране района. Вход — через дверь, не через меню. */
+/**
+ * Дом на экране района: объём на сетке. rect — основание в плитках,
+ * tall — высота в пикселях экрана, door — плитка порога, с которой
+ * входят внутрь.
+ */
 export interface BuildingDef {
   readonly locationId: string;
   readonly kind: BuildingKind;
   readonly rect: WorldRect;
+  readonly tall: number;
   readonly color: number;
   readonly door: WorldRect;
 }
@@ -58,6 +65,7 @@ export interface BuildingDef {
 export interface SceneryDef {
   readonly kind: BuildingKind;
   readonly rect: WorldRect;
+  readonly tall: number;
   readonly color: number;
   /** Вывеска на фасаде. Без неё дом остаётся просто стеной. */
   readonly signKey?: string | undefined;
@@ -123,52 +131,32 @@ export interface GateDef {
 }
 
 /**
- * По чему ходят. Земля района собирается из плит разных покрытий, а не
- * красится одной полосой: тротуар, мостовая, газон, настил и песок
- * рядом — это и есть ландшафт, ради которого район стал выше кадра.
+ * Сетка плиток района: строки символов и легенда к ним. Пишется прямо в
+ * исходнике картинкой, поэтому «пляж под улицей» видно глазами, а не
+ * держится в уме списком прямоугольников.
  */
-export type SurfaceKind =
-  | 'road'
-  | 'pavement'
-  | 'plaza'
-  | 'boardwalk'
-  | 'sand'
-  | 'grass'
-  | 'carpet'
-  | 'water'
-  | 'steps';
-
-/**
- * Плита земли. Плиты кладутся в порядке списка, снизу вверх по слоям,
- * и вместе задают проходимую часть района: где плиты нет — там не ходят.
- */
-export interface TerrainDef {
-  readonly rect: WorldRect;
-  readonly surface: SurfaceKind;
-  /**
-   * Обрыв по нижней кромке плиты: подпорная стенка такой высоты. Через
-   * неё не пройти — только по лестнице, которая её и разрывает. Отсюда
-   * многоуровневость: набережная лежит ниже улицы, а не рядом с ней.
-   */
-  readonly riser?: number | undefined;
+export interface IsoMapDef {
+  readonly legend: Readonly<Record<string, TileDef>>;
+  readonly rows: readonly string[];
 }
 
+/**
+ * Район. Все координаты — в плитках сетки, а не в пикселях: изометрия
+ * рисует одну и ту же плитку всегда одинаково, и данные не должны знать,
+ * какого она размера на экране.
+ */
 export interface DistrictDef {
   readonly id: DistrictId;
   readonly nameKey: string;
-  /** Земля района: плиты покрытий и обрывы между уровнями. */
-  readonly terrain: readonly TerrainDef[];
+  /** Земля района. */
+  readonly tiles: IsoMapDef;
   /** Место на карте города, в её собственных координатах. */
   readonly map: WorldRect;
-  readonly width: number;
-  readonly height: number;
   readonly spawn: WorldPoint;
   readonly buildings: readonly BuildingDef[];
   readonly scenery: readonly SceneryDef[];
   readonly decor: readonly DecorDef[];
   readonly gates: readonly GateDef[];
-  /** Непроходимые куски улицы сверх обрывов: ограды, стены домов. */
-  readonly solids: readonly WorldRect[];
   /** Площадки прямо на улице — переход и заказы. */
   readonly points: readonly RoomPointDef[];
 }
@@ -212,10 +200,11 @@ export interface RoomPointDef {
 
 export interface RoomDef {
   readonly locationId: string;
-  readonly width: number;
-  readonly height: number;
+  /** Пол комнаты той же сеткой плиток, что и улица. */
+  readonly tiles: IsoMapDef;
   readonly spawn: WorldPoint;
   readonly floor: number;
+  /** Стены и мебель, через которые не пройти: прямоугольники в плитках. */
   readonly solids: readonly WorldRect[];
   readonly points: readonly RoomPointDef[];
   /** Обстановка, с которой нечего делать: растения, стулья, урны. */

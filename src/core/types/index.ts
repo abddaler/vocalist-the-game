@@ -2,6 +2,7 @@ export * from './activity';
 export * from './career';
 export * from './event';
 export * from './genre';
+export * from './iso';
 export * from './location';
 export * from './log';
 export * from './npc';

@@ -5,53 +5,32 @@ import { hasVenue } from '../venues';
 import { CITY, HOME_DISTRICT, getDistrict } from './city';
 import { ROOMS, getRoom, hasRoom } from './rooms';
 import { crowdIn } from './crowd';
-import { CONTENT, WORLD_ZOOM } from '../../ui/theme';
-import { ACTOR, overlaps } from '../../game/world/movement';
-import { REACH } from '../../game/world/targets';
-import { groundBelow, standable } from '../../game/world/terrain';
-import type { DistrictDef } from '@core/types';
+import type { DistrictDef, RoomDef, WorldRect } from '@core/types';
+import { cellAt, parseMap } from '../../game/world/iso/map';
 
-const inside = (outer: { width: number; height: number }, rect: { x: number; y: number; w: number; h: number }) =>
-  rect.x >= 0 && rect.y >= 0 && rect.x + rect.w <= outer.width && rect.y + rect.h <= outer.height;
+const overlaps = (a: WorldRect, b: WorldRect): boolean =>
+  a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 
-/** Есть ли под этой точкой района земля, на которой можно стоять. */
-const canStand = (district: DistrictDef, x: number, y: number): boolean =>
-  standable(district.terrain, { x, y });
+/** Есть ли под точкой плитка, на которой можно стоять. */
+const onGround = (source: DistrictDef | RoomDef, x: number, y: number): boolean =>
+  cellAt(parseMap(source.tiles), Math.floor(x), Math.floor(y)) !== null;
 
-/** До чего можно дотянуться: хоть одна стоячая точка в пределах прямоугольника. */
-const reachable = (district: DistrictDef, rect: { x: number; y: number; w: number; h: number }): boolean => {
-  const x = rect.x + rect.w / 2;
-  for (let y = rect.y; y <= rect.y + rect.h; y += 1) {
-    if (canStand(district, x, y)) return true;
-  }
-  return false;
+const sizeOf = (source: DistrictDef | RoomDef): { width: number; depth: number } => {
+  const map = parseMap(source.tiles);
+  return { width: map.width, depth: map.depth };
 };
 
-describe('город', () => {
-  it('район выше кадра: по нему ходят и вглубь, а не только вбок', () => {
-    // Ровно на высоту кадра — это коридор без ландшафта, из-за которого
-    // район и читался одной дорогой налево-направо.
-    for (const district of CITY) {
-      expect(district.height, district.id).toBeGreaterThan(CONTENT.height / WORLD_ZOOM);
-    }
-  });
+const inside = (outer: { width: number; depth: number }, rect: WorldRect): boolean =>
+  rect.x >= 0 && rect.y >= 0 && rect.x + rect.w <= outer.width && rect.y + rect.h <= outer.depth;
 
-  it('земля сплошная там, где она есть, и разорвана только обрывами', () => {
-    // Разрыв между плитами — это и есть перепад уровня; каждый обязан
-    // быть перекрыт лестницей, иначе нижний ярус недостижим.
+describe('город', () => {
+  it('у каждого района есть земля и она не вырождена в полосу', () => {
+    // Полоса в один-два ряда — это коридор без ландшафта, ради ухода от
+    // которого мир и переведён в изометрию.
     for (const district of CITY) {
-      for (const plate of district.terrain) {
-        const riser = plate.riser ?? 0;
-        if (riser <= 0) continue;
-        const gapY = plate.rect.y + plate.rect.h + riser / 2;
-        const bridged = district.terrain.some(
-          (other) =>
-            other.surface === 'steps' &&
-            other.rect.y <= gapY &&
-            other.rect.y + other.rect.h >= gapY,
-        );
-        expect(bridged, `${district.id} @ ${plate.rect.y}`).toBe(true);
-      }
+      const { width, depth } = sizeOf(district);
+      expect(width, district.id).toBeGreaterThan(20);
+      expect(depth, district.id).toBeGreaterThan(6);
     }
   });
 
@@ -88,7 +67,7 @@ describe('город', () => {
 
   it('всё помещается в свой район', () => {
     for (const district of CITY) {
-      const bounds = { width: district.width, height: district.height };
+      const bounds = sizeOf(district);
       for (const building of district.buildings) {
         expect(inside(bounds, building.rect), building.locationId).toBe(true);
         expect(inside(bounds, building.door), building.locationId).toBe(true);
@@ -112,50 +91,50 @@ describe('город', () => {
 
   it('игрок появляется на земле, а не внутри стены', () => {
     for (const district of CITY) {
-      expect(canStand(district, district.spawn.x, district.spawn.y), district.id).toBe(true);
+      expect(onGround(district, district.spawn.x, district.spawn.y), district.id).toBe(true);
       for (const building of district.buildings) {
-        expect(overlaps({ ...district.spawn, w: 8, h: 12 }, building.rect), district.id).toBe(false);
+        const { x, y } = district.spawn;
+        expect(
+          overlaps({ x: x - 0.3, y: y - 0.3, w: 0.6, h: 0.6 }, building.rect),
+          district.id,
+        ).toBe(false);
       }
     }
   });
 
-  it('до створа и уличной площадки можно дойти ногами', () => {
+  it('дверь открывается на землю, а не в стену', () => {
     for (const district of CITY) {
-      for (const gate of district.gates) {
-        expect(reachable(district, gate.rect), `${district.id} → ${gate.to}`).toBe(true);
-      }
-      for (const point of district.points) {
-        expect(reachable(district, point.rect), point.id).toBe(true);
+      for (const building of district.buildings) {
+        expect(onGround(district, building.door.x + 0.5, building.door.y + 0.5), building.locationId).toBe(true);
+        // Порог стоит вплотную к дому: иначе дверь висит посреди улицы.
+        expect(building.door.y, building.locationId).toBe(building.rect.y + building.rect.h);
       }
     }
   });
 
   it('прохожие ходят по земле района, а не сквозь стену и не по воде', () => {
-    // Проверяется весь отрезок, а не только его концы: маршрут с двумя
-    // хорошими концами может пересекать обрыв ровно посередине, и тогда
-    // прохожий проходит сквозь подпорную стенку.
     for (const district of CITY) {
       for (const member of crowdIn(district.id)) {
         for (let i = 0; i < member.path.length; i += 1) {
           const from = member.path[i]!;
           const to = member.path[(i + 1) % member.path.length]!;
-          const steps = Math.ceil(Math.hypot(to.x - from.x, to.y - from.y));
+          const steps = Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) * 2);
           for (let k = 0; k <= steps; k += 1) {
             const x = from.x + ((to.x - from.x) * k) / Math.max(1, steps);
             const y = from.y + ((to.y - from.y) * k) / Math.max(1, steps);
-            expect(canStand(district, x, y), `${member.id} @ ${Math.round(x)},${Math.round(y)}`).toBe(true);
+            expect(onGround(district, x, y), `${member.id} @ ${x.toFixed(1)},${y.toFixed(1)}`).toBe(true);
           }
         }
       }
     }
   });
 
-  it('мелочь стоит на земле, а не висит над обрывом и не тонет', () => {
+  it('мелочь стоит на земле, а не висит в воздухе', () => {
     for (const district of CITY) {
       for (const item of district.decor) {
         // Чайки летают: им земля не нужна.
         if (item.kind === 'gull') continue;
-        expect(canStand(district, item.x, item.y), `${district.id}: ${item.kind} @ ${item.x},${item.y}`).toBe(true);
+        expect(onGround(district, item.x, item.y), `${district.id}: ${item.kind} @ ${item.x},${item.y}`).toBe(true);
       }
     }
   });
@@ -183,7 +162,7 @@ describe('комнаты локаций', () => {
 
   it('точки взаимодействия помещаются в комнату и не перекрываются', () => {
     for (const room of ROOMS) {
-      const bounds = { width: room.width, height: room.height };
+      const bounds = sizeOf(room);
       expect(inside(bounds, room.exit), room.locationId).toBe(true);
       for (const point of room.points) {
         expect(inside(bounds, point.rect), `${room.locationId}/${point.id}`).toBe(true);
@@ -224,41 +203,6 @@ describe('комнаты локаций', () => {
     ]);
     for (const activity of ACTIVITIES) {
       expect(placed.has(activity.id), activity.id).toBe(true);
-    }
-  });
-});
-
-describe('двери держатся своих домов', () => {
-  it('дверь лежит внутри стены дома, а не посреди улицы', () => {
-    // Ровно этот отрыв ломал вход: дверь верхнего ряда осталась на
-    // старых координатах после того, как дома стали ниже.
-    for (const { rect, door, locationId } of CITY.flatMap((d) => d.buildings)) {
-      expect(door.x, locationId).toBeGreaterThanOrEqual(rect.x);
-      expect(door.x + door.w, locationId).toBeLessThanOrEqual(rect.x + rect.w);
-      expect(door.y, locationId).toBeGreaterThanOrEqual(rect.y);
-      expect(door.y + door.h, locationId).toBeLessThanOrEqual(rect.y + rect.h);
-    }
-  });
-
-  it('к каждой двери можно подойти с мостовой', () => {
-    // Дверь должна касаться края дома со стороны улицы, иначе она
-    // замурована внутри.
-    for (const { rect, door, locationId } of CITY.flatMap((d) => d.buildings)) {
-      const touchesTop = door.y === rect.y;
-      const touchesBottom = door.y + door.h === rect.y + rect.h;
-      expect(touchesTop || touchesBottom, locationId).toBe(true);
-      // Вышедший встаёт на первую плиту под дверью, и его тело при этом
-      // не должно оставаться в стене дома.
-      const district = CITY.find((d) => d.buildings.some((b) => b.locationId === locationId))!;
-      const feet = groundBelow(
-        district.terrain,
-        door.x + door.w / 2,
-        rect.y + rect.h + ACTOR.h,
-        district.height,
-      );
-      expect(feet, locationId).not.toBeNull();
-      // И оттуда до двери должно хватать вытянутой руки.
-      expect(feet! - (door.y + door.h / 2), locationId).toBeLessThanOrEqual(REACH);
     }
   });
 });

@@ -51,52 +51,52 @@ const SHADOW_WIDTH: Readonly<Record<DecorKind, number>> = {
 };
 
 /**
- * Что предмет занимает на земле: ширина и глубина следа в мировых
- * пикселях, ноль — сквозь него проходят. След мелкий по глубине: скамейка
- * должна мешать пройти сквозь себя, но не перекрывать тротуар целиком.
+ * След предмета на земле в плитках: ширина и глубина. Ноль — сквозь него
+ * проходят. След мелкий: скамейка должна мешать пройти сквозь себя, но
+ * не перекрывать тротуар целиком.
  */
 const FOOTPRINT: Readonly<Record<DecorKind, readonly [number, number]>> = {
-  palm: [5, 3],
-  lamp: [3, 3],
-  bench: [20, 5],
-  car: [32, 9],
-  billboard: [8, 3],
-  hydrant: [5, 3],
-  planter: [12, 6],
-  bin: [8, 4],
-  busStop: [34, 6],
-  crate: [11, 6],
-  bollard: [4, 3],
-  newsbox: [9, 4],
-  parasol: [6, 3],
+  palm: [0.4, 0.4],
+  lamp: [0.3, 0.3],
+  bench: [1.1, 0.5],
+  car: [2.2, 0.9],
+  billboard: [0.5, 0.3],
+  hydrant: [0.3, 0.3],
+  planter: [0.7, 0.6],
+  bin: [0.5, 0.4],
+  busStop: [2.2, 0.7],
+  crate: [0.6, 0.6],
+  bollard: [0.3, 0.3],
+  newsbox: [0.5, 0.4],
+  parasol: [0.5, 0.4],
   gull: [0, 0],
   rug: [0, 0],
   poster: [0, 0],
-  shelf: [16, 4],
-  bike: [16, 3],
-  trafficLight: [4, 3],
-  mailbox: [10, 4],
+  shelf: [1, 0.4],
+  bike: [1, 0.4],
+  trafficLight: [0.3, 0.3],
+  mailbox: [0.6, 0.4],
   // Собака ходит сама и в столкновениях не участвует: стоячий барьер из
   // живности читается как баг, а не как препятствие.
   dog: [0, 0],
-  surfboard: [5, 3],
+  surfboard: [0.3, 0.3],
   // Полотенце лежит плашмя: через него переступают.
   towel: [0, 0],
-  table: [16, 8],
-  tree: [7, 4],
-  bush: [10, 5],
-  flowerbed: [18, 8],
-  lifeguard: [16, 8],
-  deckchair: [13, 6],
-  umbrella: [6, 3],
-  boat: [26, 10],
+  table: [0.9, 0.7],
+  tree: [0.5, 0.5],
+  bush: [0.6, 0.5],
+  flowerbed: [1, 0.7],
+  lifeguard: [1, 0.9],
+  deckchair: [0.8, 0.6],
+  umbrella: [0.4, 0.4],
+  boat: [1.6, 1],
 };
 
 /** След предмета на земле или null, если сквозь него ходят. */
 export function footprintOf(item: DecorDef): WorldRect | null {
-  const [w, h] = FOOTPRINT[item.kind];
-  if (w === 0 || h === 0) return null;
-  return { x: item.x - w / 2, y: item.y - h, w, h };
+  const [w, d] = FOOTPRINT[item.kind];
+  if (w === 0 || d === 0) return null;
+  return { x: item.x - w / 2, y: item.y - d / 2, w, h: d };
 }
 
 export function drawDecor(

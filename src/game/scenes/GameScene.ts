@@ -26,7 +26,8 @@ import { renderShop } from '@ui/screens/ShopScreen';
 import { initialUiState } from '@ui/screens/types';
 import type { RenderContext, UiState } from '@ui/screens/types';
 import { buildActorTextures } from '../art';
-import { WorldCanvas, WorldController, renderWorld } from '../world';
+import { WorldCanvas, WorldController, renderIso } from '../world';
+import type { WorldTarget } from '../world';
 
 /**
  * Игровая сцена: состояние, ввод и отрисовка. Ходьба, живность и переходы
@@ -272,7 +273,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Мир в нижнем слое: он же фон для экранов, которые рисуются поверх. */
   private renderWorldLayer(state: GameState): void {
-    renderWorld(
+    renderIso(
       {
         painter: this.worldPainter,
         back: this.backPainter,
@@ -284,10 +285,10 @@ export class GameScene extends Phaser.Scene {
         walked: this.world.walked,
         moving: this.world.moving,
         crowd: this.world.crowd,
-        onActivate: (target) => this.world.activate(target),
-        onWalk: (point) => this.world.walkTo(point),
+        onActivate: (target: WorldTarget) => this.world.activate(target),
+        onWalk: (point: WorldPoint) => this.world.walkTo(point),
       },
-      this.world.layer(),
+      this.world.scene(),
     );
   }
 

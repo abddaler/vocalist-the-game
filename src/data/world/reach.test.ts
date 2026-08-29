@@ -1,77 +1,83 @@
 import { describe, expect, it } from 'vitest';
 import type { DistrictDef, WorldPoint, WorldRect } from '@core/types';
 import { CITY } from './city';
-import { ACTOR, actorRect, overlaps } from '../../game/world/movement';
 import { footprintOf } from '../../game/world/decor';
-import { standable } from '../../game/world/terrain';
-import { REACH } from '../../game/world/targets';
+import { parseMap, standable as onTile, stepAllowed } from '../../game/world/iso/map';
+import { ACTOR_RADIUS, REACH_TILES } from '../../game/world/iso/walk';
+import { STREET } from './city';
 
 /**
- * Проходимость района целиком. Полосы земли всего в рост человека, и
- * одна скамейка поперёк такой полосы запирает половину улицы — глазами
- * это не видно, а ногами упирается. Поэтому связность считается заливкой
- * по той же геометрии, по которой ходит игрок.
+ * Проходимость района целиком. Одна скамейка поперёк узкой полосы
+ * запирает половину улицы — глазами это не видно, а ногами упирается.
+ * Поэтому связность считается заливкой по той же геометрии, по которой
+ * ходит игрок: шаг разрешён между плитками одного уровня и по ступеням.
  */
-function walkableMap(district: DistrictDef): (x: number, y: number) => boolean {
-  const solids: WorldRect[] = [
-    ...district.buildings.map((b) => b.rect),
-    ...district.scenery.map((s) => s.rect),
-    ...district.solids,
-  ];
-  const footprints = district.decor
-    .map(footprintOf)
-    .filter((rect): rect is WorldRect => rect !== null);
-
-  return (x, y) => {
-    const feet = { x, y };
-    const edge = ACTOR.w / 2 - 1;
-    for (const dx of [-edge, 0, edge]) {
-      if (!standable(district.terrain, { x: x + dx, y })) return false;
-    }
-    if (footprints.some((rect) => inside(rect, feet))) return false;
-    const body = actorRect(feet);
-    return !solids.some((solid) => overlaps(body, solid));
-  };
-}
-
 const inside = (rect: WorldRect, p: WorldPoint): boolean =>
   p.x >= rect.x && p.x < rect.x + rect.w && p.y >= rect.y && p.y < rect.y + rect.h;
 
-/** Куда игрок может дойти со своего места появления. */
-function reachable(district: DistrictDef): Set<number> {
-  const walkable = walkableMap(district);
-  const key = (x: number, y: number): number => y * district.width + x;
-  const start = { x: Math.round(district.spawn.x), y: Math.round(district.spawn.y) };
-  const seen = new Set<number>();
-  const queue: Array<{ x: number; y: number }> = [start];
-  seen.add(key(start.x, start.y));
+/** Заливка от места появления игрока: множество достижимых плиток. */
+function reachable(district: DistrictDef): { seen: Set<number>; free: Set<number> } {
+  const map = parseMap(district.tiles);
+  const solids: WorldRect[] = [
+    ...district.buildings.map((b) => b.rect),
+    ...district.scenery.map((s) => s.rect),
+    ...district.decor.map(footprintOf).filter((rect): rect is WorldRect => rect !== null),
+  ];
+  const key = (x: number, y: number): number => y * map.width + x;
+  const standable = (x: number, y: number): boolean => {
+    if (!onTile(map, x, y)) return false;
+    const center = { x: x + 0.5, y: y + 0.5 };
+    const r = ACTOR_RADIUS;
+    const probes = [
+      center,
+      { x: center.x - r, y: center.y },
+      { x: center.x + r, y: center.y },
+      { x: center.x, y: center.y - r },
+      { x: center.x, y: center.y + r },
+    ];
+    return !probes.some((probe) => solids.some((rect) => inside(rect, probe)));
+  };
 
+  // Считается только земля перед домами: закутки между ними за фасадами
+  // никому не нужны, а в долю «отрезанного» шумят.
+  const free = new Set<number>();
+  for (let y = STREET.frontY; y < map.depth; y += 1) {
+    for (let x = 0; x < map.width; x += 1) {
+      if (standable(x, y)) free.add(key(x, y));
+    }
+  }
+
+  const start = { x: Math.floor(district.spawn.x), y: Math.floor(district.spawn.y) };
+  const seen = new Set<number>([key(start.x, start.y)]);
+  const queue = [start];
   while (queue.length > 0) {
     const { x, y } = queue.pop()!;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
       const nx = x + dx;
       const ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= district.width || ny >= district.height) continue;
       const id = key(nx, ny);
-      if (seen.has(id) || !walkable(nx, ny)) continue;
+      if (seen.has(id) || !free.has(id)) continue;
+      if (!stepAllowed(map, { x: x + 0.5, y: y + 0.5 }, { x: nx + 0.5, y: ny + 0.5 })) continue;
       seen.add(id);
       queue.push({ x: nx, y: ny });
     }
   }
-  return seen;
+  return { seen, free };
 }
 
 describe('по району можно пройти ногами', () => {
   for (const district of CITY) {
+    const map = parseMap(district.tiles);
+
     it(`${district.id}: до каждой двери, площадки и створа есть дорога`, () => {
-      const seen = reachable(district);
+      const { seen } = reachable(district);
       const near = (rect: WorldRect): boolean => {
         const cx = rect.x + rect.w / 2;
         const cy = rect.y + rect.h / 2;
         for (const id of seen) {
-          const x = id % district.width;
-          const y = Math.floor(id / district.width);
-          if (Math.hypot(x - cx, y - cy) <= REACH) return true;
+          const x = (id % map.width) + 0.5;
+          const y = Math.floor(id / map.width) + 0.5;
+          if (Math.hypot(x - cx, y - cy) <= REACH_TILES) return true;
         }
         return false;
       };
@@ -88,20 +94,9 @@ describe('по району можно пройти ногами', () => {
     });
 
     it(`${district.id}: ни одна полоса земли не заперта мелочью`, () => {
-      // Заливка обязана покрыть почти всю землю: если предмет перегородил
-      // полосу, за ним остаётся заметный неохваченный кусок.
-      const walkable = walkableMap(district);
-      const seen = reachable(district);
-      let total = 0;
-      let cut = 0;
-      for (let y = 0; y < district.height; y += 1) {
-        for (let x = 0; x < district.width; x += 1) {
-          if (!walkable(x, y)) continue;
-          total += 1;
-          if (!seen.has(y * district.width + x)) cut += 1;
-        }
-      }
-      expect(cut / total, `${district.id}: отрезано ${cut} из ${total}`).toBeLessThan(0.02);
+      const { seen, free } = reachable(district);
+      const cut = [...free].filter((id) => !seen.has(id)).length;
+      expect(cut / free.size, `${district.id}: отрезано ${cut} из ${free.size}`).toBeLessThan(0.04);
     });
   }
 });

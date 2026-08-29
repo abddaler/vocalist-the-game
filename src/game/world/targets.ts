@@ -1,8 +1,4 @@
-import type { PropKind, WorldPoint, WorldRect } from '@core/types';
-import { centerOf } from './movement';
-
-/** Насколько близко надо подойти, чтобы взаимодействовать. */
-export const REACH = 26;
+import type { PropKind, WorldRect } from '@core/types';
 
 /** То, во что можно войти или к чему подойти: дверь, выход, точка, створ. */
 export interface WorldTarget {
@@ -16,7 +12,3 @@ export interface WorldTarget {
   readonly prop?: PropKind | undefined;
 }
 
-export function withinReach(position: WorldPoint, rect: WorldRect): boolean {
-  const center = centerOf(rect);
-  return Math.hypot(center.x - position.x, center.y - position.y) <= REACH;
-}
