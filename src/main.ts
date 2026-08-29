@@ -83,5 +83,18 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // Двух секунд движку хватает с запасом; если канваса нет — что-то не так.
 window.setTimeout(() => {
-  if (!game.canvas) reportFailure('Не удалось создать холст: браузер без canvas или WebGL.');
+  if (!game.canvas) {
+    reportFailure('Не удалось создать холст: браузер без canvas или WebGL.');
+    return;
+  }
+  /*
+   * Потеря контекста — самый частый способ для телефона показать чёрный
+   * экран вместо игры, и по нему совершенно нечего понять. Ловим его и
+   * говорим словами: без этого «на телефоне не работает» не отладить.
+   */
+  game.canvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault();
+    document.body.classList.remove('boot-failed');
+    reportFailure('Браузер отключил графику (потерян контекст WebGL). Перезагрузите страницу.');
+  });
 }, 2500);

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Painter } from '@ui/widgets/Painter';
+import { CANVAS_SIZE } from './iso/project';
 
 /**
  * Запечённая подложка района. Земля и дома не меняются, пока стоит день
@@ -24,13 +25,14 @@ export class WorldCanvas {
    * Готовит подложку под этот ключ. Если ключ тот же, ничего не рисуется:
    * ради этого всё и затевалось.
    */
-  ensure(key: string, width: number, height: number, paint: (painter: Painter) => void): void {
+  ensure(key: string, paint: (painter: Painter) => void): void {
     if (this.key === key && this.texture) return;
-
-    this.texture?.destroy();
     this.key = key;
 
-    const target = this.scene.add.renderTexture(0, 0, width, height);
+    const target =
+      this.texture ??
+      this.scene.add.renderTexture(0, 0, CANVAS_SIZE.width, CANVAS_SIZE.height);
+    target.clear();
     target.setOrigin(0, 0);
 
     // Рисуем во временный контейнер и снимаем его целиком: Painter умеет
@@ -42,9 +44,11 @@ export class WorldCanvas {
     painter.destroy();
     scratch.destroy();
 
-    this.layer.add(target);
-    this.layer.sendToBack(target);
-    this.texture = target;
+    if (this.texture !== target) {
+      this.layer.add(target);
+      this.layer.sendToBack(target);
+      this.texture = target;
+    }
   }
 
   /** Ставит подложку под камеру. Экранные координаты её левого верхнего угла. */

@@ -76,6 +76,18 @@ export class Painter {
     this.shapes.fillRect(box.x, box.y, box.w, box.h);
   }
 
+  /**
+   * Заливка многоугольника одной командой. Изометрия состоит из ромбов и
+   * скошенных граней; собранные из прямоугольников столбик за столбиком,
+   * они стоили сотен тысяч заливок в секунду и клали телефон.
+   */
+  polygon(points: ReadonlyArray<{ x: number; y: number }>, color: number, alpha = 1): void {
+    if (points.length < 3) return;
+    if (this.clipRect && outside(points, this.clipRect)) return;
+    this.shapes.fillStyle(color, alpha);
+    this.shapes.fillPoints(points as { x: number; y: number }[], true);
+  }
+
   stroke(rect: Rect, color: number): void {
     this.shapes.lineStyle(1, color, 1);
     this.shapes.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w - 1, rect.h - 1);
@@ -189,6 +201,21 @@ export class Painter {
     this.clear();
     this.shapes.destroy();
   }
+}
+
+/** Целиком ли многоугольник за пределами окна отсечения. */
+function outside(points: ReadonlyArray<{ x: number; y: number }>, clip: Rect): boolean {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y);
+    maxY = Math.max(maxY, point.y);
+  }
+  return maxX <= clip.x || minX >= clip.x + clip.w || maxY <= clip.y || minY >= clip.y + clip.h;
 }
 
 /** Пересечение прямоугольников или null, если его нет. */

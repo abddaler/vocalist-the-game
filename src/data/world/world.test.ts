@@ -7,6 +7,7 @@ import { ROOMS, getRoom, hasRoom } from './rooms';
 import { crowdIn } from './crowd';
 import type { DistrictDef, RoomDef, WorldRect } from '@core/types';
 import { cellAt, parseMap } from '../../game/world/iso/map';
+import { CANVAS_SIZE, SKY_BAND, mapSize } from '../../game/world/iso/project';
 import { footprintOf } from '../../game/world/decor';
 
 const overlaps = (a: WorldRect, b: WorldRect): boolean =>
@@ -222,6 +223,23 @@ describe('комнаты локаций', () => {
     ]);
     for (const activity of ACTIVITIES) {
       expect(placed.has(activity.id), activity.id).toBe(true);
+    }
+  });
+});
+
+describe('подложка мира', () => {
+  it('любая карта помещается в текстуру подложки', () => {
+    // Текстура выделяется один раз на всю игру: если карта в неё не
+    // влезет, у района молча срежется край, и понять это по картинке
+    // будет нельзя.
+    for (const source of [...CITY, ...ROOMS]) {
+      const map = parseMap(source.tiles);
+      const size = mapSize(map.width, map.depth, map.levels);
+      const sky = 'id' in source ? SKY_BAND : 0;
+      expect(size.w, `${'id' in source ? source.id : source.locationId}: ширина`)
+        .toBeLessThanOrEqual(CANVAS_SIZE.width);
+      expect(size.h + sky, `${'id' in source ? source.id : source.locationId}: высота`)
+        .toBeLessThanOrEqual(CANVAS_SIZE.height);
     }
   });
 });

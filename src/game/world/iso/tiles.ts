@@ -27,6 +27,12 @@ const jitter = (tx: number, ty: number, spread: number): number => {
   return 1 + ((((n >>> 8) % 100) / 100) * 2 - 1) * spread;
 };
 
+/**
+ * Линия вдоль изометрической оси: пол-пикселя вниз на пиксель вбок.
+ * Рисуется одним многоугольником, а не по пикселю: покрытий на карте
+ * восемьсот плиток, и попиксельная линия стоила десятков тысяч заливок
+ * на каждое запекание.
+ */
 const line = (
   ctx: TilePaint,
   fromDx: number,
@@ -36,12 +42,20 @@ const line = (
   color: number,
   alpha = 1,
 ): void => {
-  // Линия вдоль изометрической оси: пол-пикселя вниз на пиксель вбок.
-  for (let i = 0; i < length; i += 1) {
-    const x = ctx.at.x + fromDx + (down ? i : -i);
-    const y = ctx.at.y + fromDy + Math.floor(i / 2);
-    ctx.painter.fill({ x, y, w: 1, h: 1 }, color, alpha);
-  }
+  const x0 = ctx.at.x + fromDx;
+  const y0 = ctx.at.y + fromDy;
+  const x1 = x0 + (down ? length : -length);
+  const y1 = y0 + length / 2;
+  ctx.painter.polygon(
+    [
+      { x: x0, y: y0 },
+      { x: x1, y: y1 },
+      { x: x1, y: y1 + 1 },
+      { x: x0, y: y0 + 1 },
+    ],
+    color,
+    alpha,
+  );
 };
 
 type Paint = (ctx: TilePaint) => void;
@@ -112,7 +126,7 @@ const sand: Paint = (ctx) => {
   );
   tile(ctx.painter, ctx.at, base);
   const n = (ctx.tx * 41 + ctx.ty * 23) % 11;
-  for (let i = 0; i < 7; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     const k = (n + i * 3) % 13;
     ctx.painter.fill(
       { x: ctx.at.x - 10 + ((k * 3) % 20), y: ctx.at.y + 2 + ((k * 5) % 12), w: 1, h: 1 },
@@ -139,7 +153,7 @@ const grass: Paint = (ctx) => {
     ctx.ambience.light * jitter(ctx.tx, ctx.ty, 0.07),
   );
   tile(ctx.painter, ctx.at, base);
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 3; i += 1) {
     const k = (ctx.tx * 13 + ctx.ty * 7 + i * 5) % 17;
     ctx.painter.fill(
       { x: ctx.at.x - 8 + ((k * 3) % 16), y: ctx.at.y + 3 + ((k * 3) % 10), w: 1, h: 2 },

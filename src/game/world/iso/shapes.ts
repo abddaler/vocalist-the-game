@@ -11,13 +11,27 @@ import type { ScreenPoint } from './project';
  * отличаются только размером и цветом граней.
  */
 
-/** Ромб одной плитки. Точка — северный угол, ромб лежит под ней. */
+/**
+ * Ромб одной плитки. Точка — северный угол, ромб лежит под ней.
+ *
+ * Ромб чуть шире и ниже своей клетки: соседние плитки кладутся внахлёст,
+ * и между ними не остаётся волосяных щелей, через которые просвечивал бы
+ * фон. Порядок отрисовки — от дальней к ближней, так что перекрытие
+ * ничего не портит.
+ */
+const BLEED = 1;
+
 export function tile(painter: Painter, north: ScreenPoint, color: number, alpha = 1): void {
-  const rows = TILE.halfH * 2;
-  for (let r = 0; r < rows; r += 1) {
-    const w = 2 + 4 * Math.min(r, rows - 1 - r);
-    painter.fill({ x: north.x - w / 2, y: north.y + r, w, h: 1 }, color, alpha);
-  }
+  painter.polygon(
+    [
+      { x: north.x, y: north.y - BLEED },
+      { x: north.x + TILE.halfW + BLEED, y: north.y + TILE.halfH },
+      { x: north.x, y: north.y + TILE.halfH * 2 + BLEED },
+      { x: north.x - TILE.halfW - BLEED, y: north.y + TILE.halfH },
+    ],
+    color,
+    alpha,
+  );
 }
 
 /** Половина ромба: дальняя (верхняя) или ближняя. Нужна кромкам покрытий. */
@@ -28,12 +42,20 @@ export function tileHalf(
   half: 'far' | 'near',
   alpha = 1,
 ): void {
-  const rows = TILE.halfH * 2;
-  const from = half === 'far' ? 0 : TILE.halfH;
-  for (let r = from; r < from + TILE.halfH; r += 1) {
-    const w = 2 + 4 * Math.min(r, rows - 1 - r);
-    painter.fill({ x: north.x - w / 2, y: north.y + r, w, h: 1 }, color, alpha);
-  }
+  const middle = TILE.halfH;
+  const corners: ScreenPoint[] =
+    half === 'far'
+      ? [
+          { x: north.x, y: north.y },
+          { x: north.x + TILE.halfW, y: north.y + middle },
+          { x: north.x - TILE.halfW, y: north.y + middle },
+        ]
+      : [
+          { x: north.x + TILE.halfW, y: north.y + middle },
+          { x: north.x, y: north.y + middle * 2 },
+          { x: north.x - TILE.halfW, y: north.y + middle },
+        ];
+  painter.polygon(corners, color, alpha);
 }
 
 /**
@@ -49,16 +71,12 @@ export function face(
   color: number,
   alpha = 1,
 ): void {
-  const span = Math.abs(to.x - from.x);
-  if (span < 1 || height <= 0) return;
-  const step = to.x > from.x ? 1 : -1;
-  const slope = (to.y - from.y) / (to.x - from.x);
-
-  for (let i = 0; i < span; i += 1) {
-    const x = from.x + i * step;
-    const y = Math.round(from.y + i * step * slope);
-    painter.fill({ x: step > 0 ? x : x - 1, y, w: 1, h: height }, color, alpha);
-  }
+  if (Math.abs(to.x - from.x) < 1 || height <= 0) return;
+  painter.polygon(
+    [from, to, { x: to.x, y: to.y + height }, { x: from.x, y: from.y + height }],
+    color,
+    alpha,
+  );
 }
 
 /** Линия по кромке: контур в один пиксель вдоль верхнего ребра грани. */
@@ -166,27 +184,7 @@ export function quad(
   color: number,
   alpha = 1,
 ): void {
-  const top = Math.round(Math.min(...corners.map((p) => p.y)));
-  const bottom = Math.round(Math.max(...corners.map((p) => p.y)));
-
-  for (let y = top; y <= bottom; y += 1) {
-    let left = Infinity;
-    let right = -Infinity;
-    for (let i = 0; i < corners.length; i += 1) {
-      const a = corners[i]!;
-      const b = corners[(i + 1) % corners.length]!;
-      if (a.y === b.y) continue;
-      const lo = Math.min(a.y, b.y);
-      const hi = Math.max(a.y, b.y);
-      if (y < lo || y > hi) continue;
-      const x = a.x + ((b.x - a.x) * (y - a.y)) / (b.y - a.y);
-      left = Math.min(left, x);
-      right = Math.max(right, x);
-    }
-    if (right > left) {
-      painter.fill({ x: Math.round(left), y, w: Math.max(1, Math.round(right - left)), h: 1 }, color, alpha);
-    }
-  }
+  painter.polygon(corners, color, alpha);
 }
 
 /**

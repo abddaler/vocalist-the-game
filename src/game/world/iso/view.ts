@@ -17,14 +17,11 @@ import { drawMarks, markRect, promptFor } from './marks';
 import { heightAt } from './height';
 import { kindAt } from './map';
 import type { IsoMap } from './map';
-import { TILE, mapOrigin, mapSize, toGround, toScreen } from './project';
+import { SKY_BAND, TILE, mapOrigin, mapSize, toGround, toScreen } from './project';
 import type { ScreenPoint } from './project';
 import type { IsoScene } from './scene';
 import { nearest } from './walk';
 import type { WorldTarget } from '../targets';
-
-/** Сколько неба видно над крышами в самой верхней точке карты. */
-const SKY_BAND = 96;
 
 export interface IsoViewParams {
   readonly painter: Painter;
@@ -56,7 +53,7 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
   const sky = outdoors ? SKY_BAND : 0;
 
   params.canvas.show();
-  params.canvas.ensure(scene.key, size.w, size.h + sky, (into) => {
+  params.canvas.ensure(scene.key, (into) => {
     paintStatic(into, scene, ambience, { x: origin.x, y: origin.y + sky });
   });
 
