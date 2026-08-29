@@ -1,10 +1,11 @@
 import type Phaser from 'phaser';
 import { ACCESSORY } from './accessory';
-import { BODY, FACING_OF, POSES } from './body';
+import { BODY, BODY_ROWS, FACING_OF, POSES } from './body';
 import type { Frame } from './body';
 import { HAIR } from './hair';
 import { LOOKS, PALETTES } from './looks';
 import { OUTFIT, OUTFIT_TOP } from './outfit';
+import type { LegWear } from './outfit';
 
 export { ACTOR_SPRITE, POSES } from './body';
 export type { ActorPose } from './body';
@@ -36,6 +37,41 @@ function overlay(base: Frame, layer: Frame, top = 0): Frame {
       })
       .join('');
   });
+}
+
+/** Кожа в брючине: тело красится по своему силуэту, а не закрывается рисунком. */
+const CLOTHED: Readonly<Record<string, string>> = { 2: '9', 3: 'H', F: '9' };
+
+/** Юбка: расширяется книзу и обрывается у колена. Ниже — открытая нога. */
+const SKIRT: Frame = [
+  '......199999999999999991......',
+  '.....19999999999999999991.....',
+  '....1999999999999999999991....',
+  '....1777777777777777777771....',
+];
+
+const SIDE_SKIRT: Frame = [
+  '.......1999999999999991.......',
+  '......19999999999999991......',
+  '.....1999999999999999991.....',
+  '.....1777777777777777771.....',
+];
+
+/**
+ * Ноги в одежде. Брюки красят голень по её собственному силуэту, поэтому
+ * они не отстают от шага; юбка накрывает верх ног своей формой, а голень
+ * оставляет открытой.
+ */
+export function dressLegs(frame: Frame, wear: LegWear, facing: 'front' | 'back' | 'side'): Frame {
+  if (wear === 'bare') return frame;
+  if (wear === 'skirt') {
+    return overlay(frame, facing === 'side' ? SIDE_SKIRT : SKIRT, BODY_ROWS.legs);
+  }
+  return frame.map((row, y) =>
+    y < BODY_ROWS.legs || y >= BODY_ROWS.feet
+      ? row
+      : [...row].map((cell) => CLOTHED[cell] ?? cell).join(''),
+  );
 }
 
 /** Теневой двойник цвета. Символы без пары кромку не принимают. */
@@ -126,7 +162,9 @@ export function buildActorTextures(scene: Phaser.Scene): void {
       const accessory = ACCESSORY[look.accessory];
       // Порядок слоёв: одежда поверх тела, волосы поверх головы, примета
       // поверх всего — очки должны лечь на лицо, а сумка на пиджак.
-      let data = overlay(BODY[pose], OUTFIT[look.outfit][facing], OUTFIT_TOP);
+      const outfit = OUTFIT[look.outfit];
+      let data = overlay(BODY[pose], outfit[facing], OUTFIT_TOP);
+      data = dressLegs(data, outfit.legs, facing);
       data = overlay(data, HAIR[look.hair][facing]);
       data = overlay(data, accessory[facing], accessory.top);
 

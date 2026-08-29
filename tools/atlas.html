@@ -10,10 +10,11 @@
 <style>body{margin:0;background:#5a6a7a}canvas{image-rendering:pixelated}</style>
 <canvas id="c"></canvas>
 <script type="module">
-import { BODY, FACING_OF, POSES } from '/src/game/art/body.ts';
+import { ACTOR_SPRITE, BODY, FACING_OF, POSES } from '/src/game/art/body.ts';
 import { HAIR } from '/src/game/art/hair.ts';
 import { ACCESSORY } from '/src/game/art/accessory.ts';
 import { OUTFIT, OUTFIT_TOP } from '/src/game/art/outfit/index.ts';
+import { dressLegs } from '/src/game/art/index.ts';
 import { LOOKS, PALETTES } from '/src/game/art/looks.ts';
 import { rimmed } from '/src/game/art/index.ts';
 
@@ -26,7 +27,8 @@ const overlay = (base, layer, top = 0) => layer.length === 0 ? base : base.map((
   }).join('');
 });
 
-const W = 14, H = 24, Z = 5, PAD = 3;
+const bare = location.search.includes('bare');
+const W = ACTOR_SPRITE.width, H = ACTOR_SPRITE.height, Z = 4, PAD = 3;
 const poses = POSES;
 const c = document.getElementById('c');
 c.width = (W + PAD) * poses.length * Z;
@@ -38,9 +40,13 @@ LOOKS.forEach((look, i) => {
   poses.forEach((pose, p) => {
     const facing = FACING_OF[pose];
     const acc = ACCESSORY[look.accessory];
-    let data = overlay(BODY[pose], OUTFIT[look.outfit][facing], OUTFIT_TOP);
-    data = overlay(data, HAIR[look.hair][facing]);
-    data = overlay(data, acc[facing], acc.top);
+    let data = BODY[pose];
+    if (!bare) {
+      data = overlay(data, OUTFIT[look.outfit][facing], OUTFIT_TOP);
+      data = dressLegs(data, OUTFIT[look.outfit].legs, facing);
+      data = overlay(data, HAIR[look.hair][facing]);
+      data = overlay(data, acc[facing], acc.top);
+    }
     data = rimmed(data);
     data.forEach((row, y) => [...row].forEach((ch, x) => {
       if (ch === '.' || ch === ' ') return;

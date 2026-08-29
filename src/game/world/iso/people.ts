@@ -2,7 +2,7 @@ import type { DecorDef, WorldPoint } from '@core/types';
 import { t } from '@ui/i18n';
 import { COLORS } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
-import { PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
+import { ACTOR_SPRITE, PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
 import type { ActorPose } from '../../art';
 import type { Ambience } from '../ambience';
 import { drawShadow } from '../backdrop';
@@ -15,7 +15,11 @@ import type { ScreenPoint } from './project';
 import type { IsoScene } from './scene';
 import { heightAt } from './height';
 
-/** Во сколько раз спрайты и мелочь крупнее собственных пикселей. */
+/**
+ * Во сколько раз щитовая мелочь крупнее собственных пикселей. Человек
+ * рисуется один к одному: его кадр 28x48 и так занимает на экране
+ * столько же, сколько прежние 14x24 вдвое крупнее.
+ */
 export const UNIT = 2;
 
 export interface Inhabitants {
@@ -96,12 +100,13 @@ export function inhabitantPieces(
   const person = (
     point: WorldPoint,
     look: number,
-    pose: { pose: ActorPose; flipX: boolean },
+    pose: { pose: ActorPose; flipX: boolean; lift: number },
     nameKey?: string,
   ): void => {
     const at = place(point);
-    drawShadow(painter, at.x, at.y, 9 * UNIT, ambience);
-    painter.sprite(at.x, at.y, actorTexture(look, pose.pose), pose.flipX, UNIT);
+    // Тень остаётся на земле: подскакивает человек, а не его след.
+    drawShadow(painter, at.x, at.y, ACTOR_SPRITE.width * 0.7, ambience);
+    painter.sprite(at.x, at.y - pose.lift, actorTexture(look, pose.pose), pose.flipX);
     if (nameKey) drawNamePlate(painter, at, nameKey);
   };
 

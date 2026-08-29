@@ -3,7 +3,7 @@ import { FORMAL } from './formal';
 import type { OutfitFrames, OutfitStyle } from './kit';
 
 export { OUTFIT_TOP } from './kit';
-export type { OutfitStyle } from './kit';
+export type { LegWear, OutfitStyle } from './kit';
 
 /**
  * Гардероб. Рисунки разведены по двум файлам — повседневное и выходное, —

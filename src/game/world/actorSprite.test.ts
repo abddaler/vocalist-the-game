@@ -16,17 +16,40 @@ describe('поворот персонажа', () => {
 });
 
 describe('кадр анимации', () => {
+  /** Шаг меряется в плитках, и одна фаза — заметно меньше плитки. */
+  const PHASE = 0.55;
+  const walk = (facing: 'down' | 'left', phases: number[]): string[] =>
+    phases.map((n) => lookFor(facing, n * PHASE + PHASE / 2, true).pose);
+
   it('в покое всегда первый кадр', () => {
     expect(lookFor('down', 999, false).pose).toBe('downA');
+    expect(lookFor('down', 999, false).lift).toBe(0);
   });
 
-  it('на ходу кадры чередуются', () => {
-    const poses = [0, 7, 14, 21].map((walked) => lookFor('down', walked, true).pose);
-    expect(poses).toEqual(['downA', 'downB', 'downA', 'downB']);
+  it('шаг укладывается в плитку, а не в семь', () => {
+    // На семи плитках кадр менялся раз в две с половиной секунды.
+    expect(lookFor('down', 0, true).pose).not.toBe(lookFor('down', 1, true).pose);
+  });
+
+  it('анфас кадры чередуются: касание и пронос', () => {
+    expect(walk('down', [0, 1, 2, 3, 4])).toEqual([
+      'downB', 'downA', 'downB', 'downA', 'downB',
+    ]);
+  });
+
+  it('в профиль вперёд выносится то одна нога, то другая', () => {
+    expect(walk('left', [0, 1, 2, 3, 4])).toEqual([
+      'sideB', 'sideA', 'sideC', 'sideA', 'sideB',
+    ]);
+  });
+
+  it('на проносе корпус выше, чем в момент касания', () => {
+    expect(lookFor('down', PHASE / 2, true).lift).toBe(0);
+    expect(lookFor('down', PHASE * 1.5, true).lift).toBe(1);
   });
 
   it('профиль отзеркаливается, а не дублируется отдельными кадрами', () => {
-    expect(lookFor('left', 0, true)).toEqual({ pose: 'sideA', flipX: true });
-    expect(lookFor('right', 0, true)).toEqual({ pose: 'sideA', flipX: false });
+    expect(lookFor('left', 0, true).flipX).toBe(true);
+    expect(lookFor('right', 0, true).flipX).toBe(false);
   });
 });

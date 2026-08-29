@@ -1,141 +1,42 @@
 import { ROWS } from './kit';
 import type { OutfitFrames } from './kit';
 
-const { SLEEVE, CHEST, SHOULDER, HEM, TROUSERS, SIDE_TROUSERS, SIDE_SLEEVE, SIDE_CHEST, SIDE_HEM } =
-  ROWS;
+const {
+  SLEEVE, CUFF, CHEST, STRAP, HEM,
+  SIDE_SLEEVE, SIDE_CUFF, SIDE_CHEST, SIDE_HEM,
+  LAPEL, SHIRT, TIE, BELT, SIDE_LAPEL, SIDE_BELT,
+} = ROWS;
 
-/** Выходное и рабочее: пиджак, костюм, платье, пальто. */
+const rep = (row: string, times: number): string[] => Array.from({ length: times }, () => row);
+
+/** Выходное: пиджак, костюм, платье, длинное пальто. */
 export const FORMAL: Readonly<Record<'jacket' | 'suit' | 'dress' | 'coat', OutfitFrames>> = {
-  // Пиджак: длинный рукав, открытые полы, под ними рубашка.
+  // Пиджак: лацканы и рубашка в вырезе, рукав до кисти.
   jacket: {
-    front: [
-      SHOULDER,
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '....888866....',
-      HEM,
-      ...TROUSERS,
-    ],
-    back: [SHOULDER, SLEEVE, '16667676666661', SLEEVE, SLEEVE, CHEST, HEM, ...TROUSERS],
-    side: [
-      SIDE_SLEEVE,
-      '..1666888661..',
-      '..1666888661..',
-      '..1666888661..',
-      '..1666888661..',
-      '...16688861...',
-      SIDE_HEM,
-      ...SIDE_TROUSERS,
-    ],
+    front: [CUFF, LAPEL, LAPEL, ...rep(SHIRT, 3), ...rep(SLEEVE, 1), ...rep(CUFF, 6), HEM],
+    back: [CUFF, ...rep(SLEEVE, 6), ...rep(CUFF, 6), HEM],
+    side: [SIDE_CUFF, ...rep(SIDE_LAPEL, 3), ...rep(SIDE_SLEEVE, 3), ...rep(SIDE_CUFF, 6), SIDE_HEM],
+    legs: 'trousers',
   },
-  // Костюм: лацканы, рубашка и галстук.
+  // Костюм: тот же пиджак, но с галстуком — по нему его и узнают.
   suit: {
-    front: [
-      SHOULDER,
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '....888866....',
-      HEM,
-      ...TROUSERS,
-    ],
-    back: [SHOULDER, SLEEVE, SLEEVE, '16667676666661', SLEEVE, CHEST, HEM, ...TROUSERS],
-    side: [
-      SIDE_SLEEVE,
-      '..1666888661..',
-      '..1666B88661..',
-      '..1666888661..',
-      '..1666666661..',
-      SIDE_CHEST,
-      SIDE_HEM,
-      ...SIDE_TROUSERS,
-    ],
+    front: [CUFF, LAPEL, LAPEL, SHIRT, TIE, TIE, ...rep(CUFF, 7), HEM],
+    back: [CUFF, ...rep(SLEEVE, 6), ...rep(CUFF, 6), HEM],
+    side: [SIDE_CUFF, ...rep(SIDE_LAPEL, 3), ...rep(SIDE_SLEEVE, 3), ...rep(SIDE_CUFF, 6), SIDE_HEM],
+    legs: 'trousers',
   },
-  // Платье: плечи открыты, подол расширяется книзу.
+  // Платье: открытые плечи, лиф и юбка ниже пояса.
   dress: {
-    front: [
-      CHEST,
-      CHEST,
-      CHEST,
-      CHEST,
-      '...77777777...',
-      '..1666666661..',
-      SLEEVE,
-      '.166666666661.',
-      '.166666666661.',
-      '.177777777771.',
-      '..12211..1221.',
-    ],
-    back: [
-      CHEST,
-      CHEST,
-      CHEST,
-      CHEST,
-      '...77777777...',
-      '..1666666661..',
-      SLEEVE,
-      '.166666666661.',
-      '.166666666661.',
-      '.177777777771.',
-      '..12211..1221.',
-    ],
-    side: [
-      SIDE_CHEST,
-      SIDE_CHEST,
-      SIDE_CHEST,
-      SIDE_CHEST,
-      '...17777771...',
-      '...16666661...',
-      '..1666666661..',
-      SLEEVE,
-      SLEEVE,
-      '..1777777771..',
-      '....122221....',
-    ],
+    front: [...rep(STRAP, 2), ...rep(CHEST, 11), HEM],
+    back: [...rep(STRAP, 2), ...rep(CHEST, 11), HEM],
+    side: [...rep(SIDE_CHEST, 13), SIDE_HEM],
+    legs: 'skirt',
   },
-  // Пальто: длинный рукав и подол ниже колена.
+  // Пальто: рукав до кисти, пояс и полы ниже бёдер.
   coat: {
-    front: [
-      SHOULDER,
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '16668888866661',
-      '.177777777771.',
-      '..12211..1221.',
-    ],
-    back: [
-      SHOULDER,
-      SLEEVE,
-      '16667676666661',
-      SLEEVE,
-      SLEEVE,
-      SLEEVE,
-      SLEEVE,
-      SLEEVE,
-      SLEEVE,
-      '.177777777771.',
-      '..12211..1221.',
-    ],
-    side: [
-      SIDE_SLEEVE,
-      '..1666888661..',
-      '..1666888661..',
-      '..1666888661..',
-      '..1666888661..',
-      '..1666888661..',
-      '..1666888661..',
-      '..1666888661..',
-      '..1666666661..',
-      '..1777777771..',
-      '....122221....',
-    ],
+    front: [CUFF, ...rep(SLEEVE, 6), BELT, ...rep(CUFF, 5), HEM],
+    back: [CUFF, ...rep(SLEEVE, 6), BELT, ...rep(CUFF, 5), HEM],
+    side: [SIDE_CUFF, ...rep(SIDE_SLEEVE, 6), SIDE_BELT, ...rep(SIDE_CUFF, 5), SIDE_HEM],
+    legs: 'trousers',
   },
 };
