@@ -1,4 +1,5 @@
 import type { GameState, WorldPoint, WorldRect } from '@core/types';
+import { devFlag } from '@platform/devtools';
 import { COLORS, CONTENT, LAYOUT } from '@ui/theme';
 import type { Hotspots, Rect } from '@ui/widgets/Hotspots';
 import type { Painter } from '@ui/widgets/Painter';
@@ -13,6 +14,7 @@ import { ISO_OVERHEAD } from './props';
 import type { PropAtlas } from '../PropAtlas';
 import type { CrowdActor } from '../Crowd';
 import type { Facing } from '../actorSprite';
+import { drawIsoDebug } from './debug';
 import { drawPieces, inhabitantPieces } from './people';
 import { drawBlock, drawBlockSign } from './blocks';
 import { drawGround } from './ground';
@@ -93,6 +95,8 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
   ]);
 
   drawWash(painter, { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height }, ambience);
+
+  if (devFlag('iso')) drawIsoDebug(painter, scene, toView, position);
 
   if (focus) {
     const text = promptFor(focus);

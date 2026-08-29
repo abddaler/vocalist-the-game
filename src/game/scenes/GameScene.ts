@@ -28,6 +28,7 @@ import type { RenderContext, UiState } from '@ui/screens/types';
 import { buildActorTextures } from '../art';
 import { buildBubbleTextures } from '../art/bubble';
 import { buildPortraitTextures } from '../art/portrait';
+import { toggleDevFlag } from '@platform/devtools';
 import { WorldCanvas, WorldController, renderIso } from '../world';
 import { PropAtlas } from '../world/PropAtlas';
 import { Diagnostics } from '../Diagnostics';
@@ -87,6 +88,10 @@ export class GameScene extends Phaser.Scene {
     if (this.input.keyboard) sources.push(new KeyboardInput(this.input.keyboard));
     this.input$ = new CompositeInput(sources);
 
+    // F1 — сетка изометрии. Мимо InputController: это не действие игры,
+    // а инструмент разработки, и в её раскладке ему места нет.
+    this.input.keyboard?.on('keydown-F1', this.toggleIsoDebug);
+
     buildActorTextures(this);
     buildBubbleTextures(this);
     buildPortraitTextures(this);
@@ -129,6 +134,7 @@ export class GameScene extends Phaser.Scene {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.markDirty);
+      this.input.keyboard?.off('keydown-F1', this.toggleIsoDebug);
       this.input$.destroy();
       this.canvas.destroy();
       this.props.destroy();
@@ -199,6 +205,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private markDirty = (): void => {
+    this.dirty = true;
+  };
+
+  private toggleIsoDebug = (): void => {
+    toggleDevFlag('iso');
     this.dirty = true;
   };
 

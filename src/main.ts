@@ -1,11 +1,16 @@
 import Phaser from 'phaser';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '@platform/config';
 import { attachDisplay } from '@platform/display';
+import { readDevFlags } from '@platform/devtools';
 import { pickRenderer } from '@platform/renderer';
 import { LocalStorageSaveAdapter } from '@platform/SaveAdapter';
 import { MenuScene } from '@game/scenes/MenuScene';
 import { GameScene } from '@game/scenes/GameScene';
 import { t } from '@ui/i18n';
+
+// Переключатели разработки читаются до запуска игры: сцена спрашивает
+// их уже в первом кадре.
+readDevFlags(location.search);
 
 /**
  * Внутреннее разрешение фиксировано 480x270 (раздел 2, ограничение 3).
