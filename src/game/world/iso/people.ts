@@ -7,7 +7,7 @@ import type { ActorPose } from '../../art';
 import type { Ambience } from '../ambience';
 import { drawShadow } from '../backdrop';
 import { drawDecor, shadowWidth } from '../decor';
-import { ISO_PROPS } from './street';
+import { ISO_OVERHEAD, ISO_PROPS } from './props';
 import { lookFor } from '../actorSprite';
 import type { CrowdActor } from '../Crowd';
 import type { Facing } from '../actorSprite';
@@ -32,12 +32,20 @@ export interface Inhabitants {
  */
 export interface Piece {
   readonly depth: number;
+  /**
+   * Кусок, который висит над головой: навес, крыша, купол зонта. Такие
+   * рисуются после всех остальных, иначе прохожий ближе к камере встаёт
+   * поверх крыши и выглядит забравшимся на неё.
+   */
+  readonly over?: boolean | undefined;
   readonly draw: () => void;
 }
 
 /** Рисует куски от дальнего к ближнему: ближний заслоняет дальний. */
 export function drawPieces(pieces: readonly Piece[]): void {
-  [...pieces].sort((a, b) => a.depth - b.depth).forEach((piece) => piece.draw());
+  [...pieces]
+    .sort((a, b) => Number(a.over ?? false) - Number(b.over ?? false) || a.depth - b.depth)
+    .forEach((piece) => piece.draw());
 }
 
 /**
@@ -59,6 +67,13 @@ export function inhabitantPieces(
 
   for (const item of scene.decor) {
     const at = place(item);
+    const ctx = {
+      painter,
+      ambience,
+      at,
+      variant: item.variant ?? 0,
+      facing: item.facing ?? ('x' as const),
+    };
     pieces.push({
       depth: item.x + item.y,
       draw: () => {
@@ -66,7 +81,7 @@ export function inhabitantPieces(
         // прежняя полоска под ногами.
         const volume = ISO_PROPS[item.kind];
         if (volume) {
-          volume({ painter, ambience, at, variant: item.variant ?? 0 });
+          volume(ctx);
           return;
         }
         const width = shadowWidth(item.kind) * UNIT;
@@ -74,6 +89,8 @@ export function inhabitantPieces(
         drawDecor(painter, item as DecorDef, at.x, at.y, ambience, UNIT);
       },
     });
+    const roof = ISO_OVERHEAD[item.kind];
+    if (roof) pieces.push({ depth: item.x + item.y, over: true, draw: () => roof(ctx) });
   }
 
   const person = (

@@ -1,99 +1,17 @@
-import type { DecorKind } from '@core/types';
-import type { Painter } from '@ui/widgets/Painter';
-import { mix, scale } from '../ambience';
-import type { Ambience } from '../ambience';
-import { TILE } from './project';
-import type { ScreenPoint } from './project';
-import { boxAt, quad } from './shapes';
-import type { BoxSkin } from './shapes';
+import { scale } from '../ambience';
+import { boxAt } from './shapes';
+import { mast, panel, plate } from './planes';
+import { patch, shade, shift, skin } from './prop';
+import type { Draw } from './prop';
 
 /**
- * Мелочь, которая лежит на земле, — объёмами. Скамейка, машина, ящик и
+ * Мелочь, которая лежит на улице, — объёмами. Скамейка, машина, ящик и
  * лежак в изометрии обязаны иметь верх и две грани: нарисованные щитом,
  * они лежат на земле плашмя и выдают, что мир на самом деле плоский.
  *
- * Высокое и тонкое — пальмы, фонари, зонты, столбы — остаётся щитами:
- * так делает и сама Miami Nights, и вблизи это читается лучше объёма.
+ * Высокое и тонкое — пальмы, фонари, столбы — остаётся щитами: у них нет
+ * грани, которую камера показала бы боком.
  */
-export interface IsoProp {
-  readonly painter: Painter;
-  readonly ambience: Ambience;
-  readonly at: ScreenPoint;
-  readonly variant: number;
-}
-
-type Draw = (ctx: IsoProp) => void;
-
-const skin = (ctx: IsoProp, color: number, outline = 0.55): BoxSkin => {
-  const body = scale(color, ctx.ambience.light);
-  return {
-    top: scale(body, 1.2),
-    left: scale(body, 0.68),
-    right: scale(body, 0.9),
-    outline: mix(body, 0x0d0b14, outline),
-  };
-};
-
-/**
- * Сдвиг опоры в плитках и подъём в пикселях. Смешивать плитки с
- * пикселями напрямую нельзя: коробка, сдвинутая «на три пикселя вверх»,
- * повисает над своим же основанием.
- */
-const shift = (at: ScreenPoint, dx: number, dy: number, lift = 0): ScreenPoint => ({
-  x: at.x + (dx - dy) * TILE.halfW,
-  y: at.y + (dx + dy) * TILE.halfH - lift,
-});
-
-/**
- * Наклонная плоскость по четырём углам с разной высотой: навес, козырёк,
- * скат крыши. Ступенчатая стопка коробок вместо ската читается слоёным
- * пирогом, а не тканью.
- */
-const slope = (
-  ctx: IsoProp,
-  w: number,
-  d: number,
-  far: number,
-  near: number,
-  color: number,
-): void => {
-  const c = (sx: number, sy: number, lift: number): ScreenPoint => ({
-    x: ctx.at.x + (sx - sy) * TILE.halfW,
-    y: ctx.at.y + (sx + sy) * TILE.halfH - lift,
-  });
-  quad(
-    ctx.painter,
-    [c(-w / 2, -d / 2, far), c(w / 2, -d / 2, far), c(w / 2, d / 2, near), c(-w / 2, d / 2, near)],
-    color,
-  );
-};
-
-/** Плоское пятно на земле: тень, полотенце, клумба. */
-const patch = (
-  ctx: IsoProp,
-  w: number,
-  d: number,
-  color: number,
-  alpha = 1,
-  lift = 0,
-): void => {
-  const c = (sx: number, sy: number): ScreenPoint => ({
-    x: ctx.at.x + (sx - sy) * TILE.halfW,
-    y: ctx.at.y + (sx + sy) * TILE.halfH - lift,
-  });
-  quad(
-    ctx.painter,
-    [c(-w / 2, -d / 2), c(w / 2, -d / 2), c(w / 2, d / 2), c(-w / 2, d / 2)],
-    color,
-    alpha,
-  );
-};
-
-/** Тень под предметом: она и сажает его на землю. */
-const shade = (ctx: IsoProp, w: number, d: number): void => {
-  if (ctx.ambience.shadow <= 0) return;
-  patch(ctx, w * 1.15, d * 1.15, 0x000000, ctx.ambience.shadow * 0.8);
-};
 
 const bench: Draw = (ctx) => {
   shade(ctx, 1.2, 0.5);
@@ -117,7 +35,6 @@ const car: Draw = (ctx) => {
   const glass = skin(ctx, 0x5f7f9a, 0.5);
   const tyre = skin(ctx, 0x1a1c24, 0.2);
 
-  // Колёса по углам: без них машина стоит на брюхе.
   for (const [dx, dy] of [[-0.72, -0.32], [-0.72, 0.32], [0.72, -0.32], [0.72, 0.32]] as const) {
     boxAt(ctx.painter, shift(ctx.at, dx, dy), { w: 0.26, d: 0.2, h: 4 }, tyre);
   }
@@ -129,17 +46,27 @@ const car: Draw = (ctx) => {
     { w: 1.15, d: 0.72, h: 8 },
     { top: body.top, left: glass.left, right: glass.right, outline: body.outline },
   );
+  // Фары в плоскости торца кузова: щитом они смотрели мимо машины.
   const lit = ctx.ambience.lampsOn;
-  const nose = shift(ctx.at, 1.05, 0, 8);
-  const tail = shift(ctx.at, -1.05, 0, 8);
-  ctx.painter.fill({ x: nose.x - 3, y: nose.y - 2, w: 5, h: 3 }, lit ? 0xfff0c0 : scale(0xe8e8e0, ctx.ambience.light));
-  ctx.painter.fill({ x: tail.x - 2, y: tail.y - 2, w: 5, h: 3 }, lit ? 0xff6a5c : scale(0x8f4a44, ctx.ambience.light));
+  panel(
+    ctx.painter,
+    ctx.at,
+    'y',
+    { span: 0.7, across: 1.07, top: 10, height: 3 },
+    lit ? 0xfff0c0 : scale(0xe8e8e0, ctx.ambience.light),
+  );
+  panel(
+    ctx.painter,
+    ctx.at,
+    'y',
+    { span: 0.7, across: -1.07, top: 10, height: 3 },
+    lit ? 0xff6a5c : scale(0x8f4a44, ctx.ambience.light),
+  );
 };
 
 const bin: Draw = (ctx) => {
   shade(ctx, 0.5, 0.5);
-  const metal = skin(ctx, 0x545a66);
-  boxAt(ctx.painter, ctx.at, { w: 0.5, d: 0.5, h: 12 }, metal);
+  boxAt(ctx.painter, ctx.at, { w: 0.5, d: 0.5, h: 12 }, skin(ctx, 0x545a66));
   boxAt(ctx.painter, shift(ctx.at, 0, 0, 12), { w: 0.62, d: 0.62, h: 2 }, skin(ctx, 0x6d7481));
 };
 
@@ -147,17 +74,19 @@ const crate: Draw = (ctx) => {
   shade(ctx, 0.6, 0.6);
   const wood = skin(ctx, ctx.variant % 2 === 0 ? 0xa8804a : 0x8f6a3f);
   boxAt(ctx.painter, ctx.at, { w: 0.6, d: 0.6, h: 11 }, wood);
-  ctx.painter.fill({ x: ctx.at.x - 6, y: ctx.at.y - 7, w: 12, h: 1 }, wood.left);
+  // Обвязка по обеим видимым граням, каждая в своей плоскости.
+  panel(ctx.painter, ctx.at, 'x', { span: 0.6, across: 0.3, top: 7, height: 1 }, wood.left);
+  panel(ctx.painter, ctx.at, 'y', { span: 0.6, across: 0.3, top: 7, height: 1 }, wood.right);
 };
 
 const planter: Draw = (ctx) => {
   shade(ctx, 0.7, 0.6);
   boxAt(ctx.painter, ctx.at, { w: 0.7, d: 0.6, h: 8 }, skin(ctx, 0xa89078));
-  const leaf = scale(0x4f9f5f, ctx.ambience.light);
-  const top = shift(ctx.at, 0, 0, 8);
-  ctx.painter.fill({ x: top.x - 7, y: top.y - 9, w: 14, h: 9 }, leaf);
-  ctx.painter.fill({ x: top.x - 5, y: top.y - 13, w: 10, h: 5 }, scale(leaf, 1.15));
-  ctx.painter.fill({ x: top.x - 2, y: top.y - 15, w: 4, h: 3 }, scale(0xe86a9a, ctx.ambience.light));
+  // Куст ярусами коробок: щитом он лежал бы поперёк кашпо.
+  const leaf = skin(ctx, 0x4f9f5f, 0.4);
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 8), { w: 0.62, d: 0.52, h: 7 }, leaf);
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 15), { w: 0.42, d: 0.34, h: 5 }, skin(ctx, 0x62b872, 0.4));
+  boxAt(ctx.painter, shift(ctx.at, 0.08, -0.05, 20), { w: 0.16, d: 0.14, h: 3 }, skin(ctx, 0xe86a9a, 0.3));
 };
 
 const flowerbed: Draw = (ctx) => {
@@ -165,18 +94,18 @@ const flowerbed: Draw = (ctx) => {
   boxAt(ctx.painter, ctx.at, { w: 1, d: 0.7, h: 4 }, skin(ctx, 0xb8ac98));
   patch(ctx, 0.86, 0.56, scale(0x4a7f42, ctx.ambience.light), 1, 4);
   for (let i = 0; i < 7; i += 1) {
-    const at = shift(ctx.at, -0.35 + (i % 4) * 0.22, -0.18 + Math.floor(i / 4) * 0.2, 5);
-    ctx.painter.fill(
-      { x: at.x - 1, y: at.y - 3, w: 2, h: 3 },
-      scale([0xffd35f, 0xff7fb8, 0xff5f5f][i % 3]!, ctx.ambience.light),
+    boxAt(
+      ctx.painter,
+      shift(ctx.at, -0.35 + (i % 4) * 0.22, -0.18 + Math.floor(i / 4) * 0.2, 4),
+      { w: 0.12, d: 0.12, h: 3 },
+      skin(ctx, [0xffd35f, 0xff7fb8, 0xff5f5f][i % 3]!, 0.3),
     );
   }
 };
 
 const table: Draw = (ctx) => {
   shade(ctx, 0.9, 0.7);
-  const legs = skin(ctx, 0x8f8a80);
-  boxAt(ctx.painter, ctx.at, { w: 0.18, d: 0.18, h: 10 }, legs);
+  boxAt(ctx.painter, ctx.at, { w: 0.18, d: 0.18, h: 10 }, skin(ctx, 0x8f8a80));
   boxAt(ctx.painter, shift(ctx.at, 0, 0, 10), { w: 0.95, d: 0.75, h: 2 }, skin(ctx, 0xd8d0c4));
 };
 
@@ -185,17 +114,11 @@ const CHAIR = [0xe8705f, 0x5fb8e8, 0xe8c45f];
 const deckchair: Draw = (ctx) => {
   shade(ctx, 0.8, 0.6);
   const cloth = skin(ctx, CHAIR[ctx.variant % CHAIR.length]!);
-  const frame = skin(ctx, 0xd8c8a8);
-  boxAt(ctx.painter, ctx.at, { w: 0.75, d: 0.5, h: 4 }, frame);
+  boxAt(ctx.painter, ctx.at, { w: 0.75, d: 0.5, h: 4 }, skin(ctx, 0xd8c8a8));
   boxAt(ctx.painter, shift(ctx.at, 0, 0, 4), { w: 0.8, d: 0.55, h: 2 }, cloth);
   // Спинка под наклоном: три ступеньки вместо диагонали.
   for (let i = 0; i < 3; i += 1) {
-    boxAt(
-      ctx.painter,
-      shift(ctx.at, 0, -0.12 - i * 0.1, 5 + i * 3),
-      { w: 0.72, d: 0.12, h: 4 },
-      cloth,
-    );
+    boxAt(ctx.painter, shift(ctx.at, 0, -0.12 - i * 0.1, 5 + i * 3), { w: 0.72, d: 0.12, h: 4 }, cloth);
   }
 };
 
@@ -207,36 +130,24 @@ const boat: Draw = (ctx) => {
   boxAt(ctx.painter, shift(ctx.at, -0.85, 0, 1), { w: 0.4, d: 0.4, h: 4 }, hull);
   boxAt(ctx.painter, shift(ctx.at, 0.85, 0, 1), { w: 0.4, d: 0.4, h: 4 }, hull);
   patch(ctx, 1.15, 0.5, scale(0x3a2f22, ctx.ambience.light), 1, 5);
-  const deck = shift(ctx.at, 0, 0, 5);
-  ctx.painter.fill({ x: deck.x - 1, y: deck.y - 28, w: 2, h: 28 }, scale(0x9a7a4a, ctx.ambience.light));
-  ctx.painter.fill({ x: deck.x - 7, y: deck.y - 26, w: 14, h: 2 }, scale(0x9a7a4a, ctx.ambience.light));
-};
-
-const busStop: Draw = (ctx) => {
-  shade(ctx, 2.2, 0.8);
-  const frame = skin(ctx, 0x39404d);
-  const glass = mix(scale(0x9fd0e8, ctx.ambience.light), ctx.ambience.skyLow, 0.35);
-  // Задняя стенка стеклом, крыша сверху, стойки по краям, лавка внутри.
-  boxAt(ctx.painter, shift(ctx.at, 0, -0.35), { w: 2.2, d: 0.1, h: 30 }, {
-    top: scale(glass, 1.1),
-    left: glass,
-    right: scale(glass, 0.9),
-  });
-  boxAt(ctx.painter, shift(ctx.at, -1.05, 0.3), { w: 0.16, d: 0.16, h: 30 }, frame);
-  boxAt(ctx.painter, shift(ctx.at, 1.05, 0.3), { w: 0.16, d: 0.16, h: 30 }, frame);
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 30), { w: 2.4, d: 0.9, h: 4 }, frame);
-  boxAt(ctx.painter, shift(ctx.at, 0, -0.1, 4), { w: 1.7, d: 0.3, h: 3 }, skin(ctx, 0xb08a52));
-  boxAt(ctx.painter, shift(ctx.at, -0.6, -0.1), { w: 0.12, d: 0.25, h: 4 }, frame);
-  boxAt(ctx.painter, shift(ctx.at, 0.6, -0.1), { w: 0.12, d: 0.25, h: 4 }, frame);
+  const rig = scale(0x9a7a4a, ctx.ambience.light);
+  mast(ctx.painter, shift(ctx.at, 0, 0, 5), 28, rig);
+  // Рей идёт вдоль корпуса, а не поперёк экрана.
+  panel(ctx.painter, ctx.at, 'x', { span: 0.9, top: 31, height: 2 }, rig);
 };
 
 const newsbox: Draw = (ctx) => {
   shade(ctx, 0.5, 0.4);
-  const shell = skin(ctx, 0x3f7fa8);
   boxAt(ctx.painter, ctx.at, { w: 0.2, d: 0.2, h: 6 }, skin(ctx, 0x4a4f58));
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 6), { w: 0.5, d: 0.4, h: 12 }, shell);
-  const top = shift(ctx.at, 0, 0, 12);
-  ctx.painter.fill({ x: top.x - 5, y: top.y - 4, w: 10, h: 5 }, scale(0xd8d4c8, ctx.ambience.light));
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 6), { w: 0.5, d: 0.4, h: 12 }, skin(ctx, 0x3f7fa8));
+  // Газета за стеклом — на лицевой грани ящика.
+  panel(
+    ctx.painter,
+    ctx.at,
+    'x',
+    { span: 0.34, across: 0.2, top: 15, height: 5 },
+    scale(0xd8d4c8, ctx.ambience.light),
+  );
 };
 
 const mailbox: Draw = (ctx) => {
@@ -247,8 +158,7 @@ const mailbox: Draw = (ctx) => {
 
 const bollard: Draw = (ctx) => {
   shade(ctx, 0.3, 0.3);
-  const iron = skin(ctx, 0x4a4f58);
-  boxAt(ctx.painter, ctx.at, { w: 0.22, d: 0.22, h: 11 }, iron);
+  boxAt(ctx.painter, ctx.at, { w: 0.22, d: 0.22, h: 11 }, skin(ctx, 0x4a4f58));
   boxAt(ctx.painter, shift(ctx.at, 0, 0, 11), { w: 0.3, d: 0.3, h: 2 }, skin(ctx, 0x6d7481));
 };
 
@@ -270,40 +180,37 @@ const towel: Draw = (ctx) => {
   boxAt(ctx.painter, shift(ctx.at, 0.6, 0.1), { w: 0.3, d: 0.26, h: 6 }, skin(ctx, 0xd8c8a8));
 };
 
+/**
+ * Велосипед: рама стоит вдоль своей оси, а колёса — тонкие диски в той же
+ * плоскости. Нарисованный щитом, он висел поперёк дороги и был первым,
+ * что выдавало плоский мир.
+ */
 const bike: Draw = (ctx) => {
   shade(ctx, 1, 0.4);
-  const iron = scale(0x2f3440, ctx.ambience.light);
+  const iron = skin(ctx, 0x2f3440, 0.3);
   const paint = scale(0x4f9fd8, ctx.ambience.light);
-  // Велосипед стоит боком: два колеса и рама щитом поверх тени.
-  for (const dx of [-9, 9]) {
-    ctx.painter.fill({ x: ctx.at.x + dx - 5, y: ctx.at.y - 12, w: 10, h: 2 }, iron);
-    ctx.painter.fill({ x: ctx.at.x + dx - 5, y: ctx.at.y - 2, w: 10, h: 2 }, iron);
-    ctx.painter.fill({ x: ctx.at.x + dx - 6, y: ctx.at.y - 11, w: 2, h: 9 }, iron);
-    ctx.painter.fill({ x: ctx.at.x + dx + 4, y: ctx.at.y - 11, w: 2, h: 9 }, iron);
+  const axis = ctx.facing;
+  const along = (a: number, lift: number): { dx: number; dy: number; lift: number } =>
+    axis === 'x' ? { dx: a, dy: 0, lift } : { dx: 0, dy: a, lift };
+
+  for (const a of [-0.34, 0.34]) {
+    const w = along(a, 0);
+    boxAt(
+      ctx.painter,
+      shift(ctx.at, w.dx, w.dy),
+      axis === 'x' ? { w: 0.42, d: 0.07, h: 11 } : { w: 0.07, d: 0.42, h: 11 },
+      iron,
+    );
   }
-  ctx.painter.fill({ x: ctx.at.x - 9, y: ctx.at.y - 11, w: 18, h: 2 }, paint);
-  ctx.painter.fill({ x: ctx.at.x - 2, y: ctx.at.y - 18, w: 2, h: 8 }, paint);
-  ctx.painter.fill({ x: ctx.at.x - 6, y: ctx.at.y - 19, w: 8, h: 2 }, iron);
-  ctx.painter.fill({ x: ctx.at.x + 5, y: ctx.at.y - 17, w: 6, h: 2 }, iron);
+  // Рама и седло: полотна в плоскости велосипеда.
+  panel(ctx.painter, ctx.at, axis, { span: 0.68, top: 14, height: 3 }, paint);
+  panel(ctx.painter, ctx.at, axis, { span: 0.12, along: -0.1, top: 21, height: 8 }, paint);
+  panel(ctx.painter, ctx.at, axis, { span: 0.28, along: -0.16, top: 22, height: 2 }, iron.left);
+  panel(ctx.painter, ctx.at, axis, { span: 0.24, along: 0.3, top: 20, height: 2 }, iron.top);
+  plate(ctx.painter, ctx.at, { w: 0.2, d: 0.2, dx: axis === 'x' ? -0.16 : 0, dy: axis === 'y' ? -0.16 : 0, lift: 22 }, iron.top);
 };
 
-const shelf: Draw = (ctx) => {
-  const wood = skin(ctx, 0x8a6a44);
-  boxAt(ctx.painter, ctx.at, { w: 1, d: 0.3, h: 30 }, wood);
-  for (let i = 0; i < 3; i += 1) {
-    const y = ctx.at.y - 26 + i * 9;
-    ctx.painter.fill({ x: ctx.at.x - 12, y, w: 24, h: 2 }, wood.top);
-    for (let k = 0; k < 3; k += 1) {
-      ctx.painter.fill(
-        { x: ctx.at.x - 10 + k * 7, y: y - 5, w: 4, h: 5 },
-        scale([0xd85f6a, 0x5fb8d8, 0xd8c45f][(i + k) % 3]!, ctx.ambience.light),
-      );
-    }
-  }
-};
-
-/** Мелочь, у которой есть объём. Остальное рисуется щитом, как прежде. */
-export const ISO_PROPS: Partial<Record<DecorKind, Draw>> = {
+export const STREET_PROPS = {
   bench,
   car,
   bin,
@@ -313,256 +220,10 @@ export const ISO_PROPS: Partial<Record<DecorKind, Draw>> = {
   table,
   deckchair,
   boat,
-  busStop,
   newsbox,
   mailbox,
   bollard,
   hydrant,
   towel,
   bike,
-  shelf,
 };
-
-const AWNING = [0xe85f6a, 0x4f9fd8, 0xe8c45f, 0x5fc9a8];
-
-/** Торговый лоток: прилавок, полосатый навес и товар на нём. */
-const stall: Draw = (ctx) => {
-  shade(ctx, 2.2, 1.4);
-  const wood = skin(ctx, 0xa8804a);
-  const post = skin(ctx, 0x6a4f34);
-  const cloth = AWNING[ctx.variant % AWNING.length]!;
-
-  boxAt(ctx.painter, ctx.at, { w: 2, d: 1, h: 16 }, wood);
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 16), { w: 2.2, d: 1.15, h: 3 }, skin(ctx, 0xd8c8a8));
-  // Товар на прилавке: пятна цвета, по которым лоток и узнают.
-  for (let i = 0; i < 6; i += 1) {
-    const at = shift(ctx.at, -0.7 + (i % 3) * 0.7, -0.25 + Math.floor(i / 3) * 0.5, 19);
-    ctx.painter.fill(
-      { x: at.x - 4, y: at.y - 5, w: 8, h: 5 },
-      scale([0xe8705f, 0xe8c45f, 0x7fc95f, 0xd85f9a][i % 4]!, ctx.ambience.light),
-    );
-  }
-  // Стойки и полосатый навес со скатом к покупателю.
-  for (const [dx, dy] of [[-0.95, -0.5], [0.95, -0.5], [-0.95, 0.5], [0.95, 0.5]] as const) {
-    boxAt(ctx.painter, shift(ctx.at, dx, dy), { w: 0.12, d: 0.12, h: 34 }, post);
-  }
-  const tone = scale(cloth, ctx.ambience.light);
-  slope(ctx, 2.5, 1.6, 42, 32, scale(tone, 0.86));
-  for (let i = 0; i < 5; i += 1) {
-    const from = -1.25 + i * 0.5;
-    slopeStripe(ctx, from, from + 0.25, 1.6, 42, 32, tone);
-  }
-  // Кромка навеса с фестонами.
-  for (let i = 0; i < 9; i += 1) {
-    const at = shift(ctx.at, -1.1 + i * 0.28, 0.8, 32);
-    ctx.painter.fill({ x: at.x - 3, y: at.y, w: 6, h: 3 }, scale(tone, i % 2 === 0 ? 1.2 : 0.8));
-  }
-};
-
-/** Полоса ткани на скате: узкий четырёхугольник вдоль ската. */
-function slopeStripe(
-  ctx: IsoProp,
-  fromX: number,
-  toX: number,
-  d: number,
-  far: number,
-  near: number,
-  color: number,
-): void {
-  const c = (sx: number, sy: number, lift: number): ScreenPoint => ({
-    x: ctx.at.x + (sx - sy) * TILE.halfW,
-    y: ctx.at.y + (sx + sy) * TILE.halfH - lift,
-  });
-  quad(
-    ctx.painter,
-    [c(fromX, -d / 2, far), c(toX, -d / 2, far), c(toX, d / 2, near), c(fromX, d / 2, near)],
-    color,
-  );
-}
-
-/** Киоск: будка с окошком и вывеской. */
-const kiosk: Draw = (ctx) => {
-  shade(ctx, 1.4, 1.2);
-  const shell = skin(ctx, 0x6a7f9a);
-  boxAt(ctx.painter, ctx.at, { w: 1.3, d: 1.1, h: 40 }, shell);
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 40), { w: 1.55, d: 1.35, h: 4 }, skin(ctx, 0x3f4a5c));
-  const front = shift(ctx.at, 0, 0.55, 16);
-  const glass = mix(scale(0x9fd0e8, ctx.ambience.light), ctx.ambience.skyLow, 0.3);
-  ctx.painter.fill({ x: front.x - 11, y: front.y - 16, w: 22, h: 14 }, glass);
-  ctx.painter.fill({ x: front.x - 11, y: front.y - 16, w: 22, h: 2 }, scale(glass, 1.4));
-  ctx.painter.fill({ x: front.x - 13, y: front.y - 24, w: 26, h: 6 }, scale(0xe8c45f, ctx.ambience.light));
-};
-
-/** Хижина у воды: соломенная крыша на столбах и стойка под ней. */
-const hut: Draw = (ctx) => {
-  shade(ctx, 3.2, 2.4);
-  const post = skin(ctx, 0x8a6a3f);
-  const straw = scale(0xd8b45f, ctx.ambience.light);
-
-  for (const [dx, dy] of [[-1.4, -1], [1.4, -1], [-1.4, 1], [1.4, 1]] as const) {
-    boxAt(ctx.painter, shift(ctx.at, dx, dy), { w: 0.2, d: 0.2, h: 40 }, post);
-  }
-  boxAt(ctx.painter, shift(ctx.at, 0, 0.6, 12), { w: 2.4, d: 0.7, h: 14 }, skin(ctx, 0xb08a52));
-  // Соломенная крыша: несколько ярусов, сужающихся кверху.
-  for (let i = 0; i < 6; i += 1) {
-    boxAt(
-      ctx.painter,
-      shift(ctx.at, 0, 0, 40 + i * 3),
-      { w: 3.4 - i * 0.45, d: 2.6 - i * 0.34, h: 4 },
-      {
-        top: scale(straw, 1.16 - i * 0.02),
-        left: scale(straw, 0.7),
-        right: scale(straw, 0.9),
-        outline: mix(straw, 0x2a1f10, 0.6),
-      },
-    );
-  }
-};
-
-const SHADE = [0xe8705f, 0x5fc9a8, 0xe8c45f];
-
-/** Зонт: шест и купол конусом из ромбов, а не плоский гриб. */
-function canopy(ctx: IsoProp, radius: number, base: number, tone: number): void {
-  const layers = 5;
-  for (let i = 0; i < layers; i += 1) {
-    const t = i / layers;
-    slope(
-      ctx,
-      radius * 2 * (1 - t * 0.78),
-      radius * 2 * (1 - t * 0.78),
-      base + i * 4 + 4,
-      base + i * 4,
-      scale(tone, 0.9 + t * 0.34),
-    );
-  }
-  // Фестоны по кромке купола.
-  for (let i = 0; i < 10; i += 1) {
-    const at = shift(ctx.at, -radius + (i * radius * 2) / 9, radius * 0.55, base);
-    ctx.painter.fill({ x: at.x - 2, y: at.y, w: 4, h: 3 }, scale(tone, i % 2 === 0 ? 1.15 : 0.82));
-  }
-}
-
-const umbrella: Draw = (ctx) => {
-  shade(ctx, 0.5, 0.5);
-  const tone = scale(SHADE[ctx.variant % SHADE.length]!, ctx.ambience.light);
-  ctx.painter.fill(
-    { x: ctx.at.x - 1, y: ctx.at.y - 44, w: 2, h: 44 },
-    scale(0xd8c8a8, ctx.ambience.light),
-  );
-  canopy(ctx, 1.1, 44, tone);
-};
-
-const PARASOL = [0xe8705f, 0xe8c25f, 0x5fb8a8];
-
-/** Зонт со столиком: терраса кафе узнаётся именно по ним. */
-const parasol: Draw = (ctx) => {
-  shade(ctx, 0.9, 0.7);
-  const tone = scale(PARASOL[ctx.variant % PARASOL.length]!, ctx.ambience.light);
-  boxAt(ctx.painter, ctx.at, { w: 0.18, d: 0.18, h: 11 }, skin(ctx, 0x8f8a80));
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 11), { w: 0.9, d: 0.7, h: 2 }, skin(ctx, 0xd8d0c4));
-  ctx.painter.fill(
-    { x: ctx.at.x - 1, y: ctx.at.y - 46, w: 2, h: 46 },
-    scale(0x8f7a5a, ctx.ambience.light),
-  );
-  canopy(ctx, 1.15, 46, tone);
-};
-
-const NEON = [0x2fd8a8, 0x7f5fff, 0xff5fb8, 0x5fc9ff];
-
-/**
- * Пуф в клубе: низкий блок со светящейся кромкой. Именно из таких
- * островков света и собран зал в Miami Nights.
- */
-const seat: Draw = (ctx) => {
-  shade(ctx, 1.4, 1);
-  const glow = NEON[ctx.variant % NEON.length]!;
-  const body = mix(glow, 0x14121f, 0.55);
-  boxAt(ctx.painter, ctx.at, { w: 1.3, d: 0.95, h: 12 }, {
-    top: scale(body, 1.35),
-    left: scale(body, 0.6),
-    right: scale(body, 0.85),
-    outline: 0x0b0a12,
-  });
-  // Светящаяся кромка по верхнему ребру и отсвет на полу.
-  const top = shift(ctx.at, 0, 0, 12);
-  ctx.painter.fill({ x: top.x - 20, y: top.y - 1, w: 40, h: 2 }, glow, 0.85);
-  patch(ctx, 2, 1.6, glow, 0.14);
-};
-
-/** Светодиодная стена: узор из ярких клеток, по которому узнают клуб. */
-const screen: Draw = (ctx) => {
-  const at = ctx.at;
-  ctx.painter.fill({ x: at.x - 30, y: at.y - 54, w: 60, h: 48 }, 0x0d0b16);
-  for (let i = 0; i < 48; i += 1) {
-    const cx = at.x - 27 + (i % 8) * 7;
-    const cy = at.y - 51 + Math.floor(i / 8) * 8;
-    const on = (i * 7 + ctx.variant * 3) % 5 !== 0;
-    ctx.painter.fill(
-      { x: cx, y: cy, w: 5, h: 6 },
-      on ? NEON[(i + ctx.variant) % NEON.length]! : 0x1a1730,
-      on ? 0.9 : 1,
-    );
-  }
-  ctx.painter.fill({ x: at.x - 31, y: at.y - 55, w: 62, h: 2 }, 0x3a3556);
-};
-
-Object.assign(ISO_PROPS, { stall, kiosk, hut, umbrella, parasol, seat, screen });
-
-/** Барный стул: ножка и круглое сиденье. */
-const stool: Draw = (ctx) => {
-  shade(ctx, 0.45, 0.45);
-  const iron = skin(ctx, 0x4a505c);
-  boxAt(ctx.painter, ctx.at, { w: 0.16, d: 0.16, h: 13 }, iron);
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 13), { w: 0.5, d: 0.5, h: 3 }, skin(ctx, 0x8f5a4a));
-};
-
-/** Стойка: длинный прилавок со столешницей и цоколем. */
-const counter: Draw = (ctx) => {
-  shade(ctx, 2.2, 1);
-  const body = skin(ctx, 0x5a4a6a);
-  boxAt(ctx.painter, ctx.at, { w: 2.1, d: 0.9, h: 18 }, body);
-  boxAt(ctx.painter, shift(ctx.at, 0, 0, 18), { w: 2.35, d: 1.05, h: 3 }, skin(ctx, 0xd8c8a8));
-  // Подсветка по цоколю: стойка в клубе всегда светится снизу.
-  const base = shift(ctx.at, 0, 0.5, 3);
-  ctx.painter.fill({ x: base.x - 32, y: base.y - 2, w: 64, h: 2 }, 0x5fd8ff, 0.55);
-};
-
-/** Колонка: чёрный столб с динамиками. Без неё сцена не звучит. */
-const speaker: Draw = (ctx) => {
-  shade(ctx, 0.7, 0.7);
-  const shell = skin(ctx, 0x232733);
-  boxAt(ctx.painter, ctx.at, { w: 0.7, d: 0.7, h: 44 }, shell);
-  const front = shift(ctx.at, 0, 0.35, 0);
-  for (const dy of [10, 24, 36]) {
-    ctx.painter.fill({ x: front.x - 7, y: front.y - dy, w: 14, h: dy === 36 ? 6 : 10 }, 0x14161d);
-    ctx.painter.fill({ x: front.x - 5, y: front.y - dy + 2, w: 10, h: dy === 36 ? 2 : 6 }, 0x3a4050);
-  }
-};
-
-/** Стойка с гантелями: по ней спортзал узнают сразу. */
-const weights: Draw = (ctx) => {
-  shade(ctx, 1.6, 0.9);
-  const frame = skin(ctx, 0x3f4450);
-  boxAt(ctx.painter, ctx.at, { w: 1.5, d: 0.7, h: 6 }, frame);
-  boxAt(ctx.painter, shift(ctx.at, 0, -0.2, 6), { w: 1.5, d: 0.25, h: 10 }, frame);
-  for (let i = 0; i < 5; i += 1) {
-    const at = shift(ctx.at, -0.55 + i * 0.28, 0.1, 8);
-    ctx.painter.fill({ x: at.x - 5, y: at.y - 5, w: 10, h: 5 }, scale(0x1e2029, ctx.ambience.light));
-    ctx.painter.fill({ x: at.x - 2, y: at.y - 4, w: 4, h: 3 }, scale(0x8f96a8, ctx.ambience.light));
-  }
-};
-
-/** Окно в стене помещения: то же небо, что снаружи. */
-const windowPane: Draw = (ctx) => {
-  const at = ctx.at;
-  const glass = mix(scale(0x9fd0e8, ctx.ambience.light), ctx.ambience.skyLow, 0.25);
-  ctx.painter.fill({ x: at.x - 26, y: at.y - 52, w: 52, h: 44 }, scale(0x6a5a48, ctx.ambience.light));
-  ctx.painter.fill({ x: at.x - 23, y: at.y - 49, w: 46, h: 38 }, glass);
-  ctx.painter.fill({ x: at.x - 23, y: at.y - 49, w: 46, h: 12 }, scale(glass, 1.12));
-  ctx.painter.fill({ x: at.x - 1, y: at.y - 49, w: 2, h: 38 }, scale(0x6a5a48, ctx.ambience.light));
-  ctx.painter.fill({ x: at.x - 23, y: at.y - 31, w: 46, h: 2 }, scale(0x6a5a48, ctx.ambience.light));
-  // Отсвет на полу: без него окно приклеено к стене.
-  patch(ctx, 2.4, 1.6, glass, 0.16);
-};
-
-Object.assign(ISO_PROPS, { stool, counter, speaker, weights, window: windowPane });

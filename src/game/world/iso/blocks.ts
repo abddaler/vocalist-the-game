@@ -348,17 +348,20 @@ function drawWallDoor(ctx: BlockPaint, block: IsoBlock, door: WorldRect): void {
 
   const height = 34;
   const top = lift - height;
-  const shift = (p: ScreenPoint): ScreenPoint => ({ x: p.x, y: p.y + top });
-
-  face(painter, shift(from), shift(to), height, scale(frame, 0.5));
-  const inset = (p: ScreenPoint, k: number): ScreenPoint => ({
+  const drop = (p: ScreenPoint, k = 0): ScreenPoint => ({ x: p.x, y: p.y + top + k });
+  const inset = (p: ScreenPoint, k: number, dy = 0): ScreenPoint => ({
     x: p.x + (to.x - from.x) * k,
-    y: p.y + (to.y - from.y) * k + top,
+    y: p.y + (to.y - from.y) * k + top + dy,
   });
-  face(painter, inset(from, 0.12), inset(to, -0.12), height - 3, leaf);
-  face(painter, inset(from, 0.12), inset(to, -0.12), 2, scale(leaf, 1.3));
-  face(painter, shift(from), shift(to), 2, scale(frame, 1.3));
-  // Ручка на створке.
-  const handle = inset(from, 0.7);
-  painter.fill({ x: handle.x - 1, y: handle.y + height - 16, w: 3, h: 3 }, scale(0xd8c078, ambience.light));
+
+  // Наличник, откос вглубь стены и створка: без откоса дверь читается
+  // доской, приставленной к стене, а не проёмом в ней.
+  face(painter, drop(from), drop(to), height, scale(frame, 0.5));
+  face(painter, inset(from, 0.1), inset(to, -0.1), height - 2, mix(frame, 0x0d0b14, 0.55));
+  face(painter, inset(from, 0.16, 2), inset(to, -0.16, 2), height - 5, leaf);
+  face(painter, inset(from, 0.16, 2), inset(to, -0.16, 2), 2, scale(leaf, 1.35));
+  face(painter, drop(from), drop(to), 2, scale(frame, 1.3));
+  // Ручка лежит в плоскости створки, как и всё остальное на ней.
+  const grip = inset(from, 0.66, height - 18);
+  face(painter, grip, inset(from, 0.78, height - 18), 3, scale(0xd8c078, ambience.light));
 }

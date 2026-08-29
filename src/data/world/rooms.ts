@@ -36,6 +36,21 @@ const decor = (kind: DecorDef['kind'], x: number, y: number, variant?: number): 
   ...(variant === undefined ? {} : { variant }),
 });
 
+/**
+ * Предмет на стене: он лежит в её плоскости. Задняя стена идёт вдоль x,
+ * боковая — вдоль y, и повешенный поперёк экран или афиша сразу читаются
+ * наклейкой, а не частью комнаты.
+ */
+const onBackWall = (kind: DecorDef['kind'], x: number, variant?: number): DecorDef => ({
+  ...decor(kind, x, 1.1, variant),
+  facing: 'x',
+});
+
+const onSideWall = (kind: DecorDef['kind'], y: number, variant?: number): DecorDef => ({
+  ...decor(kind, 1.1, y, variant),
+  facing: 'y',
+});
+
 /** Прямоугольная зона другого покрытия внутри комнаты. */
 interface Zone {
   readonly kind: TileKind;
@@ -103,9 +118,9 @@ export const ROOMS: readonly RoomDef[] = [
     point('kitchen', 'point.kitchen', { x: 14, y: 2, w: 2, h: 1 }, 0x5a4f3d, 'kitchen', ['tea_regimen']),
     point('sofa', 'point.sofa', { x: 8.5, y: 6.5, w: 2, h: 1 }, 0x4c4258, 'sofa', ['home_rest']),
   ], [
-    decor('window', 11.5, 1.1),
-    decor('window', 17.5, 1.1),
-    decor('poster', 5.5, 1.1, 1),
+    onBackWall('window', 11.5),
+    onBackWall('window', 17.5),
+    onBackWall('poster', 5.5, 1),
     decor('shelf', 18.5, 3.5),
     decor('table', 11.5, 9.5),
     decor('stool', 13.5, 9.5),
@@ -121,9 +136,9 @@ export const ROOMS: readonly RoomDef[] = [
     point('teacher_mid', 'point.teacherMid', { x: 9, y: 2.5, w: 2, h: 1 }, 0x6b5a80, 'piano', lessonsOf('mid')),
     point('teacher_master', 'point.teacherMaster', { x: 15, y: 2.5, w: 2, h: 1 }, 0x8a6ea3, 'piano', lessonsOf('master')),
   ], [
-    decor('window', 6.5, 1.1),
-    decor('window', 13.5, 1.1),
-    decor('poster', 19.2, 4.5, 0),
+    onBackWall('window', 6.5),
+    onBackWall('window', 13.5),
+    onSideWall('poster', 4.5, 0),
     decor('stool', 4.5, 4.5),
     decor('stool', 10.5, 4.5),
     decor('stool', 16.5, 4.5),
@@ -142,8 +157,8 @@ export const ROOMS: readonly RoomDef[] = [
   ], [
     decor('speaker', 4.5, 2.5),
     decor('speaker', 15.5, 2.5),
-    decor('poster', 2.5, 1.1, 2),
-    decor('poster', 18.2, 3.5, 3),
+    onBackWall('poster', 2.5, 2),
+    onSideWall('poster', 3.5, 3),
     decor('crate', 2.6, 11.5, 0),
     decor('crate', 3.5, 10.8, 1),
     decor('crate', 18.5, 10.5, 0),
@@ -171,8 +186,8 @@ export const ROOMS: readonly RoomDef[] = [
     decor('stool', 10.5, 11.2),
     decor('planter', 17.5, 2.5),
     decor('planter', 17.5, 9.5),
-    decor('window', 16.5, 1.1),
-    decor('poster', 19.2, 6.5, 3),
+    onBackWall('window', 16.5),
+    onSideWall('poster', 6.5, 3),
     decor('speaker', 6.5, 1.8),
     decor('speaker', 13.5, 1.8),
   ]),
@@ -183,8 +198,8 @@ export const ROOMS: readonly RoomDef[] = [
     point('open_mic', 'point.openMic', { x: 3.5, y: 2.5, w: 2, h: 2 }, 0x74468a, 'stage', [], { venues: ['bar_stage'] }),
     point('main_stage', 'point.mainStage', { x: 13, y: 2, w: 3, h: 2 }, 0x9a4fb8, 'stage', [], { venues: ['club_stage'] }),
   ], [
-    decor('screen', 9.5, 1.1, 0),
-    decor('screen', 17.5, 1.1, 2),
+    onBackWall('screen', 9.5, 0),
+    onBackWall('screen', 17.5, 2),
     decor('speaker', 11.5, 1.8),
     decor('speaker', 17.5, 1.8),
     decor('stool', 2.5, 9.8),
@@ -196,7 +211,7 @@ export const ROOMS: readonly RoomDef[] = [
     decor('seat', 16.5, 11.5, 3),
     decor('table', 13.5, 8.5),
     decor('bin', 18.5, 12.5),
-    decor('poster', 19.2, 4.5, 1),
+    onSideWall('poster', 4.5, 1),
   ]),
 
   // — Студия звукозаписи: кабина за стеклом, пульт напротив, стойки —
@@ -213,7 +228,7 @@ export const ROOMS: readonly RoomDef[] = [
     decor('bench', 11.5, 9.5),
     decor('planter', 18.5, 7.5),
     decor('bin', 17.5, 12.5),
-    decor('poster', 8.5, 1.1, 2),
+    onBackWall('poster', 8.5, 2),
   ]),
 
   // — Магазин одежды: вешалки, примерочная, касса у входа —
@@ -228,7 +243,7 @@ export const ROOMS: readonly RoomDef[] = [
     decor('shelf', 9.5, 1.2),
     decor('shelf', 18.5, 2.5),
     decor('shelf', 18.5, 5.5),
-    decor('window', 16.5, 1.1),
+    onBackWall('window', 16.5),
     decor('bench', 12.5, 9.5),
     decor('planter', 17.5, 9.5),
     decor('planter', 2.2, 5.5),
@@ -240,7 +255,7 @@ export const ROOMS: readonly RoomDef[] = [
     point('exam_chair', 'point.examChair', { x: 5, y: 2.5, w: 1, h: 1 }, 0x477a5c, 'chair', ['doctor_visit']),
     point('prevention', 'point.prevention', { x: 13, y: 2.5, w: 1, h: 1 }, 0x3f6b52, 'chair', ['checkup']),
   ], [
-    decor('window', 9.5, 1.1),
+    onBackWall('window', 9.5),
     decor('shelf', 17.5, 1.5),
     decor('shelf', 18.5, 4.5),
     decor('bench', 4.5, 9.5),
@@ -250,7 +265,7 @@ export const ROOMS: readonly RoomDef[] = [
     decor('stool', 6.5, 4.5),
     decor('stool', 14.5, 4.5),
     decor('bin', 18.5, 12.5),
-    decor('poster', 12.5, 1.1, 1),
+    onBackWall('poster', 12.5, 1),
   ]),
 
   // — Спортзал: дорожка, стойка с гантелями, зеркальная стена —
@@ -259,9 +274,9 @@ export const ROOMS: readonly RoomDef[] = [
   ], [
     decor('weights', 12.5, 3.5),
     decor('weights', 16.5, 3.5),
-    decor('window', 9.5, 1.1),
-    decor('poster', 3.5, 1.1, 3),
-    decor('poster', 19.2, 5.5, 0),
+    onBackWall('window', 9.5),
+    onBackWall('poster', 3.5, 3),
+    onSideWall('poster', 5.5, 0),
     decor('bench', 4.5, 8.5),
     decor('bench', 7.5, 8.5),
     decor('bench', 12.5, 11.5),

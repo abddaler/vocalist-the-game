@@ -335,6 +335,26 @@ describe('комнаты локаций', () => {
     }
   });
 
+  /**
+   * Настенное — окно, экран, афиша — обязано висеть в плоскости стены и
+   * вплотную к ней. Повешенное посреди комнаты, оно рисуется полотном в
+   * пустоте; повешенное поперёк — читается наклейкой, приклеенной к кадру.
+   */
+  it('настенное висит на стене и вдоль неё', () => {
+    const onWall = new Set(['window', 'screen', 'poster']);
+    for (const room of ROOMS) {
+      for (const item of room.decor) {
+        if (!onWall.has(item.kind)) continue;
+        const where = `${room.locationId}/${item.kind} (${item.x}, ${item.y})`;
+        expect(item.facing, where).toBeDefined();
+        // Задняя стена идёт вдоль x у y = 1, боковая — вдоль y у x = 1.
+        const distance = item.facing === 'x' ? item.y - 1 : item.x - 1;
+        expect(distance, where).toBeGreaterThanOrEqual(0);
+        expect(distance, where).toBeLessThanOrEqual(0.5);
+      }
+    }
+  });
+
   it('все дела игры вообще где-то стоят', () => {
     const placed = new Set([
       ...ROOMS.flatMap((room) => room.points.flatMap((p) => p.activities)),

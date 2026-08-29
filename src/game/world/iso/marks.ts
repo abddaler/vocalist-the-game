@@ -11,6 +11,7 @@ import { heightAt } from './height';
 import { TILE } from './project';
 import type { ScreenPoint } from './project';
 import { boxAt } from './shapes';
+import { isoAt, panel, plate } from './planes';
 import type { IsoScene } from './scene';
 import { centerOf } from './walk';
 import type { Piece } from './people';
@@ -74,7 +75,11 @@ export function markPieces(
     // Подпись поверх всего: она нужна, чтобы прочесть, а не чтобы стоять
     // в очереди по глубине.
     if (active && target.kind === 'point') {
-      pieces.push({ depth: Number.POSITIVE_INFINITY, draw: () => drawCaption(painter, at, target) });
+      pieces.push({
+        depth: Number.POSITIVE_INFINITY,
+        over: true,
+        draw: () => drawCaption(painter, at, target),
+      });
     }
 
     hotspots.add({
@@ -90,11 +95,10 @@ export function markPieces(
 /** Подсветка порога, когда игрок рядом с дверью. */
 function drawDoorGlow(painter: Painter, at: ScreenPoint, ambience: Ambience): void {
   const glow = ambience.lampsOn ? 0xffd98f : COLORS.borderFocus;
+  // Свет лужицей на земле: полоски поперёк экрана висели над порогом.
   for (let i = 0; i < 3; i += 1) {
-    const w = 26 - i * 6;
-    painter.fill({ x: at.x - w / 2, y: at.y - 3 - i * 2, w, h: 2 }, glow, 0.3 - i * 0.08);
+    plate(painter, at, { w: 1.7 - i * 0.45, d: 1.7 - i * 0.45 }, glow, 0.18 + i * 0.08);
   }
-  painter.fill({ x: at.x - 9, y: at.y - 2, w: 18, h: 2 }, glow, 0.5);
 }
 
 /**
@@ -109,10 +113,11 @@ function drawDoorstep(painter: Painter, at: ScreenPoint, active: boolean, ambien
     right: scale(stone, 0.74),
     outline: mix(stone, 0x0d0b14, 0.55),
   });
+  // Стрелка лежит на коврике и сужается к двери: галочка в осях экрана
+  // висела над порогом ярлыком, а не указывала на него.
   const tip = active ? COLORS.borderFocus : COLORS.accent;
-  for (let i = 0; i < 5; i += 1) {
-    painter.fill({ x: at.x - 5 + i, y: at.y - 12 + i, w: 2, h: 1 }, tip);
-    painter.fill({ x: at.x + 4 - i, y: at.y - 12 + i, w: 2, h: 1 }, tip);
+  for (let i = 0; i < 4; i += 1) {
+    plate(painter, at, { w: 0.62 - i * 0.14, d: 0.12, dy: 0.18 - i * 0.14, lift: 3 }, tip);
   }
 }
 
@@ -126,21 +131,42 @@ function drawGate(
 ): void {
   const stone = scale(0x9aa0b0, ambience.light);
   const height = 46;
-  const span = Math.max(1, depth) * TILE.halfW;
+  const half = Math.max(1, depth) / 2;
+  const pier = {
+    top: scale(stone, 1.2),
+    left: scale(stone, 0.7),
+    right: scale(stone, 0.95),
+    outline: mix(stone, 0x0d0b14, 0.5),
+  };
 
-  for (const dx of [-span, span]) {
-    painter.fill({ x: at.x + dx - 3, y: at.y - height, w: 6, h: height }, stone);
-    painter.fill({ x: at.x + dx + 1, y: at.y - height, w: 2, h: height }, scale(stone, 0.7));
-    painter.fill({ x: at.x + dx - 4, y: at.y - height - 3, w: 8, h: 3 }, scale(stone, 1.2));
+  for (const dy of [-half, half]) {
+    boxAt(painter, isoAt(at, 0, dy), { w: 0.34, d: 0.34, h: height }, pier);
+    boxAt(painter, isoAt(at, 0, dy, height), { w: 0.5, d: 0.5, h: 3 }, {
+      ...pier,
+      top: scale(stone, 1.4),
+    });
   }
-  painter.fill({ x: at.x - span - 4, y: at.y - height - 8, w: span * 2 + 8, h: 6 }, scale(stone, 1.1));
-  painter.fill({ x: at.x - span - 4, y: at.y - height - 8, w: span * 2 + 8, h: 2 }, scale(stone, 1.4));
+  boxAt(painter, isoAt(at, 0, 0, height + 3), { w: 0.5, d: half * 2 + 0.5, h: 6 }, {
+    ...pier,
+    top: scale(stone, 1.45),
+  });
 
-  // Стрелка на перекладине: по ней читается, что здесь выход.
+  // Стрелка на перекладине: она лежит в плоскости створа.
   const tip = active ? COLORS.borderFocus : COLORS.accent;
   for (let i = 0; i < 5; i += 1) {
-    painter.fill({ x: at.x - 6 + i, y: at.y - height - 6 + i, w: 2, h: 1 }, tip);
-    painter.fill({ x: at.x - 6 + i, y: at.y - height - 2 - i, w: 2, h: 1 }, tip);
+    panel(
+      painter,
+      at,
+      'y',
+      {
+        span: 0.16,
+        along: -0.34 + i * 0.17,
+        across: 0.26,
+        top: height + 8 - Math.abs(i - 2) * 2,
+        height: 2,
+      },
+      tip,
+    );
   }
 }
 
