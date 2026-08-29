@@ -346,7 +346,7 @@ function drawWallDoor(ctx: BlockPaint, block: IsoBlock, door: WorldRect): void {
     ? at(ctx, block.rect.x + block.rect.w, door.y + 1, lift)
     : at(ctx, door.x + 1, block.rect.y + block.rect.h, lift);
 
-  const height = 34;
+  const height = 46;
   const top = lift - height;
   const drop = (p: ScreenPoint, k = 0): ScreenPoint => ({ x: p.x, y: p.y + top + k });
   const inset = (p: ScreenPoint, k: number, dy = 0): ScreenPoint => ({

@@ -12,7 +12,7 @@ import type { DecorDef, IsoMapDef, RoomDef, RoomPointDef, TileKind, WorldRect } 
 const ROOM_W = 20;
 const ROOM_D = 14;
 /** Высота стен комнаты на экране. */
-const WALL_H = 52;
+const WALL_H = 68;
 /** Порог у левой стены: дверь врезана в неё, а не стоит посреди пола. */
 const EXIT: WorldRect = { x: 1, y: ROOM_D - 3, w: 1, h: 1 };
 

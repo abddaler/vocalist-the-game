@@ -130,7 +130,9 @@ export function inhabitantPieces(
  */
 function drawNamePlate(painter: Painter, at: ScreenPoint, nameKey: string): void {
   const text = t(nameKey);
-  const plate = { x: Math.round(at.x) - 40, y: Math.round(at.y) - 32, w: 80, h: 11 };
+  // Табличка висит над головой, а не поперёк груди: высота кадра —
+  // единственное, откуда известно, где у человека макушка.
+  const plate = { x: Math.round(at.x) - 40, y: Math.round(at.y) - ACTOR_SPRITE.height - 10, w: 80, h: 11 };
   // Подложка идёт первой: порядок вызовов — это порядок слоёв, и
   // нарисованная после текста плашка просто закрыла бы его.
   const width = Math.ceil(painter.measure(text)) + 5;

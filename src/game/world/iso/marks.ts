@@ -107,7 +107,7 @@ function drawDoorGlow(painter: Painter, at: ScreenPoint, ambience: Ambience): vo
  */
 function drawDoorstep(painter: Painter, at: ScreenPoint, active: boolean, ambience: Ambience): void {
   const stone = scale(mix(ambience.pavement, 0xffffff, 0.24), ambience.light);
-  boxAt(painter, at, { w: 0.95, d: 0.95, h: 2 }, {
+  boxAt(painter, at, { w: 0.95, d: 0.95, h: 3 }, {
     top: scale(stone, 0.9),
     left: scale(stone, 0.6),
     right: scale(stone, 0.74),
@@ -117,7 +117,7 @@ function drawDoorstep(painter: Painter, at: ScreenPoint, active: boolean, ambien
   // висела над порогом ярлыком, а не указывала на него.
   const tip = active ? COLORS.borderFocus : COLORS.accent;
   for (let i = 0; i < 4; i += 1) {
-    plate(painter, at, { w: 0.62 - i * 0.14, d: 0.12, dy: 0.18 - i * 0.14, lift: 3 }, tip);
+    plate(painter, at, { w: 0.62 - i * 0.14, d: 0.12, dy: 0.18 - i * 0.14, lift: 4 }, tip);
   }
 }
 
@@ -130,7 +130,7 @@ function drawGate(
   ambience: Ambience,
 ): void {
   const stone = scale(0x9aa0b0, ambience.light);
-  const height = 46;
+  const height = 60;
   const half = Math.max(1, depth) / 2;
   const pier = {
     top: scale(stone, 1.2),
@@ -173,7 +173,7 @@ function drawGate(
 /** Подпись у цели, к которой подошли. */
 function drawCaption(painter: Painter, at: ScreenPoint, target: WorldTarget): void {
   const text = t(target.nameKey);
-  const caption = { x: at.x - 50, y: at.y - 52, w: 100, h: 12 };
+  const caption = { x: at.x - 50, y: at.y - 68, w: 100, h: 12 };
   // Плашка первой, надпись поверх: порядок вызовов — это порядок слоёв.
   const width = Math.ceil(painter.measure(text)) + 6;
   painter.fill(
