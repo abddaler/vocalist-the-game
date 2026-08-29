@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FONT_METRICS, pixelFont, wrapText } from '../font';
+import { FONT_METRICS, measureLine, pixelFont, wrapText } from '../font';
 import { COLORS } from '../theme';
 import type { Rect } from './Hotspots';
 
@@ -21,37 +21,69 @@ export interface Label {
  * Немедленный режим отрисовки: экран перерисовывается целиком при каждом
  * изменении состояния. При 480x270 объектов десятки, так что это дешевле
  * и куда понятнее, чем ручная синхронизация дерева виджетов.
+ *
+ * Порядок вызовов — это порядок слоёв. Раньше вся заливка шла в одну
+ * Graphics, а спрайты и надписи добавлялись в контейнер после неё, и
+ * потому всегда оказывались сверху: человек стоял поверх дерева, за
+ * которым прячется, и поверх машины, из-за которой выходит. Теперь
+ * спрайт разрезает поток заливки — то, что нарисовано после него, ложится
+ * поверх, а то, что до, остаётся под.
+ *
+ * Объекты не создаются заново каждый кадр, а берутся из пула: при
+ * двадцати прохожих и десятке надписей создание и уничтожение
+ * Graphics, Image и BitmapText само по себе стоило кадра.
  */
 export class Painter {
-  private readonly shapes: Phaser.GameObjects.Graphics;
-  private readonly texts: Phaser.GameObjects.BitmapText[] = [];
-  private readonly images: Phaser.GameObjects.Image[] = [];
+  private readonly canvases: Phaser.GameObjects.Graphics[] = [];
+  private readonly sprites: Phaser.GameObjects.Image[] = [];
+  private readonly labels: Phaser.GameObjects.BitmapText[] = [];
+  private used = { canvases: 0, sprites: 0, labels: 0 };
+  /** Текущая Graphics: null — значит, поверх спрайта ещё ничего не рисовали. */
+  private shapes: Phaser.GameObjects.Graphics | null = null;
   /** Окно, за которое заливка не выходит. Нужен небу: силуэт за крышами
    * растёт вверх и без окна залезал бы на панель ресурсов. */
   private clipRect: Rect | null = null;
 
-  /**
-   * Весь текст ложится поверх общей Graphics внутри одного контейнера,
-   * поэтому порядок вызовов слои не разделяет. Разделяют контейнеры:
-   * мир и интерфейс рисуются разными Painter'ами.
-   */
-
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly layer: Phaser.GameObjects.Container,
-  ) {
-    this.shapes = scene.add.graphics();
-    layer.add(this.shapes);
-  }
+  ) {}
 
   clear(): void {
-    this.shapes.clear();
-    for (const text of this.texts) text.destroy();
-    this.texts.length = 0;
-    for (const image of this.images) image.destroy();
-    this.images.length = 0;
+    for (const item of this.canvases) item.clear();
+    for (const item of this.sprites) item.setVisible(false);
+    for (const item of this.labels) item.setVisible(false);
+    this.used = { canvases: 0, sprites: 0, labels: 0 };
+    this.shapes = null;
     this.clipRect = null;
-    this.layer.bringToTop(this.shapes);
+  }
+
+  /**
+   * Холст под ближайшую заливку. Новый берётся только после спрайта или
+   * надписи: пустых Graphics в контейнере быть не должно.
+   */
+  private canvas(): Phaser.GameObjects.Graphics {
+    if (this.shapes) return this.shapes;
+    const index = this.used.canvases;
+    this.used.canvases += 1;
+    let target = this.canvases[index];
+    if (!target) {
+      target = this.scene.add.graphics();
+      this.canvases[index] = target;
+      this.layer.add(target);
+    } else {
+      this.layer.bringToTop(target);
+    }
+    this.shapes = target;
+    return target;
+  }
+
+  /**
+   * Ширина надписи до того, как её нарисуют. Нужна подложке: рисовать
+   * плашку после текста больше нельзя — она ляжет поверх него.
+   */
+  measure(value: string, scale: 1 | 2 = 1): number {
+    return measureLine(value) * scale;
   }
 
   /** Ограничить заливку прямоугольником; null снимает ограничение. */
@@ -60,20 +92,50 @@ export class Painter {
   }
 
   /** Спрайт с привязкой к нижнему центру: персонаж стоит ногами в точке. */
-  sprite(x: number, y: number, key: string, flipX = false, scale = 1): void {
-    const image = this.scene.add.image(Math.round(x), Math.round(y), key);
+  sprite(x: number, y: number, key: string, flipX = false, frame?: string): void {
+    const image = this.take(key, frame);
     image.setOrigin(0.5, 1);
+    image.setPosition(Math.round(x), Math.round(y));
     image.setFlipX(flipX);
-    if (scale !== 1) image.setScale(scale);
-    this.layer.add(image);
-    this.images.push(image);
+  }
+
+  /**
+   * Готовый кадр атласа левым верхним углом в точке. Так рисуется вся
+   * объёмная мелочь: её изображение не меняется от кадра к кадру, и
+   * пересобирать его из полутора сотен заливок каждый раз незачем.
+   */
+  stamp(x: number, y: number, key: string, frame: string): void {
+    const image = this.take(key, frame);
+    image.setOrigin(0, 0);
+    image.setPosition(Math.round(x), Math.round(y));
+    image.setFlipX(false);
+  }
+
+  /** Картинка из пула, поднятая на верх контейнера. */
+  private take(key: string, frame?: string): Phaser.GameObjects.Image {
+    const index = this.used.sprites;
+    this.used.sprites += 1;
+    let image = this.sprites[index];
+    if (!image) {
+      image = this.scene.add.image(0, 0, key, frame);
+      this.sprites[index] = image;
+      this.layer.add(image);
+    } else {
+      image.setTexture(key, frame);
+      image.setVisible(true);
+      this.layer.bringToTop(image);
+    }
+    // Следующая заливка ляжет поверх спрайта, а не под него.
+    this.shapes = null;
+    return image;
   }
 
   fill(rect: Rect, color: number, alpha: number = 1): void {
     const box = this.clipRect ? intersect(rect, this.clipRect) : rect;
     if (!box) return;
-    this.shapes.fillStyle(color, alpha);
-    this.shapes.fillRect(box.x, box.y, box.w, box.h);
+    const shapes = this.canvas();
+    shapes.fillStyle(color, alpha);
+    shapes.fillRect(box.x, box.y, box.w, box.h);
   }
 
   /**
@@ -84,13 +146,15 @@ export class Painter {
   polygon(points: ReadonlyArray<{ x: number; y: number }>, color: number, alpha = 1): void {
     if (points.length < 3) return;
     if (this.clipRect && outside(points, this.clipRect)) return;
-    this.shapes.fillStyle(color, alpha);
-    this.shapes.fillPoints(points as { x: number; y: number }[], true);
+    const shapes = this.canvas();
+    shapes.fillStyle(color, alpha);
+    shapes.fillPoints(points as { x: number; y: number }[], true);
   }
 
   stroke(rect: Rect, color: number): void {
-    this.shapes.lineStyle(1, color, 1);
-    this.shapes.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w - 1, rect.h - 1);
+    const shapes = this.canvas();
+    shapes.lineStyle(1, color, 1);
+    shapes.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w - 1, rect.h - 1);
   }
 
   panel(rect: Rect, fill: number = COLORS.panel, border: number = COLORS.border): void {
@@ -141,24 +205,32 @@ export class Painter {
 
   text(x: number, y: number, value: string, style: TextStyle = {}): Phaser.GameObjects.BitmapText {
     const body = style.wrapWidth ? wrapText(value, style.wrapWidth).join('\n') : value;
-    const object = this.scene.add.bitmapText(
-      Math.round(x),
-      Math.round(y),
-      pixelFont(this.scene, style.color ?? COLORS.text),
-      body,
-      FONT_METRICS.height * (style.scale ?? 1),
-    );
+    const font = pixelFont(this.scene, style.color ?? COLORS.text);
+    const size = FONT_METRICS.height * (style.scale ?? 1);
 
-    if (style.align === 'center') {
-      object.setOrigin(0.5, 0);
-      object.setCenterAlign();
-    } else if (style.align === 'right') {
-      object.setOrigin(1, 0);
-      object.setRightAlign();
+    const index = this.used.labels;
+    this.used.labels += 1;
+    let object = this.labels[index];
+    if (!object) {
+      object = this.scene.add.bitmapText(0, 0, font, body, size);
+      this.labels[index] = object;
+      this.layer.add(object);
+    } else {
+      object.setFont(font, size);
+      object.setText(body);
+      object.setVisible(true);
+      this.layer.bringToTop(object);
     }
 
-    this.layer.add(object);
-    this.texts.push(object);
+    const align = style.align ?? 'left';
+    object.setOrigin(align === 'center' ? 0.5 : align === 'right' ? 1 : 0, 0);
+    object.setLeftAlign();
+    if (align === 'center') object.setCenterAlign();
+    if (align === 'right') object.setRightAlign();
+    object.setPosition(Math.round(x), Math.round(y));
+
+    // Надпись тоже разрезает поток: подложка под неё должна лечь ниже.
+    this.shapes = null;
     return object;
   }
 
@@ -198,8 +270,12 @@ export class Painter {
   }
 
   destroy(): void {
-    this.clear();
-    this.shapes.destroy();
+    for (const item of this.canvases) item.destroy();
+    for (const item of this.sprites) item.destroy();
+    for (const item of this.labels) item.destroy();
+    this.canvases.length = 0;
+    this.sprites.length = 0;
+    this.labels.length = 0;
   }
 }
 

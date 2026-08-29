@@ -137,12 +137,15 @@ export function inhabitantPieces(
  * найти нужного человека, не обходя всю улицу по одному.
  */
 function drawNamePlate(painter: Painter, at: ScreenPoint, nameKey: string): void {
+  const text = t(nameKey);
   const plate = { x: Math.round(at.x) - 40, y: Math.round(at.y) - 32, w: 80, h: 11 };
-  const label = painter.label(plate, t(nameKey), { align: 'center', color: COLORS.text });
-  const width = Math.ceil(label.width) + 5;
+  // Подложка идёт первой: порядок вызовов — это порядок слоёв, и
+  // нарисованная после текста плашка просто закрыла бы его.
+  const width = Math.ceil(painter.measure(text)) + 5;
   painter.fill(
     { x: Math.round(at.x) - Math.round(width / 2), y: plate.y, w: width, h: plate.h },
     0x14161c,
     0.72,
   );
+  painter.label(plate, text, { align: 'center', color: COLORS.text });
 }

@@ -79,4 +79,10 @@ function meter(
   });
 }
 
-const format = (value: number): string => new Intl.NumberFormat('ru-RU').format(value);
+/**
+ * Разделитель разрядов. Форматтер создаётся один раз: собранный заново
+ * на каждый кадр, он стоил больше, чем весь остальной интерфейс.
+ */
+const MONEY = new Intl.NumberFormat('ru-RU');
+
+const format = (value: number): string => MONEY.format(value);

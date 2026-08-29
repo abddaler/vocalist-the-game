@@ -172,17 +172,16 @@ function drawGate(
 
 /** Подпись у цели, к которой подошли. */
 function drawCaption(painter: Painter, at: ScreenPoint, target: WorldTarget): void {
+  const text = t(target.nameKey);
   const caption = { x: at.x - 50, y: at.y - 52, w: 100, h: 12 };
-  const label = painter.label(caption, t(target.nameKey), {
-    align: 'center',
-    color: COLORS.accent,
-  });
-  const width = Math.ceil(label.width) + 6;
+  // Плашка первой, надпись поверх: порядок вызовов — это порядок слоёв.
+  const width = Math.ceil(painter.measure(text)) + 6;
   painter.fill(
     { x: Math.round(at.x - width / 2), y: caption.y, w: width, h: caption.h },
     COLORS.bg,
     0.78,
   );
+  painter.label(caption, text, { align: 'center', color: COLORS.accent });
 }
 
 /** У выхода и створа собственная подпись, у двери и точки — глагол. */
