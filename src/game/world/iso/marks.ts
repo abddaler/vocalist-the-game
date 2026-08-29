@@ -98,39 +98,21 @@ function drawDoorGlow(painter: Painter, at: ScreenPoint, ambience: Ambience): vo
 }
 
 /**
- * Выход из комнаты: дверной проём с косяками и светом снаружи. Плита в
- * полу читалась листом бумаги, а выход должен быть виден с порога.
+ * Выход из комнаты: коврик у порога и стрелка над ним. Сама дверь врезана
+ * в стену — здесь остаётся только показать, где она.
  */
 function drawDoorstep(painter: Painter, at: ScreenPoint, active: boolean, ambience: Ambience): void {
-  const stone = scale(mix(ambience.pavement, 0xffffff, 0.28), ambience.light);
-  const frame = {
-    top: stone,
-    left: scale(stone, 0.62),
-    right: scale(stone, 0.84),
-    outline: mix(stone, 0x0d0b14, 0.6),
-  };
-  // Коврик под ногами.
-  boxAt(painter, at, { w: 1.1, d: 1.1, h: 2 }, {
-    top: scale(stone, 0.72),
-    left: scale(stone, 0.5),
-    right: scale(stone, 0.6),
+  const stone = scale(mix(ambience.pavement, 0xffffff, 0.24), ambience.light);
+  boxAt(painter, at, { w: 0.95, d: 0.95, h: 2 }, {
+    top: scale(stone, 0.9),
+    left: scale(stone, 0.6),
+    right: scale(stone, 0.74),
+    outline: mix(stone, 0x0d0b14, 0.55),
   });
-  // Проём: тёмная створка между двумя косяками под перемычкой.
-  const height = 40;
-  painter.fill({ x: at.x - 13, y: at.y - height, w: 26, h: height - 2 }, 0x14121c);
-  painter.fill(
-    { x: at.x - 11, y: at.y - height + 4, w: 22, h: height - 8 },
-    active ? mix(ambience.skyLow, 0xffffff, 0.4) : mix(ambience.skyLow, 0x14121c, 0.35),
-  );
-  boxAt(painter, { x: at.x - 14, y: at.y }, { w: 0.2, d: 0.9, h: height }, frame);
-  boxAt(painter, { x: at.x + 14, y: at.y }, { w: 0.2, d: 0.9, h: height }, frame);
-  painter.fill({ x: at.x - 17, y: at.y - height - 5, w: 34, h: 6 }, stone);
-  painter.fill({ x: at.x - 17, y: at.y - height - 5, w: 34, h: 1 }, scale(stone, 1.3));
-
   const tip = active ? COLORS.borderFocus : COLORS.accent;
   for (let i = 0; i < 5; i += 1) {
-    painter.fill({ x: at.x - 5 + i, y: at.y - 14 + i, w: 2, h: 1 }, tip);
-    painter.fill({ x: at.x + 4 - i, y: at.y - 14 + i, w: 2, h: 1 }, tip);
+    painter.fill({ x: at.x - 5 + i, y: at.y - 12 + i, w: 2, h: 1 }, tip);
+    painter.fill({ x: at.x + 4 - i, y: at.y - 12 + i, w: 2, h: 1 }, tip);
   }
 }
 

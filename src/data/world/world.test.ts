@@ -9,6 +9,7 @@ import type { DistrictDef, RoomDef, WorldRect } from '@core/types';
 import { cellAt, parseMap } from '../../game/world/iso/map';
 import { CANVAS_SIZE, SKY_BAND, mapSize } from '../../game/world/iso/project';
 import { signReach } from '../../game/world/iso/sign';
+import { REACH_TILES } from '../../game/world/iso/walk';
 import { footprintOf } from '../../game/world/decor';
 
 const overlaps = (a: WorldRect, b: WorldRect): boolean =>
@@ -228,6 +229,70 @@ describe('комнаты локаций', () => {
           const b = room.points[j]!;
           expect(overlaps(a.rect, b.rect), `${room.locationId}: ${a.id} и ${b.id}`).toBe(false);
         }
+      }
+    }
+  });
+
+  it('обстановка не стоит в стенах, на точках и на пороге', () => {
+    // Предмет внутри стены или поверх точки — это «налеплено»: понять,
+    // что там стоит, нельзя, а подойти к точке иногда и вовсе не выходит.
+    for (const room of ROOMS) {
+      const blockers = [...room.solids, room.exit];
+      for (const item of room.decor) {
+        const rect = footprintOf(item);
+        if (!rect) {
+          // Плоское и настенное живёт по своим правилам: у окна и афиши
+          // следа на полу нет, они и должны быть на стене.
+          continue;
+        }
+        for (const wall of blockers) {
+          expect(overlaps(rect, wall), `${room.locationId}: ${item.kind} в стене`).toBe(false);
+        }
+        for (const point of room.points) {
+          expect(
+            overlaps(rect, point.rect),
+            `${room.locationId}: ${item.kind} поверх ${point.id}`,
+          ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('до каждой точки комнаты можно дойти от порога', () => {
+    for (const room of ROOMS) {
+      const map = parseMap(room.tiles);
+      const solids = [
+        ...room.solids,
+        ...room.decor.map(footprintOf).filter((rect): rect is WorldRect => rect !== null),
+      ];
+      const key = (x: number, y: number): number => y * map.width + x;
+      const free = (x: number, y: number): boolean =>
+        cellAt(map, x, y) !== null &&
+        !solids.some((rect) => overlaps({ x: x + 0.2, y: y + 0.2, w: 0.6, h: 0.6 }, rect));
+
+      const start = { x: Math.floor(room.spawn.x), y: Math.floor(room.spawn.y) };
+      const seen = new Set([key(start.x, start.y)]);
+      const queue = [start];
+      while (queue.length > 0) {
+        const { x, y } = queue.pop()!;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (seen.has(key(nx, ny)) || !free(nx, ny)) continue;
+          seen.add(key(nx, ny));
+          queue.push({ x: nx, y: ny });
+        }
+      }
+
+      for (const point of [...room.points, { id: 'exit', rect: room.exit }]) {
+        const cx = point.rect.x + point.rect.w / 2;
+        const cy = point.rect.y + point.rect.h / 2;
+        const near = [...seen].some((id) => {
+          const x = (id % map.width) + 0.5;
+          const y = Math.floor(id / map.width) + 0.5;
+          return Math.hypot(x - cx, y - cy) <= REACH_TILES;
+        });
+        expect(near, `${room.locationId}: ${point.id}`).toBe(true);
       }
     }
   });

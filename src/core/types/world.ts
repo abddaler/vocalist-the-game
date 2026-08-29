@@ -113,6 +113,11 @@ export type DecorKind =
   | 'hut'
   | 'seat'
   | 'screen'
+  | 'stool'
+  | 'counter'
+  | 'speaker'
+  | 'weights'
+  | 'window'
   | 'table';
 
 export interface DecorDef {

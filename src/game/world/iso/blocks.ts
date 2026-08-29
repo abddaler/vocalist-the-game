@@ -1,4 +1,4 @@
-import type { BuildingKind } from '@core/types';
+import type { BuildingKind, WorldRect } from '@core/types';
 import { t } from '@ui/i18n';
 import { COLORS } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
@@ -322,4 +322,43 @@ function drawWall(ctx: BlockPaint, block: IsoBlock): void {
     face(painter, { x: a.x, y: a.y + lift - 14 }, { x: b.x, y: b.y + lift - 14 }, 1, scale(base, 1.2));
     face(painter, a, b, 3, scale(base, 1.24));
   }
+
+  if (block.doorRect) drawWallDoor(ctx, block, block.doorRect);
+}
+
+/**
+ * Дверь в стене комнаты. Створка посреди пола читалась ширмой: выход
+ * должен быть там же, где он был бы в настоящей комнате — в стене.
+ */
+function drawWallDoor(ctx: BlockPaint, block: IsoBlock, door: WorldRect): void {
+  const { painter, ambience } = ctx;
+  const lift = block.tall;
+  const frame = scale(0x6b5a48, ambience.light);
+  const leaf = scale(0x7a5f42, ambience.light);
+
+  // Дверь врезана в ту стену, вдоль которой она стоит: у левой стены
+  // проём идёт по её плоскости, у задней — по своей.
+  const alongY = block.rect.w <= block.rect.h;
+  const from = alongY
+    ? at(ctx, block.rect.x + block.rect.w, door.y, lift)
+    : at(ctx, door.x, block.rect.y + block.rect.h, lift);
+  const to = alongY
+    ? at(ctx, block.rect.x + block.rect.w, door.y + 1, lift)
+    : at(ctx, door.x + 1, block.rect.y + block.rect.h, lift);
+
+  const height = 34;
+  const top = lift - height;
+  const shift = (p: ScreenPoint): ScreenPoint => ({ x: p.x, y: p.y + top });
+
+  face(painter, shift(from), shift(to), height, scale(frame, 0.5));
+  const inset = (p: ScreenPoint, k: number): ScreenPoint => ({
+    x: p.x + (to.x - from.x) * k,
+    y: p.y + (to.y - from.y) * k + top,
+  });
+  face(painter, inset(from, 0.12), inset(to, -0.12), height - 3, leaf);
+  face(painter, inset(from, 0.12), inset(to, -0.12), 2, scale(leaf, 1.3));
+  face(painter, shift(from), shift(to), 2, scale(frame, 1.3));
+  // Ручка на створке.
+  const handle = inset(from, 0.7);
+  painter.fill({ x: handle.x - 1, y: handle.y + height - 16, w: 3, h: 3 }, scale(0xd8c078, ambience.light));
 }

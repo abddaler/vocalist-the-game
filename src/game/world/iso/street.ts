@@ -507,3 +507,62 @@ const screen: Draw = (ctx) => {
 };
 
 Object.assign(ISO_PROPS, { stall, kiosk, hut, umbrella, parasol, seat, screen });
+
+/** Барный стул: ножка и круглое сиденье. */
+const stool: Draw = (ctx) => {
+  shade(ctx, 0.45, 0.45);
+  const iron = skin(ctx, 0x4a505c);
+  boxAt(ctx.painter, ctx.at, { w: 0.16, d: 0.16, h: 13 }, iron);
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 13), { w: 0.5, d: 0.5, h: 3 }, skin(ctx, 0x8f5a4a));
+};
+
+/** Стойка: длинный прилавок со столешницей и цоколем. */
+const counter: Draw = (ctx) => {
+  shade(ctx, 2.2, 1);
+  const body = skin(ctx, 0x5a4a6a);
+  boxAt(ctx.painter, ctx.at, { w: 2.1, d: 0.9, h: 18 }, body);
+  boxAt(ctx.painter, shift(ctx.at, 0, 0, 18), { w: 2.35, d: 1.05, h: 3 }, skin(ctx, 0xd8c8a8));
+  // Подсветка по цоколю: стойка в клубе всегда светится снизу.
+  const base = shift(ctx.at, 0, 0.5, 3);
+  ctx.painter.fill({ x: base.x - 32, y: base.y - 2, w: 64, h: 2 }, 0x5fd8ff, 0.55);
+};
+
+/** Колонка: чёрный столб с динамиками. Без неё сцена не звучит. */
+const speaker: Draw = (ctx) => {
+  shade(ctx, 0.7, 0.7);
+  const shell = skin(ctx, 0x232733);
+  boxAt(ctx.painter, ctx.at, { w: 0.7, d: 0.7, h: 44 }, shell);
+  const front = shift(ctx.at, 0, 0.35, 0);
+  for (const dy of [10, 24, 36]) {
+    ctx.painter.fill({ x: front.x - 7, y: front.y - dy, w: 14, h: dy === 36 ? 6 : 10 }, 0x14161d);
+    ctx.painter.fill({ x: front.x - 5, y: front.y - dy + 2, w: 10, h: dy === 36 ? 2 : 6 }, 0x3a4050);
+  }
+};
+
+/** Стойка с гантелями: по ней спортзал узнают сразу. */
+const weights: Draw = (ctx) => {
+  shade(ctx, 1.6, 0.9);
+  const frame = skin(ctx, 0x3f4450);
+  boxAt(ctx.painter, ctx.at, { w: 1.5, d: 0.7, h: 6 }, frame);
+  boxAt(ctx.painter, shift(ctx.at, 0, -0.2, 6), { w: 1.5, d: 0.25, h: 10 }, frame);
+  for (let i = 0; i < 5; i += 1) {
+    const at = shift(ctx.at, -0.55 + i * 0.28, 0.1, 8);
+    ctx.painter.fill({ x: at.x - 5, y: at.y - 5, w: 10, h: 5 }, scale(0x1e2029, ctx.ambience.light));
+    ctx.painter.fill({ x: at.x - 2, y: at.y - 4, w: 4, h: 3 }, scale(0x8f96a8, ctx.ambience.light));
+  }
+};
+
+/** Окно в стене помещения: то же небо, что снаружи. */
+const windowPane: Draw = (ctx) => {
+  const at = ctx.at;
+  const glass = mix(scale(0x9fd0e8, ctx.ambience.light), ctx.ambience.skyLow, 0.25);
+  ctx.painter.fill({ x: at.x - 26, y: at.y - 52, w: 52, h: 44 }, scale(0x6a5a48, ctx.ambience.light));
+  ctx.painter.fill({ x: at.x - 23, y: at.y - 49, w: 46, h: 38 }, glass);
+  ctx.painter.fill({ x: at.x - 23, y: at.y - 49, w: 46, h: 12 }, scale(glass, 1.12));
+  ctx.painter.fill({ x: at.x - 1, y: at.y - 49, w: 2, h: 38 }, scale(0x6a5a48, ctx.ambience.light));
+  ctx.painter.fill({ x: at.x - 23, y: at.y - 31, w: 46, h: 2 }, scale(0x6a5a48, ctx.ambience.light));
+  // Отсвет на полу: без него окно приклеено к стене.
+  patch(ctx, 2.4, 1.6, glass, 0.16);
+};
+
+Object.assign(ISO_PROPS, { stool, counter, speaker, weights, window: windowPane });

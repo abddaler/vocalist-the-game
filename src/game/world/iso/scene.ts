@@ -111,12 +111,15 @@ export function roomScene(room: RoomDef, slot: Slot): IsoScene {
   return {
     map: mapOf(room),
     // Стены комнаты — те же объёмы, только без вывески и рода занятий.
+    // Дверь врезается в ту стену, к которой примыкает выход: створка
+    // посреди пола читалась ширмой, а не выходом.
     blocks: room.solids.map((rect) => ({
       rect,
       tall: ROOM_WALL_H,
       color: room.floor,
       kind: 'apartment' as BuildingKind,
       wall: true,
+      doorRect: touches(rect, room.exit) ? room.exit : undefined,
     })),
     targets: [
       { kind: 'exit', id: room.locationId, nameKey: 'ui.exit', rect: room.exit },
@@ -165,6 +168,14 @@ export function blockedIn(scene: IsoScene): Blocked {
         point.y >= rect.y &&
         point.y < rect.y + rect.h,
     );
+}
+
+/** Примыкает ли выход к этой стене. */
+function touches(wall: WorldRect, exit: WorldRect): boolean {
+  const alongY = wall.w <= wall.h;
+  return alongY
+    ? exit.x === wall.x + wall.w && exit.y >= wall.y && exit.y < wall.y + wall.h
+    : exit.y === wall.y + wall.h && exit.x >= wall.x && exit.x < wall.x + wall.w;
 }
 
 /** Где на улице стоит дверь этой локации. */
