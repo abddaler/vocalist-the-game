@@ -1,6 +1,6 @@
 import { getActivity } from '@data/activities';
 import type { Action } from '@core/state';
-import { ACTIVITY_MS, moteOf } from '@ui/screens/ActivityScene';
+import { ACTIVITY_MS, BUSY, TEMPO, moteOf } from '@ui/screens/ActivityScene';
 import type { ActivityView } from '@ui/screens/ActivityScene';
 import { PLAYER_LOOK, actorTexture } from '../art';
 import type { Mote } from '@ui/screens/ActivityScene';
@@ -54,8 +54,14 @@ export class ActivityRunner {
       mote: current.mote,
       progress: Math.min(1, current.elapsed / ACTIVITY_MS),
       elapsed: current.elapsed,
-      // Два кадра ходьбы вперемешку: персонаж должен шевелиться.
-      actorTexture: actorTexture(PLAYER_LOOK, current.elapsed % 500 < 250 ? 'downA' : 'downB'),
+      // На деятельном занятии ноги переступают в такт, на отдыхе — нет:
+      // спящий, марширующий на месте, выглядит хуже неподвижного.
+      actorTexture: actorTexture(
+        PLAYER_LOOK,
+        BUSY[current.mote] && current.elapsed % (TEMPO[current.mote] * 2) < TEMPO[current.mote]
+          ? 'downB'
+          : 'downA',
+      ),
     };
   }
 }
