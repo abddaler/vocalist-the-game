@@ -340,6 +340,32 @@ describe('комнаты локаций', () => {
    * вплотную к ней. Повешенное посреди комнаты, оно рисуется полотном в
    * пустоте; повешенное поперёк — читается наклейкой, приклеенной к кадру.
    */
+  /**
+   * Тонкий столб — фонарь, пальма, светофор — и коробка, стоящая почти в
+   * том же экранном столбце, но чуть ближе, слипаются в один предмет:
+   * дерево вырастает из ящика, урна протыкает фонарь. В плитках они
+   * далеко друг от друга, и на плане это незаметно — видно только в
+   * кадре, поэтому проверка считает по экрану.
+   */
+  it('столбы не прорастают сквозь мелочь', () => {
+    const tall = new Set(['palm', 'lamp', 'tree', 'trafficLight', 'billboard']);
+    /** Разбег по экранному столбцу и по удалению, при котором ещё слипается. */
+    const column = 0.8;
+    const reach = 4;
+    for (const district of CITY) {
+      for (const post of district.decor) {
+        if (!tall.has(post.kind)) continue;
+        for (const item of district.decor) {
+          if (item === post || tall.has(item.kind)) continue;
+          const apart = Math.abs(post.x - post.y - (item.x - item.y));
+          const ahead = item.x + item.y - (post.x + post.y);
+          const where = `${district.id}: ${post.kind} (${post.x}, ${post.y}) и ${item.kind} (${item.x}, ${item.y})`;
+          expect(apart >= column || ahead <= 0 || ahead >= reach, where).toBe(true);
+        }
+      }
+    }
+  });
+
   it('настенное висит на стене и вдоль неё', () => {
     const onWall = new Set(['window', 'screen', 'poster']);
     for (const room of ROOMS) {

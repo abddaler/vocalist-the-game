@@ -95,9 +95,9 @@ export const group = {
     ];
   },
 
-  /** Столик кафе: зонт со столом под ним и стул рядом. */
+  /** Столик кафе: зонт со столом под ним и урна рядом. */
   cafe(x: number, y: number, variant: number): DecorDef[] {
-    return [decor('parasol', x, y, variant), decor('bin', x + 1.6, y)];
+    return [decor('parasol', x, y, variant), decor('bin', x + 1.6, y + 0.6)];
   },
 
   /** Ряд фонарей вдоль бордюра: ровный шаг, а не случайные точки. */
@@ -114,8 +114,12 @@ export const group = {
     return list;
   },
 
-  /** Торговый ряд: лоток и ящики позади него. */
+  /**
+   * Торговый ряд: лоток и ящик с товаром сбоку от прилавка. Ящик стоит
+   * ближе к камере, а не позади: за лотком он прятался, а на одной с ним
+   * линии — упирался в столб фонаря, стоявший в том же экранном столбце.
+   */
   market(x: number, y: number, variant: number): DecorDef[] {
-    return [decor('stall', x, y, variant), decor('crate', x + 1.6, y - 0.6, variant)];
+    return [decor('stall', x, y, variant), decor('crate', x + 0.5, y + 1.15, variant)];
   },
 };

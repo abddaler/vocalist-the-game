@@ -84,7 +84,7 @@ export const BOULEVARD: DistrictDef = {
     decor('kiosk', 24.5, 4.5),
     ...group.rest(0.6, 4.5),
     ...group.bollards(9.5, 3, 0.9, 4.5),
-    decor('newsbox', 36.5, 4.5),
+    decor('newsbox', 35.5, 4.5),
     decor('trafficLight', 19.5, 4.5),
 
     // Первая проезжая часть.

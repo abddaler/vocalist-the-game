@@ -80,7 +80,7 @@ export const DOWNTOWN: DistrictDef = {
     // Тротуар под площадью: остановка, светофор у перехода, столбики
     // вдоль него.
     decor('busStop', 14.5, 6.5),
-    decor('trafficLight', 20.5, 6.5),
+    decor('trafficLight', 22.5, 6.5),
     ...group.bollards(18.5, 3, 1.4, 7.5),
     decor('newsbox', 3.5, 6.5),
     decor('mailbox', 6.5, 6.5),
@@ -93,7 +93,7 @@ export const DOWNTOWN: DistrictDef = {
     decor('car', 34.5, 9.5, 2),
     ...group.lamps(4.5, 33.5, 7.25, 12.5),
     ...group.rest(11.5, 12.5),
-    ...group.rest(25.5, 12.5),
+    ...group.rest(22.5, 12.5),
   ],
 
   gates: [gateLeft('hills', 7), gateRight('boulevard', 38, 7)],
