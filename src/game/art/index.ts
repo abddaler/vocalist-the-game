@@ -38,6 +38,78 @@ function overlay(base: Frame, layer: Frame, top = 0): Frame {
   });
 }
 
+/** Теневой двойник цвета. Символы без пары кромку не принимают. */
+const SHADOW: Readonly<Record<string, string>> = {
+  2: '3',
+  F: '2',
+  4: 'J',
+  5: '4',
+  6: '7',
+  8: 'G',
+  9: 'H',
+  A: 'K',
+  B: 'C',
+};
+
+/** Световой двойник цвета: им берётся кромка со стороны света. */
+const LIGHT: Readonly<Record<string, string>> = {
+  2: 'F',
+  3: '2',
+  4: '5',
+  6: 'L',
+  7: '6',
+  8: 'N',
+  9: 'M',
+};
+
+/** Толщина теневой кромки и блика в пикселях кадра. */
+const RIM = 2;
+const GLINT = 1;
+
+/**
+ * Теневая кромка по правому краю фигуры. В изометрии свет падает слева
+ * сверху, и всё в кадре — от плитки до коробки — тем и держит объём, что
+ * правая грань темнее. Персонаж без кромки оставался единственным в мире
+ * плоским пятном, вырезанным ножницами.
+ *
+ * Кромка подставляется при сборке, а не рисуется руками: иначе её
+ * пришлось бы повторить в каждой причёске, рубашке и юбке — и в одной из
+ * них забыть.
+ */
+export function rimmed(frame: Frame): Frame {
+  return frame.map((row) => {
+    const cells = [...row];
+    paint(cells, cells.length - 1, -1, SHADOW, RIM);
+    paint(cells, 0, 1, LIGHT, GLINT);
+    return cells.join('');
+  });
+}
+
+/**
+ * Кромка с одного края строки: пропустить пустоту и контур, затем
+ * перекрасить несколько пикселей подряд. Как только попался символ без
+ * пары — лицо, глаз, пуговица, — кромка обрывается: рисунок на фигуре
+ * важнее её объёма.
+ */
+function paint(
+  cells: string[],
+  from: number,
+  step: number,
+  tones: Readonly<Record<string, string>>,
+  width: number,
+): void {
+  let x = from;
+  const inside = (i: number): boolean => i >= 0 && i < cells.length;
+  while (inside(x) && cells[x] === '.') x += step;
+  while (inside(x) && cells[x] === '1') x += step;
+  for (let done = 0; done < width && inside(x); x += step) {
+    const tone = tones[cells[x]!];
+    if (tone === undefined) break;
+    cells[x] = tone;
+    done += 1;
+  }
+}
+
 /**
  * Текстуры собираются из строковых раскладок прямо в рантайме: арт лежит
  * в исходниках, читается в диффах и не требует шага сборки.
@@ -59,7 +131,7 @@ export function buildActorTextures(scene: Phaser.Scene): void {
       data = overlay(data, accessory[facing], accessory.top);
 
       scene.textures.generate(key, {
-        data: [...data],
+        data: [...rimmed(data)],
         pixelWidth: 1,
         pixelHeight: 1,
         palette: colors,

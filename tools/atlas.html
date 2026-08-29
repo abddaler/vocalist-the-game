@@ -1,0 +1,53 @@
+<!doctype html><meta charset="utf-8"><title>Атлас персонажей</title>
+<!--
+  Лист всех внешностей во всех позах. Персонажи собираются из строковых
+  раскладок, и правку в причёске или кромке иначе видно только в игре,
+  куда до нужного прохожего ещё надо дойти.
+
+  Открывается на dev-сервере: /tools/atlas.html. В сборку не попадает —
+  входная точка у неё одна, index.html.
+-->
+<style>body{margin:0;background:#5a6a7a}canvas{image-rendering:pixelated}</style>
+<canvas id="c"></canvas>
+<script type="module">
+import { BODY, FACING_OF, POSES } from '/src/game/art/body.ts';
+import { HAIR } from '/src/game/art/hair.ts';
+import { ACCESSORY } from '/src/game/art/accessory.ts';
+import { OUTFIT, OUTFIT_TOP } from '/src/game/art/outfit/index.ts';
+import { LOOKS, PALETTES } from '/src/game/art/looks.ts';
+import { rimmed } from '/src/game/art/index.ts';
+
+const overlay = (base, layer, top = 0) => layer.length === 0 ? base : base.map((row, y) => {
+  const patch = layer[y - top];
+  if (patch === undefined) return row;
+  return [...row].map((cell, x) => {
+    const over = patch[x];
+    return over === undefined || over === '.' ? cell : over;
+  }).join('');
+});
+
+const W = 14, H = 24, Z = 5, PAD = 3;
+const poses = POSES;
+const c = document.getElementById('c');
+c.width = (W + PAD) * poses.length * Z;
+c.height = (H + PAD) * LOOKS.length * Z;
+const g = c.getContext('2d');
+g.imageSmoothingEnabled = false;
+LOOKS.forEach((look, i) => {
+  const colors = PALETTES[i];
+  poses.forEach((pose, p) => {
+    const facing = FACING_OF[pose];
+    const acc = ACCESSORY[look.accessory];
+    let data = overlay(BODY[pose], OUTFIT[look.outfit][facing], OUTFIT_TOP);
+    data = overlay(data, HAIR[look.hair][facing]);
+    data = overlay(data, acc[facing], acc.top);
+    data = rimmed(data);
+    data.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '.' || ch === ' ') return;
+      g.fillStyle = colors[ch] ?? '#f0f';
+      g.fillRect(((W + PAD) * p + x) * Z, ((H + PAD) * i + y) * Z, Z, Z);
+    }));
+  });
+});
+document.title = 'atlas ' + LOOKS.length;
+</script>

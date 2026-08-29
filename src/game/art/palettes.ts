@@ -3,7 +3,12 @@
  * 1 контур, 2 кожа, 3 тень кожи, 4 волосы, 5 блик волос, 6 ткань,
  * 7 её тень, 8 вторая ткань, 9 низ (брюки, юбка), A обувь, B акцент,
  * C тень акцента, D тёмная деталь (брови, рот), E белок глаза, F блик
- * кожи.
+ * кожи, G тень второй ткани, H тень низа, J тень волос, K тень обуви,
+ * L блик ткани, M блик низа, N блик второй ткани.
+ *
+ * Теневых двойников больше, чем видно в раскладках: их не рисуют руками,
+ * а подставляют при сборке текстуры — по кромке фигуры справа, с той
+ * стороны, куда в изометрии не достаёт свет.
  *
  * Тени и блики выводятся из основных цветов, а не задаются: у пятнадцати
  * человек в толпе они всё равно были бы одним и тем же сдвигом яркости,
@@ -29,6 +34,13 @@ export interface ActorPalette {
   readonly D: string;
   readonly E: string;
   readonly F: string;
+  readonly G: string;
+  readonly H: string;
+  readonly J: string;
+  readonly K: string;
+  readonly L: string;
+  readonly M: string;
+  readonly N: string;
 }
 
 export interface Colors {
@@ -70,5 +82,12 @@ export function palette(colors: Colors): ActorPalette {
     D: '#2b2331',
     E: '#f4f0f8',
     F: shift(colors.skin, 1.12),
+    G: shift(colors.trim, 0.7),
+    H: shift(colors.legs, 0.72),
+    J: shift(colors.hair, 0.72),
+    K: shift(colors.shoes, 0.7),
+    L: shift(colors.cloth, 1.18),
+    M: shift(colors.legs, 1.2),
+    N: shift(colors.trim, 1.18),
   };
 }
