@@ -101,3 +101,45 @@ function outline(painter: Painter, points: ReadonlyArray<{ x: number; y: number 
     );
   }
 }
+
+/** Цвет заливки проходимого пола. */
+const WALKABLE = { color: 0x5df08a, alpha: 0.38 } as const;
+
+/**
+ * Куда можно встать. Отдельно от сетки: сетка отвечает на вопрос «как
+ * считается глубина», а эта заливка — на вопрос «куда игрок дойдёт», и
+ * смешивать их в одном кадре значит не увидеть ни того, ни другого.
+ */
+export function drawWalkable(
+  painter: Painter,
+  scene: IsoScene,
+  toView: (point: WorldPoint, z: number) => ScreenPoint,
+): void {
+  const blocked = blockedIn(scene);
+  const clip = { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height };
+  painter.clip(clip);
+
+  for (let y = 0; y < scene.map.depth; y += 1) {
+    for (let x = 0; x < scene.map.width; x += 1) {
+      const level = levelAt(scene.map, x + 0.5, y + 0.5);
+      if (level === null) continue;
+      if (!standable(scene.map, x + 0.5, y + 0.5)) continue;
+      if (blocked({ x: x + 0.5, y: y + 0.5 })) continue;
+
+      const at = toView({ x: x + 0.5, y: y + 0.5 }, level);
+      if (at.x < -TILE.halfW || at.x > CONTENT.width + TILE.halfW) continue;
+      if (at.y < clip.y - TILE.halfH || at.y > clip.y + clip.h + TILE.halfH) continue;
+      painter.polygon(
+        [
+          { x: at.x, y: at.y - TILE.halfH },
+          { x: at.x + TILE.halfW, y: at.y },
+          { x: at.x, y: at.y + TILE.halfH },
+          { x: at.x - TILE.halfW, y: at.y },
+        ],
+        WALKABLE.color,
+        WALKABLE.alpha,
+      );
+    }
+  }
+  painter.clip(null);
+}

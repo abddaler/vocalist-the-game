@@ -3,7 +3,7 @@ import { Store, createInitialState } from '@core/state';
 import { getLocation } from '@data/locations';
 import { getDistrict } from '@data/world';
 import type { Action } from '@core/state';
-import type { GameState, GenreId, Wardrobe, WorldPoint } from '@core/types';
+import type { DistrictId, GameState, GenreId, Wardrobe, WorldPoint } from '@core/types';
 import { CompositeInput, KeyboardInput, PointerInput } from '@platform/input';
 import type { InputController } from '@platform/input';
 import { saveGame } from '@platform/saveGame';
@@ -28,7 +28,8 @@ import type { RenderContext, UiState } from '@ui/screens/types';
 import { PLAYER_LOOK, buildActorTextures, playerFigure, repaintActor, wardrobeKey } from '../art';
 import { buildBubbleTextures } from '../art/bubble';
 import { buildPortraitTextures } from '../art/portrait';
-import { toggleDevFlag } from '@platform/devtools';
+import { PROP_LIST, renderPropShot } from './PropShot';
+import { devFlag, toggleDevFlag } from '@platform/devtools';
 import { WorldCanvas, WorldController, renderIso } from '../world';
 import { PropAtlas } from '../world/PropAtlas';
 import { Diagnostics } from '../Diagnostics';
@@ -63,6 +64,8 @@ export class GameScene extends Phaser.Scene {
   private dressed = '';
   /** Часы сцены, мс. По ним дышат стоящие и качается севший голос. */
   private clock = 0;
+  /** Какой предмет снимают крупно, если снимают. */
+  private propShot: string | null = null;
 
   private readonly activity = new ActivityRunner();
 
@@ -110,6 +113,7 @@ export class GameScene extends Phaser.Scene {
       markDirty: this.markDirty,
     });
     this.world.reset();
+    if (devFlag('hook')) this.openCaptureHook();
 
     const backLayer = this.add.container(0, 0);
     const canvasLayer = this.add.container(0, 0);
@@ -152,7 +156,9 @@ export class GameScene extends Phaser.Scene {
 
   override update(time: number, delta: number): void {
     this.input$.update();
-    this.clock = time;
+    // Со стоящим временем кадр воспроизводим побитово: толпа стоит,
+    // пузыри не всплывают, дыхание не считается.
+    this.clock = devFlag('still') ? 0 : time;
     // Счётчик кадров живёт всегда: он должен показать именно тот кадр,
     // который тормозит, а не тот, что был бы при включённой отладке.
     if (this.diagnostics.tick(time, delta)) this.dirty = true;
@@ -216,6 +222,34 @@ export class GameScene extends Phaser.Scene {
   };
 
   /**
+   * Ручка съёмки: встать в локацию без прохождения игры. Открывается
+   * только по флагу `?debug=hook` и умеет ровно одно — перейти в место.
+   * Разбору локаций нужен воспроизводимый кадр каждой из тринадцати, а
+   * доходить до каждой двери ногами — это минуты и разный кадр каждый раз.
+   */
+  private openCaptureHook(): void {
+    const api = {
+      /** Список предметов для слепого опознания: порядок постоянен. */
+      props: PROP_LIST,
+      /** Снять один предмет крупно на нейтральном фоне. */
+      prop: (kind: string | null): void => {
+        this.propShot = kind;
+        this.dirty = true;
+      },
+      go: (districtId: DistrictId, locationId: string | null): void => {
+        this.propShot = null;
+        this.world.jump(districtId, locationId);
+        this.go(
+          locationId === null
+            ? { screen: 'world', locationId: null, pointId: null, page: 0 }
+            : { screen: 'room', locationId, pointId: null, page: 0 },
+        );
+      },
+    };
+    (window as unknown as { __vsCapture?: typeof api }).__vsCapture = api;
+  }
+
+  /**
    * Перерисовать игрока под надетое. Магазин был витриной цифр: куртка
    * двигала имидж, а на улице выходил тот же человек в той же футболке.
    * Отпечаток гардероба сравнивается, чтобы не пересобирать девятнадцать
@@ -249,6 +283,15 @@ export class GameScene extends Phaser.Scene {
 
   private render(): void {
     this.dirty = false;
+    if (this.propShot !== null) {
+      this.backPainter.clear();
+      this.worldPainter.clear();
+      this.painter.clear();
+      this.hotspots.clear();
+      this.canvas.hide();
+      renderPropShot(this.worldPainter, this.propShot);
+      return;
+    }
     // Счёт снимается до очистки: это работа прошлого кадра, и сложить её
     // можно только пока кисти ещё её помнят.
     this.diagnostics.count(
@@ -293,7 +336,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    renderHud(this.painter, state, this.placeKey(), this.diagnostics.line());
+    if (!devFlag('bare')) renderHud(this.painter, state, this.placeKey(), this.diagnostics.line());
 
     const activity = this.activity.view();
     if (activity) {
@@ -312,7 +355,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.renderScreen(ctx);
-    renderNav(this.painter, this.hotspots, this.ui, this.go);
+    // Съёмка для разбора идёт без интерфейса: панель и кнопки закрывают
+    // пятую часть локации, и судить по такому кадру нельзя.
+    if (!devFlag('bare')) renderNav(this.painter, this.hotspots, this.ui, this.go);
   }
 
   /** Что написать в средней табличке панели: комната или район. */

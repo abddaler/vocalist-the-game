@@ -13,7 +13,8 @@
     "sim": "tsx src/sim/run.ts",
     "check": "npm run typecheck && npm run lint && npm run test",
     "play:text": "tsx src/sim/textRun.ts",
-    "audit:locations": "tsx src/sim/audit.ts"
+    "audit:locations": "tsx src/sim/audit.ts",
+    "capture": "node scripts/capture.mjs"
   },
   "repository": {
     "type": "git",

@@ -4,3 +4,11 @@ coverage/
 .vite/
 *.local
 .DS_Store
+
+# Съёмка для ревью локаций: 5 МБ картинок, которые целиком
+# восстанавливаются `npm run capture` из кода и сида. В репозитории
+# хранится только вывод разбора — он написан руками и не воспроизводим.
+/artifacts/*
+!/artifacts/review/
+/artifacts/review/*
+!/artifacts/review/REPORT.md

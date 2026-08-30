@@ -6,10 +6,35 @@
  *
  * `?debug=iso` включает сетку сразу — на телефоне клавиши F1 нет, а
  * посмотреть на сортировку по глубине нужно именно там.
+ *
+ * Флаги съёмки нужны разбору локаций: кадр для ревью обязан быть
+ * воспроизводим побитово. Ревью по нестабильным снимкам хуже отсутствия
+ * ревью — оно даёт ложную уверенность.
  */
-export type DevFlag = 'iso' | 'plain';
+export type DevFlag = 'iso' | 'plain' | 'bare' | 'still' | 'cast' | 'walk' | 'hook';
 
-const FLAGS: Record<DevFlag, boolean> = { iso: false, plain: false };
+const FLAGS: Record<DevFlag, boolean> = {
+  /** Сетка плиток, номера глубины, непроходимые клетки. */
+  iso: false,
+  /** Весь мир заглушками. */
+  plain: false,
+  /** Без интерфейса: чистый кадр локации. */
+  bare: false,
+  /** Время стоит: толпа не идёт, пузыри не всплывают, дыхания нет. */
+  still: false,
+  /** Игрок сразу в восьми точках: проверка, что его везде видно. */
+  cast: false,
+  /** Заливка проходимого пола поверх сцены. */
+  walk: false,
+  /**
+   * Ручка перехода в локацию для съёмки. Узкая нарочно: снимку нужно
+   * попасть в место, а не управлять игрой, и открывать ради этого всю
+   * сцену — значит завести второй способ ею пользоваться.
+   */
+  hook: false,
+};
+
+const NAMES = Object.keys(FLAGS) as readonly DevFlag[];
 
 /**
  * Что просили в адресе страницы. Разбирается один раз при загрузке:
@@ -19,7 +44,8 @@ export function readDevFlags(search: string): void {
   const asked = new URLSearchParams(search).get('debug');
   if (!asked) return;
   for (const name of asked.split(',')) {
-    if (name === 'iso' || name === 'plain') FLAGS[name] = true;
+    const flag = NAMES.find((known) => known === name);
+    if (flag) FLAGS[flag] = true;
   }
 }
 

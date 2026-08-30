@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { devFlag } from '@platform/devtools';
 import { GENRE_IDS, SLOTS } from '@core/types';
 import type { GameState, GenreId } from '@core/types';
 import { CompositeInput, KeyboardInput, PointerInput } from '@platform/input';
@@ -185,6 +186,10 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startNewGame(genre: GenreId): void {
-    this.scene.start('game', { seed: `run-${Date.now()}`, genre });
+    // Со стоящим временем сид тоже стоит: съёмка для разбора обязана
+    // повторяться от запуска к запуску, а сид от часов делает каждый
+    // прогон новым.
+    const seed = devFlag('still') ? 'capture' : `run-${Date.now()}`;
+    this.scene.start('game', { seed, genre });
   }
 }

@@ -8,6 +8,7 @@ import {
   hasRoom,
 } from '@data/world';
 import type { InputController } from '@platform/input';
+import { devFlag } from '@platform/devtools';
 import { spawnCrowd, updateCrowd } from './Crowd';
 import type { CrowdActor } from './Crowd';
 import { facingCamera, facingFrom } from './actorSprite';
@@ -108,7 +109,7 @@ export class WorldController {
 
   /** Живность идёт и во время затемнения: замирающая комната выдаёт декорацию. */
   tick(delta: number, input: InputController, canWalk: boolean): void {
-    updateCrowd(this.crowd, delta);
+    if (!devFlag('still')) updateCrowd(this.crowd, delta);
     this.deps.markDirty();
 
     if (this.fade.phase !== 'idle') {
@@ -177,6 +178,28 @@ export class WorldController {
     // затылком до самого следующего шага.
     this.still += delta;
     if (this.still >= TURN_MS) this.facing = facingCamera(this.facing);
+  }
+
+  /**
+   * Встать в локацию без перехода. Нужно съёмке для разбора: пройти к
+   * каждой двери ногами — это минуты на локацию и разный кадр от
+   * запуска к запуску.
+   */
+  jump(districtId: DistrictId, locationId: string | null): void {
+    this.districtId = districtId;
+    this.route = [];
+    this.pendingTarget = null;
+    this.facing = 'se';
+    if (locationId === null) {
+      this.position = { ...getDistrict(districtId).spawn };
+      this.crowd = spawnCrowd(districtId);
+      this.deps.leaveRoom();
+      return;
+    }
+    const room = getRoom(locationId);
+    this.position = { ...room.spawn };
+    this.crowd = spawnCrowd(locationId);
+    this.deps.enterRoom(locationId);
   }
 
   /** Тап по пустому месту — приказ идти туда. */

@@ -142,6 +142,15 @@ export function inhabitantPieces(
     });
   }
 
+  // Проверка «персонаж виден везде»: восемь копий разом дороже одного
+  // обхода локации и честнее — тёмный ковёр под ногами видно сразу.
+  for (const spot of devFlag('cast') ? castSpots(scene) : []) {
+    pieces.push({
+      depth: spot.x + spot.y,
+      draw: () => person(spot, PLAYER_LOOK, lookFor('se', 0, false)),
+    });
+  }
+
   pieces.push({
     depth: params.position.x + params.position.y,
     draw: () => person(params.position, PLAYER_LOOK, playerLook(params)),
@@ -251,4 +260,22 @@ function playerLook(params: Inhabitants): { pose: ActorPose; flipX: boolean; lif
   if (params.moving) return step;
   if (params.vocalHealth < BALANCE.vocal.tiers.fatigue) return wornLook(params.clock);
   return idleBreath(step, params.clock);
+}
+
+/**
+ * Восемь точек, разнесённых по локации: четверти и их середины. Точная
+ * решётка тут важнее случайности — снимок обязан повторяться от запуска
+ * к запуску, иначе по нему нельзя сравнивать «было и стало».
+ */
+function castSpots(scene: IsoScene): WorldPoint[] {
+  const spots: WorldPoint[] = [];
+  for (const fy of [0.25, 0.5, 0.75, 0.9]) {
+    for (const fx of [0.25, 0.75]) {
+      spots.push({
+        x: Math.floor(scene.map.width * fx) + 0.5,
+        y: Math.floor(scene.map.depth * fy) + 0.5,
+      });
+    }
+  }
+  return spots;
 }

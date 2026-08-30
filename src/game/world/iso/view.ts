@@ -14,7 +14,7 @@ import { ISO_OVERHEAD } from './props';
 import type { PropAtlas } from '../PropAtlas';
 import type { CrowdActor } from '../Crowd';
 import type { Facing } from '../actorSprite';
-import { drawIsoDebug } from './debug';
+import { drawIsoDebug, drawWalkable } from './debug';
 import { paintPlainBlock, paintPlainGround } from './plain';
 import { drawPieces, inhabitantPieces } from './people';
 import { drawBlock, drawBlockSign } from './blocks';
@@ -105,6 +105,7 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
 
   drawWash(painter, { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height }, ambience);
 
+  if (devFlag('walk')) drawWalkable(painter, scene, toView);
   if (devFlag('iso')) drawIsoDebug(painter, scene, toView, position);
 
   if (focus) {
