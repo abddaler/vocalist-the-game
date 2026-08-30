@@ -55,78 +55,89 @@ export const LOOKS: readonly Look[] = [
   ),
 
   // — названные (9.3): каждого должно быть видно с другого конца улицы —
+  // Педагог: высокий тугой пучок и очки на цепочке, глубокий бордовый.
+  // Пучок меняет силуэт, а силуэт читается раньше лица.
   look(
     'teacher',
     {
       skin: SKIN.light,
-      hair: '#7a4230',
-      cloth: '#8f6ac9',
-      trim: '#d8c0f0',
-      legs: '#33304a',
+      hair: '#6f6a72',
+      cloth: '#7a1f38',
+      trim: '#c9899c',
+      legs: '#33303a',
       shoes: '#2a2630',
-      accent: '#e0708f',
+      accent: '#e0c060',
     },
-    'bob',
+    'bun',
     'coat',
-    'scarf',
+    'spectacles',
   ),
+  // Звукорежиссёр: наушники на шее и серо-оливковая толстовка. На голову
+  // он их не надевает — по шее его и узнают.
   look(
     'engineer',
     {
       skin: SKIN.tan,
       hair: '#241c18',
-      cloth: '#3f4a5c',
-      trim: '#7f8fa8',
+      cloth: '#5e6349',
+      trim: '#8e9470',
       legs: '#2c3038',
       shoes: '#22242a',
       accent: '#ff9a3d',
     },
     'short',
     'hoodie',
-    'headphones',
+    'collar',
   ),
+  // Промоутер: тёмные очки в помещении и слишком узкая куртка цвета
+  // фуксии. Ни у кого в кадре больше нет этого цвета — так и задумано.
   look(
     'promoter',
     {
       skin: SKIN.olive,
       hair: '#191720',
-      cloth: '#22202e',
-      trim: '#ece6f2',
+      cloth: '#d6249f',
+      trim: '#f27ac9',
       legs: '#1d1c28',
       shoes: '#141419',
       accent: '#ffd34d',
     },
     'short',
-    'suit',
+    'jacket',
     'shades',
   ),
+  // Блогер: телефон в руке во всех кадрах и мятно-зелёный. В позе
+  // разговора рука поднята — телефон поднимается вместе с ней.
   look(
     'blogger',
     {
       skin: SKIN.light,
-      hair: '#3a2a2a',
-      cloth: '#f0e8f4',
-      trim: '#5fc9c0',
-      legs: '#5a7fc9',
+      hair: '#e8dfa8',
+      cloth: '#4fd6b0',
+      trim: '#a8f0dc',
+      legs: '#3a4256',
       shoes: '#e8e8ee',
-      accent: '#ff5fa8',
+      accent: '#5fe0ff',
     },
     'long',
     'crop',
-    'bag',
+    'phone',
   ),
+  // Конкурент: тот же силуэт, что у игрока, но всегда в чёрном и с
+  // идеально уложенными волосами. Сходство намеренное — он должен
+  // читаться как «ты, но собранный».
   look(
     'rival',
     {
       skin: SKIN.fair,
-      hair: '#d8bf62',
-      cloth: '#c94a4a',
-      trim: '#f0a0a0',
-      legs: '#2a2c38',
-      shoes: '#20222a',
-      accent: '#1c1e26',
+      hair: '#1e1a20',
+      cloth: '#1b1a22',
+      trim: '#3c3a48',
+      legs: '#16161c',
+      shoes: '#101014',
+      accent: '#c9c2d8',
     },
-    'curly',
+    'short',
     'jacket',
     'shades',
   ),

@@ -6,7 +6,16 @@
  * данные толпы и таблицы рукавов, юбок и примет в figure/.
  */
 
-export type HairStyle = 'short' | 'curly' | 'long' | 'ponytail' | 'bob' | 'cap' | 'bald';
+export type HairStyle =
+  | 'short'
+  | 'curly'
+  | 'long'
+  | 'ponytail'
+  | 'bob'
+  /** Высокий тугой пучок: по нему педагога видно с другого конца улицы. */
+  | 'bun'
+  | 'cap'
+  | 'bald';
 
 export type OutfitStyle =
   | 'tee'
@@ -27,4 +36,10 @@ export type Accessory =
   | 'earrings'
   | 'scarf'
   | 'necklace'
-  | 'bag';
+  | 'bag'
+  /** Очки на цепочке: не на глазах, а на груди. */
+  | 'spectacles'
+  /** Наушники на шее, а не на голове: примета звукорежиссёра. */
+  | 'collar'
+  /** Телефон в руке. У блогера он там всегда, даже на ходу. */
+  | 'phone';

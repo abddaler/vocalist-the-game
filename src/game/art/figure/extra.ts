@@ -72,6 +72,76 @@ export const EXTRA: Readonly<Record<string, Paint>> = {
     );
   },
 
+  /**
+   * Очки на цепочке. Не на глазах, а на груди: педагог снимает их, когда
+   * слушает, и это её примета вернее любой другой.
+   */
+  spectacles: (brush, figure, joints, up) => {
+    const y = joints.shoulder[0]!.y + 3;
+    const frame = tone(figure.colors.trim, 1);
+    // Цепочка идёт от висков вниз и сходится на груди.
+    for (const dir of [-1, 1]) {
+      stroke(
+        brush,
+        lift(at(joints.head.x + dir * (BUILD.headRx - 0.5), joints.head.y + 3), up),
+        lift(at(18 + dir * 5.4, y - 1), up),
+        lift(at(18 + dir * 2, y + 1.6), up),
+        0.7,
+        tone(figure.colors.accent, 0.9),
+      );
+      blob(brush, lift(at(18 + dir * 2.6, y + 3), up), 1.5, 1.3, '#dceef8');
+    }
+    // Перемычка между стёклами: без неё две линзы сливаются в тёмную
+    // полосу и читаются кошельком, а не очками.
+    stroke(
+      brush,
+      lift(at(16.4, y + 3), up),
+      lift(at(18, y + 3.4), up),
+      lift(at(19.6, y + 3), up),
+      0.7,
+      frame,
+    );
+  },
+
+  /**
+   * Наушники на шее. Звукорежиссёр не снимает их и на улице — по ним его
+   * узнают раньше, чем по лицу.
+   */
+  collar: (brush, figure, joints, up) => {
+    const y = joints.neck.y + 2.5;
+    const color = tone(figure.colors.accent, 1);
+    stroke(brush, lift(at(14.6, y), up), lift(at(18, y + 2.2), up), lift(at(21.4, y), up), 1.6, color);
+    for (const dx of [-4.4, 4.4]) {
+      blob(brush, lift(at(18 + dx, y + 1.4), up), 1.8, 2.2, color, figure.colors.accent);
+    }
+  },
+
+  /** Телефон в ближней руке: у блогера он там всегда. */
+  phone: (brush, figure, joints, up) => {
+    const hand = lift(joints.hand[joints.near]!, up);
+    shape(
+      brush,
+      [
+        at(hand.x - 1.6, hand.y - 2.6),
+        at(hand.x + 1.6, hand.y - 2.6),
+        at(hand.x + 1.6, hand.y + 2.6),
+        at(hand.x - 1.6, hand.y + 2.6),
+      ],
+      '#26242e',
+      '#26242e',
+    );
+    shape(
+      brush,
+      [
+        at(hand.x - 1, hand.y - 2),
+        at(hand.x + 1, hand.y - 2),
+        at(hand.x + 1, hand.y + 1.6),
+        at(hand.x - 1, hand.y + 1.6),
+      ],
+      tone(figure.colors.accent, 1.1),
+    );
+  },
+
   bag: (brush, figure, joints, up) => {
     const color = tone(figure.colors.accent, 1);
     stroke(

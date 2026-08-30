@@ -367,6 +367,16 @@ function hairOver(brush: Brush, figure: Figure, joints: Joints, up: number): voi
       blob(brush, at(head.x + dx, head.y - 5.2 + Math.abs(dx) * 0.34), 2.9, 2.6, shade(colors.hair));
     }
   }
+  if (style === 'bun') {
+    // Пучок сидит высоко и сзади: в три четверти он уходит в сторону,
+    // обратную повороту, и этим силуэт узнаётся раньше лица.
+    // Пучок сидит на темени, а не над ним: кадру всего шестьдесят два
+    // пикселя, и поднятый выше он срезается верхней кромкой.
+    const x = head.x - (turned ? 2.4 : 0);
+    // Без обводки: на шести пикселях контур съедает половину пучка и
+    // превращает его в бублик.
+    blob(brush, at(x, head.y - BUILD.headRy + 1.8), 3.2, 2.9, shade(colors.hair));
+  }
   if (style === 'ponytail') {
     const x = head.x - (turned ? 7 : 6.4);
     shape(brush, [at(x, head.y - 3), at(x + 2.4, head.y - 2), at(x + 1.6, head.y + 8.5), at(x - 2.3, head.y + 7.5)], shade(colors.hair));
