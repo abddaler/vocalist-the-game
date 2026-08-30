@@ -101,17 +101,14 @@ export const group = {
   },
 
   /** Ряд фонарей вдоль бордюра: ровный шаг, а не случайные точки. */
-  lamps(from: number, to: number, step: number, y: number): DecorDef[] {
-    const list: DecorDef[] = [];
-    for (let x = from; x <= to; x += step) list.push(decor('lamp', x, y));
-    return list;
-  },
-
-  /** Короткий ряд столбиков: они всегда стоят цепочкой, а не по одному. */
-  bollards(from: number, count: number, step: number, y: number): DecorDef[] {
-    const list: DecorDef[] = [];
-    for (let i = 0; i < count; i += 1) list.push(decor('bollard', from + i * step, y));
-    return list;
+  /**
+   * Короткая цепочка столбиков: они стоят вместе, а не по одному. Шаг
+   * неровный и задан таблицей, а не умножением: ровный шаг — ровно то,
+   * что норма Б.2 запрещает, и раньше эта функция его и строила.
+   */
+  bollards(from: number, count: number, y: number): DecorDef[] {
+    const steps = [0, 0.9, 2.1, 3.2];
+    return steps.slice(0, count).map((step) => decor('bollard', from + step, y));
   },
 
   /**

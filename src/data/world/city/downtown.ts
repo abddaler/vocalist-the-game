@@ -62,14 +62,12 @@ export const DOWNTOWN: DistrictDef = {
     decor('flowerbed', 24.5, 2.5),
     decor('planter', 2.5, 2.5),
     decor('planter', 16.5, 2.5),
-    decor('planter', 20.5, 2.5),
     decor('planter', 36.5, 2.5),
 
+    // Шаг между фонарями неровный нарочно: ровная гребёнка — первый
+    // признак того, что сцену не расставляли, а сгенерировали.
     decor('lamp', 4.5, 4.5),
-    decor('lamp', 10.5, 4.5),
     decor('lamp', 16.5, 4.5),
-    decor('lamp', 22.5, 4.5),
-    decor('lamp', 28.5, 4.5),
     decor('lamp', 34.5, 4.5),
     decor('billboard', 19.5, 4.5, 1),
     ...group.rest(7.5, 4.5),
@@ -81,7 +79,7 @@ export const DOWNTOWN: DistrictDef = {
     // вдоль него.
     decor('busStop', 14.5, 6.5),
     decor('trafficLight', 22.5, 6.5),
-    ...group.bollards(18.5, 3, 1.4, 7.5),
+    ...group.bollards(18.5, 3, 7.5),
     decor('newsbox', 3.5, 6.5),
     decor('mailbox', 6.5, 6.5),
     decor('bike', 23.5, 6.5),
@@ -91,9 +89,7 @@ export const DOWNTOWN: DistrictDef = {
     decor('car', 7.5, 9.5, 1),
     decor('car', 26.5, 9.5, 1),
     decor('car', 34.5, 9.5, 2),
-    ...group.lamps(4.5, 33.5, 7.25, 12.5),
     ...group.rest(11.5, 12.5),
-    ...group.rest(22.5, 12.5),
   ],
 
   gates: [gateLeft('hills', 7), gateRight('boulevard', 38, 7)],

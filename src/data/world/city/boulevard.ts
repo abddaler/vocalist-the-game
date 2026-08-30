@@ -62,28 +62,23 @@ export const BOULEVARD: DistrictDef = {
     decor('palm', 18.0, 2.5, 1),
     decor('tree', 23.8, 2.5, 0),
     decor('palm', 29.6, 2.5, 0),
-    decor('palm', 35.2, 2.5, 1),
+    decor('palm', 35.2, 2.5, 2),
     decor('bush', 5.5, 2.5),
     decor('bush', 16.5, 2.5),
-    decor('bush', 32.5, 2.5),
     decor('flowerbed', 21.5, 2.5),
     decor('flowerbed', 39.5, 2.5),
 
-    // Бордюр: фонари ровным рядом, кафе у ресторана, лотки и киоск.
+    // Бордюр: фонари вразнобой, кафе у ресторана, лотки и киоск.
     decor('lamp', 3.5, 4.5),
-    decor('lamp', 9.5, 4.5),
     decor('lamp', 15.5, 4.5),
-    decor('lamp', 21.5, 4.5),
-    decor('lamp', 27.5, 4.5),
     decor('lamp', 33.5, 4.5),
-    decor('lamp', 39.5, 4.5),
     ...group.cafe(12.5, 4.5, 0),
     decor('table', 17.5, 4.5),
     ...group.market(6.5, 4.5, 1),
     ...group.market(30.5, 4.5, 3),
     decor('kiosk', 24.5, 4.5),
     ...group.rest(0.6, 4.5),
-    ...group.bollards(9.5, 3, 0.9, 4.5),
+    ...group.bollards(9.5, 3, 4.5),
     decor('newsbox', 35.5, 4.5),
     decor('trafficLight', 19.5, 4.5),
 
@@ -94,20 +89,15 @@ export const BOULEVARD: DistrictDef = {
 
     // Зелёный островок между полосами: пальмы бульвара растут здесь.
     decor('palm', 3.5, 8.5, 2),
-    decor('palm', 11.5, 8.5, 1),
+    decor('palm', 10.2, 8.5, 1),
     decor('palm', 19.5, 8.5, 2),
-    decor('palm', 27.5, 8.5, 0),
-    decor('palm', 35.5, 8.5, 2),
-    decor('bush', 7.5, 8.5),
+    decor('palm', 28.9, 8.5, 0),
     decor('bush', 23.5, 8.5),
-    decor('bush', 39.5, 8.5),
     decor('flowerbed', 15.5, 8.5),
-    decor('flowerbed', 31.5, 8.5),
 
     // Дальняя полоса и тротуар у нижнего края.
     decor('car', 9.5, 10.5, 3),
     decor('car', 28.5, 10.5, 2),
-    ...group.lamps(6.5, 38.5, 8, 13.5),
     ...group.rest(19.5, 13.5),
   ],
 

@@ -68,6 +68,20 @@ describe('разбор локаций', () => {
     }
   });
 
+  it('ни одной локации с повтором сверх нормы и ровным рядом', () => {
+    // Разбор нашёл девятнадцать повторов и шестнадцать рядов разом, и
+    // все они держались на генераторах вроде «фонарь через каждые шесть
+    // плиток». Проверка стоит здесь, чтобы гребёнка не вернулась молча:
+    // прогон разбора руками бывает раз в месяц, а тесты идут всегда.
+    const [, repeats, rows] = RULES;
+    expect(repeats).toBeDefined();
+    expect(rows).toBeDefined();
+    for (const place of places) {
+      expect(repeats!(place).map((f) => f.subject), place.id).toEqual([]);
+      expect(rows!(place).map((f) => f.subject), place.id).toEqual([]);
+    }
+  });
+
   it('разбор доходит до конца на каждой локации', () => {
     for (const place of places) {
       for (const rule of RULES) expect(() => rule(place), place.id).not.toThrow();

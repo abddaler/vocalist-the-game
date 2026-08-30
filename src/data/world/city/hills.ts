@@ -61,28 +61,25 @@ export const HILLS: DistrictDef = {
     decor('tree', 7.1, 2.5, 0),
     decor('palm', 14.3, 2.5, 1),
     decor('tree', 18.7, 2.5, 1),
-    decor('palm', 25.0, 2.5, 2),
-    decor('tree', 30.0, 2.5, 2),
+    // Пальма и дерево поменялись местами: высокое стоит строго в швах
+    // между домами, шаг между швами одинаков, и ровный ряд ломается не
+    // сдвигом — сдвиг закрыл бы вывеску, — а чередованием пород.
+    decor('tree', 25.0, 2.5, 2),
+    decor('palm', 30.0, 2.5, 2),
     decor('palm', 35.7, 2.5, 0),
-    decor('bush', 5.5, 2.5),
     decor('bush', 9.5, 2.5),
-    decor('bush', 15.5, 2.5),
     decor('bush', 22.5, 2.5),
-    decor('bush', 26.5, 2.5),
-    decor('bush', 33.5, 2.5),
     decor('flowerbed', 12.5, 2.5),
     decor('flowerbed', 38.5, 2.5),
 
     // Кромка террасы: фонари по тем же разрывам, мебель у самых перил.
+    // Их трое, а не шестеро: одинаковый предмет чаще трёх раз в кадре
+    // читается заливкой, а не улицей.
     decor('lamp', 7.1, 3.5),
-    decor('lamp', 14.3, 3.5),
     decor('lamp', 18.7, 3.5),
-    decor('lamp', 25.0, 3.5),
     decor('lamp', 30.0, 3.5),
-    decor('lamp', 35.7, 3.5),
     ...group.rest(2.5, 3.5),
     ...group.rest(21.5, 3.5),
-    ...group.rest(32.5, 3.5),
     decor('mailbox', 5.5, 3.5),
     decor('planter', 11.5, 3.5),
     decor('planter', 17.5, 3.5),
@@ -95,7 +92,6 @@ export const HILLS: DistrictDef = {
     decor('mailbox', 32.5, 5.5),
     decor('bike', 7.8, 5.5),
     decor('dog', 11.5, 6.5, 0),
-    ...group.rest(24.6, 5.5),
     ...group.rest(35.5, 5.5),
 
     // Мостовая и газон у нижнего края.
@@ -103,12 +99,10 @@ export const HILLS: DistrictDef = {
     decor('car', 17.5, 8.5, 3),
     decor('car', 33.5, 8.5, 1),
     decor('tree', 3.5, 11.5, 1),
-    decor('bush', 8.5, 11.5),
     decor('tree', 12.5, 11.5, 0),
     decor('tree', 22.5, 11.5, 2),
     decor('bush', 27.5, 11.5),
     decor('tree', 31.5, 11.5, 1),
-    decor('bush', 37.5, 11.5),
   ],
 
   gates: [gateRight('downtown', 40, 6)],

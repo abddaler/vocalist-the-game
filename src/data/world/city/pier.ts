@@ -68,11 +68,8 @@ export const PIER: DistrictDef = {
     // напротив щита они срезают надпись.
     decor('palm', 0.4, 2.5, 2),
     decor('palm', 6.8, 2.5, 1),
-    decor('palm', 13.6, 2.5, 2),
     decor('palm', 20.4, 2.5, 0),
-    decor('palm', 27.5, 2.5, 1),
     decor('palm', 33.0, 2.5, 2),
-    decor('palm', 39.1, 2.5, 0),
     decor('crate', 3.5, 3.5, 0),
     decor('crate', 4.4, 3.4, 1),
     decor('surfboard', 17.3, 3.5, 0),
@@ -81,7 +78,6 @@ export const PIER: DistrictDef = {
     decor('lamp', 20.4, 3.5),
     decor('lamp', 33.0, 3.5),
     ...group.rest(10.5, 3.5),
-    ...group.rest(30.5, 3.5),
     decor('bike', 24.5, 3.5),
     decor('hydrant', 36.5, 3.5),
 
@@ -90,10 +86,8 @@ export const PIER: DistrictDef = {
     decor('car', 35.5, 5.5, 0),
 
     // Парапет над набережной: столбики цепочкой, урны у скамей.
-    ...group.bollards(6.5, 4, 1.6, 8.5),
-    ...group.bollards(24.5, 4, 1.6, 8.5),
+    ...group.bollards(6.5, 3, 8.5),
     ...group.rest(17.5, 7.5),
-    ...group.rest(37.5, 7.5),
 
     // Настил: хижина, торговый ряд, кафе и пальмы вдоль променада.
     decor('hut', 6.5, 10.5),
@@ -104,16 +98,13 @@ export const PIER: DistrictDef = {
     decor('palm', 3.5, 10.5, 1),
     decor('palm', 20.5, 10.5, 2),
     decor('palm', 31.5, 10.5, 0),
-    decor('palm', 41.5, 10.5, 1),
     decor('dog', 29.5, 11.5, 1),
     decor('newsbox', 14.5, 10.5),
 
     // Пляж: места отдыха группами, вышка спасателя и лодка у воды.
     ...group.beach(4.5, 12.5, 0),
-    ...group.beach(11.5, 12.5, 1),
+    ...group.beach(12.8, 12.5, 1),
     ...group.beach(20.5, 12.5, 2),
-    ...group.beach(29.5, 12.5, 0),
-    ...group.beach(38.5, 12.5, 1),
     decor('lifeguard', 33.5, 12.5),
     decor('boat', 16.5, 15.2, 0),
     decor('surfboard', 25.5, 15.5, 1),

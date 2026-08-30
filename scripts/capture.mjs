@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 
 /**
  * Съёмка локаций для разбора: `npm run capture`.
@@ -103,7 +103,11 @@ async function sheet(browser, numbers) {
 const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM ?? undefined,
 });
-await rm(OUT, { recursive: true, force: true });
+// Чистится только съёмка: разбор написан руками и одним прогоном
+// восстановлению не подлежит. Первый раз он тут и погиб.
+for (const stale of await readdir(OUT).catch(() => [])) {
+  if (stale !== 'REPORT.md') await rm(`${OUT}/${stale}`, { recursive: true, force: true });
+}
 
 const problems = [];
 /** Третье поле — обязан ли вид быть без единой надписи. */
