@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FONT_METRICS, measureLine, pixelFont, wrapText } from '../font';
+import { FONT_METRICS, advanceOf, measureLine, pixelFont, wrapText } from '../font';
 import { COLORS } from '../theme';
 import type { Rect } from './Hotspots';
 
@@ -9,12 +9,6 @@ export interface TextStyle {
   color?: number | undefined;
   align?: 'left' | 'center' | 'right' | undefined;
   wrapWidth?: number | undefined;
-  /**
-   * Наклон надписи, радианы. Нужен вывескам: щит лежит в плоскости
-   * фасада, а горизонтальная строка на нём читается наклейкой поверх.
-   * При наклоне надпись поворачивается вокруг своей середины.
-   */
-  angle?: number | undefined;
 }
 
 /** Надпись на экране: вызывающему нужна только её ширина под подложку. */
@@ -243,21 +237,36 @@ export class Painter {
     }
 
     const align = style.align ?? 'left';
-    const turn = style.angle ?? 0;
-    // Наклонная надпись вертится вокруг середины, прямая — висит от
-    // своей верхней кромки, как весь остальной интерфейс.
-    object.setOrigin(align === 'center' ? 0.5 : align === 'right' ? 1 : 0, turn === 0 ? 0 : 0.5);
+    object.setOrigin(align === 'center' ? 0.5 : align === 'right' ? 1 : 0, 0);
     object.setLeftAlign();
     if (align === 'center') object.setCenterAlign();
     if (align === 'right') object.setRightAlign();
-    // Поворот сбрасывается всегда: надпись идёт из пула, и наклон
-    // вывески достался бы следующему, кто её возьмёт.
-    object.setRotation(turn);
     object.setPosition(Math.round(x), Math.round(y));
 
     // Надпись тоже разрезает поток: подложка под неё должна лечь ниже.
     this.shapes = null;
     return object;
+  }
+
+  /**
+   * Надпись вдоль наклонной линии, серединой в точке. Каждая буква стоит
+   * прямо, вниз уходит только базовая линия.
+   *
+   * Так текст и лежит на стене в изометрии: стена уходит в глубину, но
+   * вертикаль на ней остаётся вертикалью экрана. Поворот всей строки
+   * заваливал штрихи букв и растрировал их со сглаживанием — в
+   * пиксель-арте это читается кривизной, а не перспективой.
+   */
+  slanted(x: number, y: number, value: string, slope: number, style: TextStyle = {}): void {
+    const size = style.scale ?? 1;
+    const width = measureLine(value) * size;
+    // Буква висит от своей верхней кромки, а точка задана серединой.
+    const top = y - (FONT_METRICS.height * size) / 2;
+    let cursor = x - width / 2;
+    for (const char of value) {
+      this.text(cursor, top + (cursor - x) * slope, char, { ...style, align: 'left' });
+      cursor += advanceOf(char) * size;
+    }
   }
 
   /**

@@ -286,13 +286,11 @@ function drawSign(ctx: BlockPaint, block: IsoBlock): void {
     panel(painter, base, 'x', { ...board, top: top + 2, height: SIGN_HEIGHT + 4 }, COLORS.money, 0.16);
   }
 
-  // Надпись наклонена по фасаду. Горизонтальная строка на наклонном щите
-  // сползает с него: у стометровой вывески края разъезжаются на четверть
-  // её длины.
+  // Надпись идёт по щиту, но буквы стоят прямо: на стене в изометрии
+  // наклоняется базовая линия, а не сами буквы. Повёрнутая строка
+  // заваливала штрихи и сползала со щита — вывеска читалась кривой.
   const middle = isoAt(base, r.w / 2, 0, top - SIGN_HEIGHT / 2);
-  painter.text(middle.x, middle.y, text, {
-    align: 'center',
-    angle: SIGN_TILT,
+  painter.slanted(middle.x, middle.y, text, SIGN_SLOPE, {
     color: ambience.lampsOn ? COLORS.money : COLORS.text,
   });
 }
@@ -300,8 +298,8 @@ function drawSign(ctx: BlockPaint, block: IsoBlock): void {
 /** Высота щита в пикселях. */
 const SIGN_HEIGHT = 15;
 
-/** Наклон фасада: подъём плитки к её половине ширины. */
-const SIGN_TILT = Math.atan2(TILE.halfH, TILE.halfW);
+/** Наклон фасада: на сколько базовая линия опускается за пиксель вправо. */
+const SIGN_SLOPE = TILE.halfH / TILE.halfW;
 
 /**
  * Стена комнаты: та же коробка, но без окон и вывесок — зато с панелью
