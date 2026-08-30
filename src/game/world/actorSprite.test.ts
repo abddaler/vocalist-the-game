@@ -162,3 +162,45 @@ describe('стоящий и севший голос', () => {
     for (const pose of ['wornA', 'wornB']) expect(ACT_POSES).toContain(pose);
   });
 });
+
+describe('вся цепочка поворота', () => {
+  /** Как клавиша превращается в смещение по сетке: см. WorldController. */
+  const byKey = (x: number, y: number): { x: number; y: number } => {
+    const length = Math.hypot(x, y) || 1;
+    return { x: (x / length + y / length) / 2, y: (y / length - x / length) / 2 };
+  };
+
+  const frame = (dx: number, dy: number, was: Facing): string => {
+    const facing = facingFrom({ x: 0, y: 0 }, { x: dx, y: dy }, was);
+    const look = lookFor(facing, 0.3, true);
+    return `${look.pose}${look.flipX ? '-зеркало' : ''}`;
+  };
+
+  it('четыре клавиши дают четыре разных кадра', () => {
+    // «Наверх иду — моделька не меняется»: вот проверка, что меняется.
+    const up = byKey(0, -1);
+    const down = byKey(0, 1);
+    const right = byKey(1, 0);
+    const left = byKey(-1, 0);
+    expect(frame(down.x, down.y, 'se')).not.toBe(frame(up.x, up.y, 'se'));
+    expect(frame(right.x, right.y, 'se')).not.toBe(frame(left.x, left.y, 'se'));
+  });
+
+  it('вверх показывает спину, вниз — лицо', () => {
+    const up = byKey(0, -1);
+    const down = byKey(0, 1);
+    expect(frame(up.x, up.y, 'se').startsWith('ne')).toBe(true);
+    expect(frame(down.x, down.y, 'se').startsWith('se')).toBe(true);
+  });
+
+  it('шаг по маршруту вдоль осей сетки различает все четыре стороны', () => {
+    // Тап ведёт по клеткам: шаг идёт вдоль оси, а не по экрану.
+    const seen = new Set([
+      frame(1, 0, 'se'),
+      frame(-1, 0, 'se'),
+      frame(0, 1, 'se'),
+      frame(0, -1, 'se'),
+    ]);
+    expect(seen.size).toBe(4);
+  });
+});

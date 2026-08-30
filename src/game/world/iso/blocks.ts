@@ -4,7 +4,8 @@ import { COLORS } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
 import { mix, scale } from '../ambience';
 import type { Ambience } from '../ambience';
-import { toScreen } from './project';
+import { isoAt, panel } from './planes';
+import { TILE, toScreen } from './project';
 import type { ScreenPoint } from './project';
 import { face, tile } from './shapes';
 import { signWidth } from './sign';
@@ -13,7 +14,7 @@ import type { IsoBlock } from './scene';
 /**
  * Дома как объёмы. Видно две грани: длинную лицевую и короткую боковую,
  * плюс крышу. На лицевой — окна, витрина и дверь; над ней — вывеска
- * щитом, потому что надпись на скошенной грани не прочесть.
+ * щитом в плоскости того же фасада.
  *
  * Ряд окон, витрина и козырёк подбираются по роду занятий дома: клуб,
  * склад и вилла должны отличаться силуэтом, а не только цветом.
@@ -100,11 +101,7 @@ export function drawBlock(ctx: BlockPaint, block: IsoBlock): void {
  */
 export function drawBlockSign(ctx: BlockPaint, block: IsoBlock): void {
   if (!block.nameKey || block.wall) return;
-  const r = block.rect;
-  const lift = block.tall;
-  const west = at(ctx, r.x, r.y + r.h, lift);
-  const south = at(ctx, r.x + r.w, r.y + r.h, lift);
-  drawSign(ctx, block, west, south, lift);
+  drawSign(ctx, block);
 }
 
 interface Corners {
@@ -264,32 +261,47 @@ function drawSideWindows(
  * вывеске дом и узнают. Щит висит на самой стене, а не над крышей —
  * иначе у высокого дома он уезжает под панель ресурсов.
  */
-function drawSign(
-  ctx: BlockPaint,
-  block: IsoBlock,
-  west: ScreenPoint,
-  south: ScreenPoint,
-  lift: number,
-): void {
+function drawSign(ctx: BlockPaint, block: IsoBlock): void {
   const { painter, ambience } = ctx;
+  const r = block.rect;
+  const lift = block.tall;
   const text = t(block.nameKey ?? '');
-  const width = signWidth(block.nameKey ?? '', block.rect.w);
-  const top = Math.min(14, Math.max(6, lift - 40));
-  const mid = along(west, south, 0.5, top);
-  const board = { x: Math.round(mid.x - width / 2), y: mid.y, w: Math.round(width), h: 15 };
+  const width = signWidth(block.nameKey ?? '', r.w);
 
-  painter.fill({ x: board.x - 1, y: board.y - 1, w: board.w + 2, h: board.h + 2 }, 0x14121f);
-  painter.fill(board, mix(scale(block.color, ambience.light), 0x1a1626, 0.55));
-  painter.fill({ x: board.x, y: board.y, w: board.w, h: 1 }, scale(block.color, 1.5));
-  painter.fill({ x: board.x, y: board.y + board.h - 1, w: board.w, h: 1 }, 0x0e0c16);
+  // Щит лежит в плоскости фасада, а не в осях экрана. Прямой
+  // прямоугольник на наклонной стене смотрит в камеру и выдаёт себя
+  // наклейкой: дом уходит в глубину, а вывеска стоит поперёк.
+  const base = at(ctx, r.x, r.y + r.h, 0);
+  const span = width / TILE.halfW;
+  const drop = Math.min(14, Math.max(6, lift - 40));
+  const top = lift - drop;
+  const board = { span, along: r.w / 2, top, height: SIGN_HEIGHT };
+  const fill = mix(scale(block.color, ambience.light), 0x1a1626, 0.55);
+
+  panel(painter, base, 'x', { ...board, top: top + 1, height: SIGN_HEIGHT + 2 }, 0x14121f);
+  panel(painter, base, 'x', board, fill);
+  panel(painter, base, 'x', { ...board, height: 1 }, scale(block.color, 1.5));
+  panel(painter, base, 'x', { ...board, top: top - SIGN_HEIGHT + 1, height: 1 }, 0x0e0c16);
   if (ambience.lampsOn) {
-    painter.fill({ x: board.x - 2, y: board.y - 2, w: board.w + 4, h: board.h + 4 }, COLORS.money, 0.16);
+    panel(painter, base, 'x', { ...board, top: top + 2, height: SIGN_HEIGHT + 4 }, COLORS.money, 0.16);
   }
-  painter.label(board, text, {
+
+  // Надпись наклонена по фасаду. Горизонтальная строка на наклонном щите
+  // сползает с него: у стометровой вывески края разъезжаются на четверть
+  // её длины.
+  const middle = isoAt(base, r.w / 2, 0, top - SIGN_HEIGHT / 2);
+  painter.text(middle.x, middle.y, text, {
     align: 'center',
+    angle: SIGN_TILT,
     color: ambience.lampsOn ? COLORS.money : COLORS.text,
   });
 }
+
+/** Высота щита в пикселях. */
+const SIGN_HEIGHT = 15;
+
+/** Наклон фасада: подъём плитки к её половине ширины. */
+const SIGN_TILT = Math.atan2(TILE.halfH, TILE.halfW);
 
 /**
  * Стена комнаты: та же коробка, но без окон и вывесок — зато с панелью
