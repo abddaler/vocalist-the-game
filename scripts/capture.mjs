@@ -43,9 +43,17 @@ async function open(browser, extra) {
   return { page, errors };
 }
 
-async function shoot(page, district, location, file) {
+async function shoot(page, district, location, file, mute) {
   await page.evaluate(([d, l]) => window.__vsCapture.go(d, l), [district, location]);
   await page.waitForTimeout(700);
+  // Кадр с подписью — испорченный кадр: имя NPC и подсказка действия
+  // закрывают ровно ту расстановку, ради которой снимаем. Один раз это
+  // уже прошло мимо: `bare` убирал панель и кнопки, а текст мира — нет.
+  // Отладочные виды считают номера глубины своей работой и не в счёт.
+  if (mute) {
+    const labels = await page.evaluate(() => window.__vsCapture.labels());
+    if (labels > 0) throw new Error(`${file}: в кадре осталось надписей: ${labels}`);
+  }
   await page.screenshot({ path: file, clip: { x: 0, y: 0, ...SHOT } });
 }
 
@@ -98,19 +106,20 @@ const browser = await chromium.launch({
 await rm(OUT, { recursive: true, force: true });
 
 const problems = [];
+/** Третье поле — обязан ли вид быть без единой надписи. */
 const views = [
-  ['native', []],
-  ['grid', ['iso']],
-  ['walkable', ['walk']],
-  ['with_character', ['cast']],
+  ['native', [], true],
+  ['grid', ['iso'], false],
+  ['walkable', ['walk'], true],
+  ['with_character', ['cast'], true],
 ];
 
-for (const [name, extra] of views) {
+for (const [name, extra, mute] of views) {
   const { page, errors } = await open(browser, extra);
   for (const [district, location] of PLACES) {
     const id = location ?? district;
     await mkdir(`${OUT}/${id}`, { recursive: true });
-    await shoot(page, district, location, `${OUT}/${id}/${name}.png`);
+    await shoot(page, district, location, `${OUT}/${id}/${name}.png`, mute);
   }
   problems.push(...errors);
   await page.close();

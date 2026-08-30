@@ -108,7 +108,7 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
   if (devFlag('walk')) drawWalkable(painter, scene, toView);
   if (devFlag('iso')) drawIsoDebug(painter, scene, toView, position);
 
-  if (focus) {
+  if (focus && !devFlag('bare')) {
     const text = promptFor(focus);
     const width = Math.min(CONTENT.width - 20, text.length * 6 + 20);
     const bar = {

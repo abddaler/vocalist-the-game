@@ -1,4 +1,5 @@
 import type { WorldPoint } from '@core/types';
+import { devFlag } from '@platform/devtools';
 import { t } from '@ui/i18n';
 import { COLORS, LAYOUT } from '@ui/theme';
 import type { Hotspots, Rect } from '@ui/widgets/Hotspots';
@@ -74,7 +75,7 @@ export function markPieces(
 
     // Подпись поверх всего: она нужна, чтобы прочесть, а не чтобы стоять
     // в очереди по глубине.
-    if (active && target.kind === 'point') {
+    if (active && target.kind === 'point' && !devFlag('bare')) {
       pieces.push({
         depth: Number.POSITIVE_INFINITY,
         over: true,

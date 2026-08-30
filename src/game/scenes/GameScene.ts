@@ -236,6 +236,14 @@ export class GameScene extends Phaser.Scene {
         this.propShot = kind;
         this.dirty = true;
       },
+      /**
+       * Сколько надписей осталось в кадре. Под `bare` их обязано быть
+       * ноль: подпись закрывает ровно то, что разбираем, — расстановку.
+       * Проверка живёт здесь, а не в тесте, потому что дефект был именно
+       * в том, что часть текста рисуется мимо renderHud и renderNav.
+       */
+      labels: (): number =>
+        this.painter.drawn().labels + this.worldPainter.drawn().labels + this.backPainter.drawn().labels,
       go: (districtId: DistrictId, locationId: string | null): void => {
         this.propShot = null;
         this.world.jump(districtId, locationId);

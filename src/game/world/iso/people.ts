@@ -70,6 +70,7 @@ export function inhabitantPieces(
 ): Piece[] {
   const pieces: Piece[] = [];
   const plain = devFlag('plain');
+  const bare = devFlag('bare');
 
   const place = (point: WorldPoint): ScreenPoint =>
     toView(point, heightAt(scene.map, point));
@@ -119,8 +120,10 @@ export function inhabitantPieces(
     } else {
       painter.sprite(at.x, at.y - pose.lift, ACTOR_TEXTURE, pose.flipX, actorTexture(look, pose.pose));
     }
-    if (nameKey) drawNamePlate(painter, at, nameKey);
-    if (mood) drawBubble(painter, at, mood, nameKey !== undefined);
+    // Съёмка для разбора идёт без единой буквы: имя и пузырь — это
+    // интерфейс, а он закрывает ровно то, что разбираем, — расстановку.
+    if (nameKey && !bare) drawNamePlate(painter, at, nameKey);
+    if (mood && !bare) drawBubble(painter, at, mood, nameKey !== undefined);
   };
 
   for (const actor of params.crowd) {
