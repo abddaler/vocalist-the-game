@@ -63,6 +63,33 @@ export function lookFor(facing: Facing, walked: number, moving: boolean): ActorL
 }
 
 /**
+ * Такт дыхания стоящего, мс. Неподвижная фигура читается паузой в игре,
+ * а не человеком, который ждёт: подъём корпуса на пиксель раз в полсекунды
+ * стоит одного числа и снимает это ощущение.
+ */
+const IDLE_MS = 560;
+
+/** Дыхание: корпус стоящего поднимается на пиксель и опускается. */
+export function idleBreath(look: ActorLook, clock: number): ActorLook {
+  return { ...look, lift: clock % IDLE_MS < IDLE_MS / 2 ? 0 : 1 };
+}
+
+/**
+ * Такт севшего голоса, мс. Медленнее дыхания: усталость не частит.
+ */
+const WORN_MS = 700;
+
+/**
+ * Кадр севшего голоса: сутулость и рука у горла. Игрок должен видеть
+ * состояние связок на человеке — полоску в углу не замечают, пока не
+ * станет поздно.
+ */
+export function wornLook(clock: number): ActorLook {
+  const second = clock % WORN_MS >= WORN_MS / 2;
+  return { pose: (second ? 'wornB' : 'wornA') as ActorPose, flipX: false, lift: second ? 1 : 0 };
+}
+
+/**
  * Такт разговора: два кадра за это время, мс. Реплика идёт медленнее
  * шага — человек, машущий рукой в темпе ходьбы, выглядит не говорящим,
  * а отгоняющим осу.

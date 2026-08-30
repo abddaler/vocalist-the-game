@@ -1,4 +1,5 @@
 import type { WorldPoint } from '@core/types';
+import { BALANCE } from '@data/balance';
 import { devFlag } from '@platform/devtools';
 import { t } from '@ui/i18n';
 import { COLORS } from '@ui/theme';
@@ -11,7 +12,7 @@ import { drawShadow } from '../backdrop';
 import { ISO_OVERHEAD, paintProp, propId } from './props';
 import { PROP_ANCHOR } from '../PropAtlas';
 import type { PropAtlas } from '../PropAtlas';
-import { lookFor, talkLook } from '../actorSprite';
+import { idleBreath, lookFor, talkLook, wornLook } from '../actorSprite';
 import type { CrowdActor, Mood } from '../Crowd';
 import type { Facing } from '../actorSprite';
 import type { ScreenPoint } from './project';
@@ -27,6 +28,10 @@ export interface Inhabitants {
   readonly walked: number;
   readonly moving: boolean;
   readonly crowd: readonly CrowdActor[];
+  /** Часы сцены, мс. */
+  readonly clock: number;
+  /** Здоровье связок игрока: ниже порога усталости он ходит севшим. */
+  readonly vocalHealth: number;
 }
 
 /**
@@ -123,13 +128,14 @@ export function inhabitantPieces(
     // Названный, у которого висит пузырь и который стоит, — говорит.
     // Позы разговора есть только у него: прохожему их не собирают.
     const talking = actor.mood !== null && !actor.moving && ACT_LOOKS.has(actor.member.look);
+    const idle = lookFor(actor.facing, actor.walked, actor.moving);
     pieces.push({
       depth: actor.position.x + actor.position.y,
       draw: () =>
         person(
           actor.position,
           look,
-          talking ? talkLook(actor.mood!.age) : lookFor(actor.facing, actor.walked, actor.moving),
+          talking ? talkLook(actor.mood!.age) : actor.moving ? idle : idleBreath(idle, params.clock),
           actor.member.nameKey,
           actor.mood,
         ),
@@ -138,8 +144,7 @@ export function inhabitantPieces(
 
   pieces.push({
     depth: params.position.x + params.position.y,
-    draw: () =>
-      person(params.position, PLAYER_LOOK, lookFor(params.facing, params.walked, params.moving)),
+    draw: () => person(params.position, PLAYER_LOOK, playerLook(params)),
   });
 
   return pieces;
@@ -235,4 +240,15 @@ const PLAIN_LOW = 12;
 function plainColor(look: number): number {
   const colors = LOOKS[look]?.colors;
   return colors ? Number.parseInt(colors.cloth.slice(1), 16) : 0x888888;
+}
+
+/**
+ * Кадр игрока. Идёт — шаг; стоит с севшим голосом — сутулость и рука у
+ * горла; просто стоит — дыхание.
+ */
+function playerLook(params: Inhabitants): { pose: ActorPose; flipX: boolean; lift: number } {
+  const step = lookFor(params.facing, params.walked, params.moving);
+  if (params.moving) return step;
+  if (params.vocalHealth < BALANCE.vocal.tiers.fatigue) return wornLook(params.clock);
+  return idleBreath(step, params.clock);
 }

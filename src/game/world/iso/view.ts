@@ -41,6 +41,8 @@ export interface IsoViewParams {
   readonly walked: number;
   readonly moving: boolean;
   readonly crowd: readonly CrowdActor[];
+  /** Часы сцены, мс. По ним дышат стоящие и качается севший голос. */
+  readonly clock: number;
   readonly onActivate: (target: WorldTarget) => void;
   readonly onWalk: (point: WorldPoint) => void;
 }
@@ -92,7 +94,13 @@ export function renderIso(params: IsoViewParams, scene: IsoScene): void {
   const focus = nearest(position, scene.targets);
   drawPieces([
     ...markPieces(painter, hotspots, scene, params, toView, focus, ambience),
-    ...inhabitantPieces(painter, params, scene, toView, ambience),
+    ...inhabitantPieces(
+      painter,
+      { ...params, vocalHealth: params.state.resources.vocalHealth },
+      scene,
+      toView,
+      ambience,
+    ),
   ]);
 
   drawWash(painter, { x: 0, y: CONTENT.y, w: CONTENT.width, h: CONTENT.height }, ambience);

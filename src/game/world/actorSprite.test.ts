@@ -5,7 +5,8 @@ import { ACT_LOOKS, LOOKS, PLAYER_LOOK } from '../art';
 import { ACT_POSES, POSES } from '../art';
 import { POSE } from '../art/figure/pose';
 import { CYCLE } from '@ui/screens/ActivityScene';
-import { facingFrom, lookFor, talkLook } from './actorSprite';
+import { BALANCE } from '@data/balance';
+import { facingFrom, idleBreath, lookFor, talkLook, wornLook } from './actorSprite';
 
 describe('поворот персонажа', () => {
   it('следует за преобладающей осью движения', () => {
@@ -98,5 +99,36 @@ describe('позы дела', () => {
         expect(ACT_LOOKS.has(member.look)).toBe(true);
       }
     }
+  });
+});
+
+describe('стоящий и севший голос', () => {
+  const stand = lookFor('down', 0, false);
+
+  it('стоящий дышит: корпус поднимается и опускается', () => {
+    const lifts = new Set([0, 280, 560, 840].map((clock) => idleBreath(stand, clock).lift));
+    expect(lifts).toEqual(new Set([0, 1]));
+  });
+
+  it('дыхание не трогает позу, только подъём', () => {
+    for (const clock of [0, 300, 700]) {
+      expect(idleBreath(stand, clock).pose).toBe(stand.pose);
+      expect(idleBreath(stand, clock).flipX).toBe(stand.flipX);
+    }
+  });
+
+  it('севший голос берёт свои два кадра', () => {
+    const poses = new Set([0, 350, 700, 1050].map((clock) => wornLook(clock).pose));
+    expect(poses).toEqual(new Set(['wornA', 'wornB']));
+  });
+
+  it('порог севшего голоса — усталость из баланса, а не число в рендере', () => {
+    // Порог живёт в data/balance.ts вместе с остальными порогами связок.
+    expect(BALANCE.vocal.tiers.fatigue).toBeGreaterThan(BALANCE.vocal.tiers.hoarse);
+    expect(BALANCE.vocal.tiers.fatigue).toBeLessThan(BALANCE.vocal.tiers.normal);
+  });
+
+  it('позы севшего голоса собраны игроку', () => {
+    for (const pose of ['wornA', 'wornB']) expect(ACT_POSES).toContain(pose);
   });
 });

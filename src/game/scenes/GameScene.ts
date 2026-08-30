@@ -61,6 +61,8 @@ export class GameScene extends Phaser.Scene {
   private diagnostics!: Diagnostics;
   /** Отпечаток надетого, по которому кадры игрока перерисовываются. */
   private dressed = '';
+  /** Часы сцены, мс. По ним дышат стоящие и качается севший голос. */
+  private clock = 0;
 
   private readonly activity = new ActivityRunner();
 
@@ -150,6 +152,7 @@ export class GameScene extends Phaser.Scene {
 
   override update(time: number, delta: number): void {
     this.input$.update();
+    this.clock = time;
     // Счётчик кадров живёт всегда: он должен показать именно тот кадр,
     // который тормозит, а не тот, что был бы при включённой отладке.
     if (this.diagnostics.tick(time, delta)) this.dirty = true;
@@ -333,6 +336,7 @@ export class GameScene extends Phaser.Scene {
         walked: this.world.walked,
         moving: this.world.moving,
         crowd: this.world.crowd,
+        clock: this.clock,
         onActivate: (target: WorldTarget) => this.world.activate(target),
         onWalk: (point: WorldPoint) => this.world.walkTo(point),
       },
