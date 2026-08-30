@@ -1,8 +1,8 @@
 import type { Colors } from '../palettes';
 import { BUILD } from './pose';
 import type { Joints, Point } from './pose';
-import { blob, limb, lit, shape, stroke, tone, trunk } from './draw';
-import type { Brush } from './draw';
+import { bands, blob, limb, shade, shape, stroke, tone, trunk } from './draw';
+import type { Brush, Paint } from './draw';
 
 /**
  * Сборка фигуры: тело, одежда, причёска, лицо. Порядок тот же, что был
@@ -39,10 +39,10 @@ export function paintFigure(brush: Brush, figure: Figure, joints: Joints): void 
   const sleeve = SLEEVES[figure.outfit] ?? 'short';
   const skirt = SKIRTS.has(figure.outfit);
 
-  const skin = lit(brush, colors.skin, 8, 28);
+  const skin = shade(colors.skin);
   const dim = tone(colors.skin, 0.8);
-  const cloth = lit(brush, colors.cloth, 8, 28);
-  const trousers = lit(brush, colors.legs, 10, 26);
+  const cloth = shade(colors.cloth);
+  const trousers = shade(colors.legs);
   const shoes = tone(colors.shoes, 1);
 
   // Дальняя нога и рука — приглушённые: так читается, что они за корпусом.
@@ -92,9 +92,9 @@ function arm(
   joints: Joints,
   which: number,
   up: number,
-  fill: string | CanvasGradient,
+  fill: Paint,
   sleeve: 'bare' | 'short' | 'long',
-  cloth: string | CanvasGradient,
+  cloth: Paint,
   outline: { skin: string; cloth: string },
 ): void {
   const from = lift(joints.shoulder[which]!, up);
@@ -125,7 +125,7 @@ function leg(
   joints: Joints,
   which: number,
   up: number,
-  fill: string | CanvasGradient,
+  fill: Paint,
   shoe: string,
   outline: { leg: string; shoe: string },
 ): void {
@@ -144,12 +144,12 @@ function dressTrunk(
   figure: Figure,
   joints: Joints,
   up: number,
-  cloth: string | CanvasGradient,
+  cloth: Paint,
 ): void {
   const shoulderY = joints.shoulder[0]!.y;
   const size = girth(joints.view);
   const bare = SLEEVES[figure.outfit] === 'bare';
-  const top = bare ? shoulderY + 2.5 : shoulderY - 2.2;
+  const top = bare ? shoulderY + 2.5 : shoulderY - 2.9;
   const wide = bare ? size.shoulders - 3 : size.shoulders;
   trunk(brush, lift(at(18, top), up), lift(at(joints.hip.x, joints.hip.y + 1.5), up), wide, size.waist - 0.5, cloth, figure.colors.cloth);
   if (!bare) {
@@ -171,7 +171,7 @@ function dressTrunk(
 
 function dressSkirt(brush: Brush, figure: Figure, joints: Joints, up: number): void {
   const y = joints.hip.y + 1;
-  const fill = lit(brush, figure.colors.legs, 10, 26);
+  const fill = shade(figure.colors.legs);
   shape(
     brush,
     [
@@ -284,7 +284,7 @@ function hairBehind(brush: Brush, figure: Figure, joints: Joints, up: number): v
   if (drop === 0) return;
   const head = lift(joints.head, up);
   const rx = girth(joints.view).headRx;
-  const fill = lit(brush, figure.colors.hair, head.x - 9, head.x + 9);
+  const fill = shade(figure.colors.hair);
   // Масса идёт по черепу и чуть расходится книзу. Прямоугольник шире
   // плеч превращал затылок в шлем.
   shape(
@@ -309,10 +309,12 @@ function hairOver(brush: Brush, figure: Figure, joints: Joints, up: number): voi
 
   const head = lift(joints.head, up);
   const colors = figure.colors;
-  const fill = lit(brush, colors.hair, head.x - 9, head.x + 9);
   const back = joints.view === 'back';
   const side = joints.view === 'side';
   const rx = girth(joints.view).headRx;
+  // Шапка волос кладётся прямоугольником с обрезкой по черепу, поэтому
+  // тона ей нужны готовыми — по ширине самой головы.
+  const fill = bands(brush, colors.hair, head.x - rx, head.x + rx);
 
   // Шапка обрезается по черепу: волосы лежат на голове, а не поверх неё.
   const { ctx, scale } = brush;
@@ -342,12 +344,12 @@ function hairOver(brush: Brush, figure: Figure, joints: Joints, up: number): voi
 
   if (style === 'curly') {
     for (const dx of [-5.4, -1.9, 1.9, 5.4]) {
-      blob(brush, at(head.x + dx, head.y - 5.2 + Math.abs(dx) * 0.34), 2.9, 2.6, fill);
+      blob(brush, at(head.x + dx, head.y - 5.2 + Math.abs(dx) * 0.34), 2.9, 2.6, shade(colors.hair));
     }
   }
   if (style === 'ponytail') {
     const x = head.x - (side ? 7.2 : 6.4);
-    shape(brush, [at(x, head.y - 3), at(x + 2.4, head.y - 2), at(x + 1.6, head.y + 8.5), at(x - 2.3, head.y + 7.5)], fill);
+    shape(brush, [at(x, head.y - 3), at(x + 2.4, head.y - 2), at(x + 1.6, head.y + 8.5), at(x - 2.3, head.y + 7.5)], shade(colors.hair));
   }
   if (style === 'cap') {
     blob(brush, at(head.x, head.y - 2.2), rx + 0.8, 2.8, tone(colors.accent, 0.92));

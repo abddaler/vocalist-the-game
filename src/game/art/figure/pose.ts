@@ -42,26 +42,26 @@ const p = (x: number, y: number): Point => ({ x, y });
 
 /** Ширины частей тела в пикселях кадра. */
 export const BUILD = {
-  headRx: 6.2,
-  headRy: 7.6,
-  neck: 4,
-  shoulders: 13.8,
-  waist: 11.4,
-  arm: 3.6,
-  wrist: 2.6,
-  thigh: 6,
-  ankle: 4.2,
-  foot: 6.2,
+  headRx: 6.7,
+  headRy: 7.9,
+  neck: 4.2,
+  shoulders: 14.6,
+  waist: 12.2,
+  arm: 3.9,
+  wrist: 2.8,
+  thigh: 6.4,
+  ankle: 4.4,
+  foot: 6.6,
 } as const;
 
 const stand = (view: Side): Joints => ({
   view,
   head: p(18, 11),
   neck: p(18, 19),
-  hip: p(18, 39),
-  shoulder: [p(11.9, 23), p(24.1, 23)],
-  hand: [p(9.8, 41), p(26.2, 41)],
-  knee: [p(14.3, 48.5), p(21.7, 48.5)],
+  hip: p(18, 40),
+  shoulder: [p(11.7, 23.4), p(24.3, 23.4)],
+  hand: [p(9.6, 41.5), p(26.4, 41.5)],
+  knee: [p(14.2, 49), p(21.8, 49)],
   foot: [p(14.3, 57), p(21.7, 57)],
   lift: 0,
 });

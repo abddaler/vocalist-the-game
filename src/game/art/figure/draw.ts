@@ -51,16 +51,56 @@ const BANDS = [0.34, 0.68] as const;
 /** Множители трёх тонов: блик, база, тень. */
 const TONES = [1.16, 1, 0.7] as const;
 
+/** Уже этого деталь красится одним тоном, а не тремя. */
+const NARROW = 7;
+
 /**
- * Заливка тремя плоскими тонами: блик слева, база, тень справа. Свет
- * падает слева сверху, одинаково для всех.
+ * Ось света по кадру. По ней узкая деталь понимает, в чью полосу она
+ * попала: свет один на всю фигуру, и рука не может быть освещена иначе,
+ * чем плечо, из которого растёт.
+ */
+const LIGHT = { left: 8, right: 28 } as const;
+
+/**
+ * Чем красить деталь: готовым цветом или тремя тонами по её собственной
+ * ширине.
  *
- * Границы полос резкие — стоп повторяется дважды. Плавная растяжка на
+ * Разница видна сразу. Одна растяжка на всю фигуру ставит границы полос
+ * по общей вертикали, и рубашка получает полосу поперёк, а тонкая рука
+ * целиком попадает в одну полосу. Тень должна идти по форме той детали,
+ * которую она лепит: у каждой свой левый край и свой правый.
+ */
+export type Paint = string | { readonly shade: string };
+
+/** Красить тремя тонами по собственной ширине детали. */
+export const shade = (color: string): Paint => ({ shade: color });
+
+/**
+ * Три плоских тона: блик слева, база, тень справа. Свет падает слева
+ * сверху, одинаково для всех деталей и всех направлений.
+ *
+ * Границы полос резкие — стоп повторяется дважды. Плавный переход на
  * тридцати шести пикселях даёт грязь из десятков оттенков, а три тона
  * держат объём тем же, чем его держит коробка: разницей между гранями.
  */
-export function lit(brush: Brush, color: string, left: number, right: number): CanvasGradient {
-  const gradient = brush.ctx.createLinearGradient(left * brush.scale, 0, right * brush.scale, 0);
+export function bands(
+  brush: Brush,
+  color: string,
+  left: number,
+  right: number,
+): string | CanvasGradient {
+  // Узкая деталь берёт один тон — тот, в чью полосу она попала по
+  // фигуре. Три полосы на руке шириной в четыре пикселя дают её
+  // собственный блик вплотную к тени корпуса, и рука отрывается от тела
+  // светлым швом. Вручную тонкую руку и красят одним тоном.
+  if (right - left < NARROW) {
+    const middle = ((left + right) / 2 - LIGHT.left) / (LIGHT.right - LIGHT.left);
+    const index = middle < BANDS[0] ? 0 : middle < BANDS[1] ? 1 : 2;
+    return tone(color, TONES[index] as number);
+  }
+
+  const { ctx, scale } = brush;
+  const gradient = ctx.createLinearGradient(left * scale, 0, right * scale, 0);
   gradient.addColorStop(0, tone(color, TONES[0]));
   gradient.addColorStop(BANDS[0], tone(color, TONES[0]));
   gradient.addColorStop(BANDS[0], tone(color, TONES[1]));
@@ -70,19 +110,24 @@ export function lit(brush: Brush, color: string, left: number, right: number): C
   return gradient;
 }
 
+/** Заливка детали по её собственным краям. */
+function resolve(brush: Brush, paint: Paint, left: number, right: number): string | CanvasGradient {
+  return typeof paint === 'string' ? paint : bands(brush, paint.shade, left, right);
+}
+
 /** Овал: голова, кисть, стопа. */
 export function blob(
   brush: Brush,
   at: Point,
   rx: number,
   ry: number,
-  fill: string | CanvasGradient,
+  fill: Paint,
   outline?: string,
 ): void {
   const { ctx, scale } = brush;
   ctx.beginPath();
   ctx.ellipse(at.x * scale, at.y * scale, rx * scale, ry * scale, 0, 0, Math.PI * 2);
-  ctx.fillStyle = fill;
+  ctx.fillStyle = resolve(brush, fill, at.x - rx, at.x + rx);
   ctx.fill();
   edge(brush, outline);
 }
@@ -97,7 +142,7 @@ export function limb(
   to: Point,
   wide: number,
   thin: number,
-  fill: string | CanvasGradient,
+  fill: Paint,
   outline?: string,
 ): void {
   const { ctx, scale } = brush;
@@ -118,7 +163,12 @@ export function limb(
   ctx.lineTo(...at(from, 0.5, wide));
   ctx.arc((from.x) * scale, (from.y) * scale, (wide / 2) * scale, Math.atan2(ny, nx), Math.atan2(ny, nx) + Math.PI);
   ctx.closePath();
-  ctx.fillStyle = fill;
+  ctx.fillStyle = resolve(
+    brush,
+    fill,
+    Math.min(from.x - wide / 2, to.x - thin / 2),
+    Math.max(from.x + wide / 2, to.x + thin / 2),
+  );
   ctx.fill();
   edge(brush, outline);
 }
@@ -133,7 +183,7 @@ export function trunk(
   bottom: Point,
   wide: number,
   narrow: number,
-  fill: string | CanvasGradient,
+  fill: Paint,
   outline?: string,
 ): void {
   const { ctx, scale } = brush;
@@ -148,7 +198,7 @@ export function trunk(
   ctx.lineTo(s(top.x - wide / 2), s(top.y + round));
   ctx.quadraticCurveTo(s(top.x - wide / 2), s(top.y), s(top.x - wide / 2 + round), s(top.y));
   ctx.closePath();
-  ctx.fillStyle = fill;
+  ctx.fillStyle = resolve(brush, fill, top.x - wide / 2, top.x + wide / 2);
   ctx.fill();
   edge(brush, outline);
 }
@@ -176,7 +226,7 @@ export function stroke(
 export function shape(
   brush: Brush,
   points: readonly Point[],
-  fill: string | CanvasGradient,
+  fill: Paint,
   outline?: string,
 ): void {
   const { ctx, scale } = brush;
@@ -193,7 +243,8 @@ export function shape(
     ctx.quadraticCurveTo(point.x * scale, point.y * scale, cx * scale, cy * scale);
   }
   ctx.closePath();
-  ctx.fillStyle = fill;
+  const xs = points.map((point) => point.x);
+  ctx.fillStyle = resolve(brush, fill, Math.min(...xs), Math.max(...xs));
   ctx.fill();
   edge(brush, outline);
 }
