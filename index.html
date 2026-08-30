@@ -1,6 +1,129 @@
 <!doctype html>
 <html lang="ru">
   <head>
+    <!--
+      Спасение от протухшей страницы.
+
+      Имя собранного файла игры содержит хэш и меняется с каждым
+      обновлением, а index.html телефон охотно держит в кэше. Тогда
+      страница просит файл, которого на сервере уже нет: модуль не
+      загружается, и вместе с ним не загружается всё, что умеет
+      сообщать об ошибках, — человек видит чёрный экран и ничего больше.
+      Именно это и значит «после каждого обновления на телефоне не
+      работает».
+
+      Сторож живёт прямо в странице, обычным скриптом: он переживает
+      падение модуля. И стоит он ПЕРВЫМ в head — сборщик подставляет
+      тег игры в конец head, и слушатель, объявленный после него, может
+      не успеть к ошибке загрузки.
+
+      Отметка о попытке живёт со сроком, а не до конца вкладки. Раньше
+      одна разовая осечка помечала вкладку навсегда: следующая попытка,
+      даже через сутки, уже не перезагружалась, а сразу показывала
+      надпись. Телефон с полусотней вкладок из этого не выбирался.
+    -->
+    <script>
+      (function () {
+        var KEY = 'vocalist-sim/recovered';
+        // Сколько отметка о попытке считается свежей, мс. Две минуты:
+        // за это время осечка либо повторится, либо была разовой.
+        var HOLD = 120000;
+        var loaded = false;
+        var failed = '';
+
+        function recent() {
+          try {
+            var at = Number(sessionStorage.getItem(KEY));
+            return at > 0 && Date.now() - at < HOLD;
+          } catch (error) {
+            return false;
+          }
+        }
+
+        function remember() {
+          try {
+            sessionStorage.setItem(KEY, String(Date.now()));
+          } catch (error) {
+            /* приватный режим: попробуем перезагрузиться ещё раз */
+          }
+        }
+
+        function forget() {
+          try {
+            sessionStorage.removeItem(KEY);
+          } catch (error) {
+            /* пусто */
+          }
+        }
+
+        /*
+         * Причина словами. «Не удалось загрузить игру» не говорит ничего
+         * ни игроку, ни тому, кто чинит: сеть, кэш и сломанный файл
+         * выглядят одинаково. Пусть скажет, что именно не загрузилось и
+         * была ли связь.
+         */
+        function say(reason) {
+          var box = document.getElementById('boot');
+          if (!box) return;
+          var lines = ['Игра не запустилась.', reason];
+          if (failed) lines.push('Файл: ' + failed);
+          lines.push('Сеть: ' + (navigator.onLine ? 'есть' : 'нет'));
+          box.textContent = lines.join('\n');
+          var again = document.createElement('button');
+          again.id = 'retry';
+          again.textContent = 'Попробовать снова';
+          again.onclick = function () {
+            forget();
+            location.replace(location.pathname + '?r=' + Date.now());
+          };
+          box.appendChild(again);
+          document.body.className += ' boot-failed';
+        }
+
+        function recover(reason) {
+          if (window.__vsReady) return;
+          if (recent()) return say(reason);
+          remember();
+          // Новый параметр в адресе — новый ключ кэша: страницу придётся
+          // взять из сети, а с ней придёт и верное имя файла игры.
+          location.replace(location.pathname + '?r=' + Date.now());
+        }
+
+        window.__vsReady = false;
+        window.__vsBooted = function () {
+          window.__vsReady = true;
+          forget();
+        };
+
+        // Ошибки загрузки ресурсов не всплывают, но проходят фазу
+        // погружения, поэтому слушаем с capture.
+        window.addEventListener(
+          'error',
+          function (event) {
+            var target = event.target;
+            if (!target || target.tagName !== 'SCRIPT') return;
+            failed = String(target.src || '').split('/').pop();
+            recover('Не удалось загрузить игру.');
+          },
+          true,
+        );
+        window.addEventListener(
+          'load',
+          function (event) {
+            var target = event.target;
+            if (target && target.tagName === 'SCRIPT') loaded = true;
+          },
+          true,
+        );
+
+        // Запасной срок — на случай, когда файл отдался, но пустым или
+        // обрезанным. Он длинный: на медленном телефоне разбор игры сам
+        // по себе не быстрый, и торопить его перезагрузкой нельзя.
+        window.setTimeout(function () {
+          if (!window.__vsReady && !loaded) recover('Игра не загрузилась за 20 секунд.');
+        }, 20000);
+      })();
+    </script>
     <meta charset="utf-8" />
     <meta
       name="viewport"
@@ -107,6 +230,16 @@
       body.boot-failed #boot {
         display: grid;
       }
+
+      #retry {
+        margin: 18px auto 0;
+        padding: 10px 18px;
+        border: 1px solid #5c3f9c;
+        border-radius: 999px;
+        font: 14px/1 ui-monospace, monospace;
+        color: #2ee6c8;
+        background: #2b1c4e;
+      }
     </style>
   </head>
   <body>
@@ -114,96 +247,6 @@
     <div id="rotate"></div>
     <div id="boot"></div>
 
-    <!--
-      Спасение от протухшей страницы.
-
-      Имя собранного файла игры содержит хэш и меняется с каждым
-      обновлением, а index.html телефон охотно держит в кэше. Тогда
-      страница просит файл, которого на сервере уже нет: модуль не
-      загружается, и вместе с ним не загружается всё, что умеет
-      сообщать об ошибках, — человек видит чёрный экран и ничего больше.
-      Именно это и значит «после каждого обновления на телефоне не
-      работает».
-
-      Поэтому сторож живёт прямо в странице, обычным скриптом: он
-      переживает падение модуля. Не загрузился — один раз перезагрузиться
-      по адресу с новым параметром, мимо кэша. Не помогло и во второй раз
-      — сказать словами, а не молчать.
-    -->
-    <script>
-      (function () {
-        var KEY = 'vocalist-sim/recovered';
-        var loaded = false;
-
-        function tried() {
-          try {
-            return sessionStorage.getItem(KEY) === '1';
-          } catch (error) {
-            return false;
-          }
-        }
-
-        function remember() {
-          try {
-            sessionStorage.setItem(KEY, '1');
-          } catch (error) {
-            /* приватный режим: попробуем перезагрузиться ещё раз */
-          }
-        }
-
-        function say(reason) {
-          var box = document.getElementById('boot');
-          if (!box) return;
-          box.textContent = 'Игра не запустилась.\n' + reason;
-          document.body.className += ' boot-failed';
-        }
-
-        function recover(reason) {
-          if (window.__vsReady) return;
-          if (tried()) return say(reason);
-          remember();
-          // Новый параметр в адресе — новый ключ кэша: страницу придётся
-          // взять из сети, а с ней придёт и верное имя файла игры.
-          location.replace(location.pathname + '?r=' + Date.now());
-        }
-
-        window.__vsReady = false;
-        window.__vsBooted = function () {
-          window.__vsReady = true;
-          try {
-            sessionStorage.removeItem(KEY);
-          } catch (error) {
-            /* пусто */
-          }
-        };
-
-        // Ошибки загрузки ресурсов не всплывают, но проходят фазу
-        // погружения, поэтому слушаем с capture.
-        window.addEventListener(
-          'error',
-          function (event) {
-            var target = event.target;
-            if (target && target.tagName === 'SCRIPT') recover('Не удалось загрузить игру.');
-          },
-          true,
-        );
-        window.addEventListener(
-          'load',
-          function (event) {
-            var target = event.target;
-            if (target && target.tagName === 'SCRIPT') loaded = true;
-          },
-          true,
-        );
-
-        // Запасной срок — на случай, когда файл отдался, но пустым или
-        // обрезанным. Он длинный: на медленном телефоне разбор игры сам
-        // по себе не быстрый, и торопить его перезагрузкой нельзя.
-        window.setTimeout(function () {
-          if (!window.__vsReady && !loaded) recover('Игра не загрузилась за 20 секунд.');
-        }, 20000);
-      })();
-    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
