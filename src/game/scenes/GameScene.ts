@@ -3,7 +3,7 @@ import { Store, createInitialState } from '@core/state';
 import { getLocation } from '@data/locations';
 import { getDistrict } from '@data/world';
 import type { Action } from '@core/state';
-import type { GameState, GenreId, WorldPoint } from '@core/types';
+import type { GameState, GenreId, Wardrobe, WorldPoint } from '@core/types';
 import { CompositeInput, KeyboardInput, PointerInput } from '@platform/input';
 import type { InputController } from '@platform/input';
 import { saveGame } from '@platform/saveGame';
@@ -25,7 +25,7 @@ import { renderPoint } from '@ui/screens/PointScreen';
 import { renderShop } from '@ui/screens/ShopScreen';
 import { initialUiState } from '@ui/screens/types';
 import type { RenderContext, UiState } from '@ui/screens/types';
-import { buildActorTextures } from '../art';
+import { PLAYER_LOOK, buildActorTextures, playerFigure, repaintActor, wardrobeKey } from '../art';
 import { buildBubbleTextures } from '../art/bubble';
 import { buildPortraitTextures } from '../art/portrait';
 import { toggleDevFlag } from '@platform/devtools';
@@ -59,6 +59,8 @@ export class GameScene extends Phaser.Scene {
   private canvas!: WorldCanvas;
   private props!: PropAtlas;
   private diagnostics!: Diagnostics;
+  /** Отпечаток надетого, по которому кадры игрока перерисовываются. */
+  private dressed = '';
 
   private readonly activity = new ActivityRunner();
 
@@ -95,6 +97,7 @@ export class GameScene extends Phaser.Scene {
     buildActorTextures(this);
     buildBubbleTextures(this);
     buildPortraitTextures(this);
+    this.dressPlayer(this.store.getState().wardrobe.equipped);
     this.world = new WorldController({
       getState: () => this.store.getState(),
       getLocationId: () => this.ui.locationId,
@@ -120,6 +123,7 @@ export class GameScene extends Phaser.Scene {
 
     this.store.subscribe((state) => {
       this.dirty = true;
+      this.dressPlayer(state.wardrobe.equipped);
       // Автосохранение после каждого действия: прогон на шестьдесят дней
       // нельзя терять из-за закрытой вкладки.
       void saveGame(this.registry.get('save') as SaveAdapter, state);
@@ -207,6 +211,19 @@ export class GameScene extends Phaser.Scene {
   private markDirty = (): void => {
     this.dirty = true;
   };
+
+  /**
+   * Перерисовать игрока под надетое. Магазин был витриной цифр: куртка
+   * двигала имидж, а на улице выходил тот же человек в той же футболке.
+   * Отпечаток гардероба сравнивается, чтобы не пересобирать девятнадцать
+   * кадров на каждое действие.
+   */
+  private dressPlayer(equipped: Wardrobe): void {
+    const key = wardrobeKey(equipped);
+    if (key === this.dressed) return;
+    this.dressed = key;
+    repaintActor(this, PLAYER_LOOK, playerFigure(equipped));
+  }
 
   private toggleIsoDebug = (): void => {
     toggleDevFlag('iso');

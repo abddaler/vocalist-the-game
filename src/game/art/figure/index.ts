@@ -27,6 +27,56 @@ export function actorTexture(lookIndex: number, pose: string): string {
  */
 const SUPERSAMPLE = 3;
 
+/**
+ * Холст втрое крупнее кадра и кисть по нему. Заводится один раз на
+ * сборку: перерисовка игрока при каждой обновке иначе выделяла бы новый
+ * холст, а от потока выделений телефонный WebGL и теряет контекст.
+ */
+function easel(): { canvas: HTMLCanvasElement; brush: { ctx: CanvasRenderingContext2D; scale: number } } {
+  const canvas = document.createElement('canvas');
+  canvas.width = ACTOR_SPRITE.width * SUPERSAMPLE;
+  canvas.height = ACTOR_SPRITE.height * SUPERSAMPLE;
+  return {
+    canvas,
+    brush: { ctx: canvas.getContext('2d') as CanvasRenderingContext2D, scale: SUPERSAMPLE },
+  };
+}
+
+/**
+ * Перерисовать кадры одного человека поверх уже собранного атласа.
+ * Нужно гардеробу: игрок переодевается по ходу игры, и кадры у него
+ * меняются, а у остальных нет.
+ */
+export function repaintActor(scene: Phaser.Scene, index: number, figure: Figure): void {
+  if (!scene.textures.exists(ACTOR_TEXTURE)) return;
+  const atlas = scene.textures.get(ACTOR_TEXTURE) as Phaser.Textures.CanvasTexture;
+  const target = atlas.getContext?.();
+  if (!target) return;
+
+  const { canvas, brush } = easel();
+  target.imageSmoothingEnabled = true;
+  target.imageSmoothingQuality = 'high';
+
+  const poses = [...POSES, ...ACT_POSES];
+  poses.forEach((pose, column) => {
+    const joints = POSE[pose];
+    if (!joints) return;
+    brush.ctx.clearRect(0, 0, canvas.width, canvas.height);
+    paintFigure(brush, figure, joints);
+    EXTRA[figure.accessory]?.(brush, figure, joints, joints.lift);
+
+    const x = column * ACTOR_SPRITE.width;
+    const y = index * ACTOR_SPRITE.height;
+    // Клетка чистится: новая одежда уже, чем старая, и без очистки от
+    // прежней остаётся кайма.
+    target.clearRect(x, y, ACTOR_SPRITE.width, ACTOR_SPRITE.height);
+    target.drawImage(canvas, x, y, ACTOR_SPRITE.width, ACTOR_SPRITE.height);
+  });
+
+  atlas.refresh();
+  atlas.setFilter(1);
+}
+
 export function buildActorTextures(scene: Phaser.Scene): void {
   if (scene.textures.exists(ACTOR_TEXTURE)) return;
 
@@ -39,10 +89,7 @@ export function buildActorTextures(scene: Phaser.Scene): void {
   if (!atlas) return;
   const target = atlas.getContext();
 
-  const big = document.createElement('canvas');
-  big.width = ACTOR_SPRITE.width * SUPERSAMPLE;
-  big.height = ACTOR_SPRITE.height * SUPERSAMPLE;
-  const brush = { ctx: big.getContext('2d')!, scale: SUPERSAMPLE };
+  const { canvas: big, brush } = easel();
   target.imageSmoothingEnabled = true;
   target.imageSmoothingQuality = 'high';
 

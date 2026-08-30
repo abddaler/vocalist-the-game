@@ -10,6 +10,7 @@ import { ACT_LOOKS, LOOKS, lookIndex } from './looks';
 export {
   ACT_POSES,
   ACTOR_SPRITE,
+  repaintActor,
   ACTOR_TEXTURE,
   POSES,
   actorTexture,
@@ -21,4 +22,5 @@ export type { Look } from './looks';
 export type { Accessory, HairStyle, OutfitStyle } from './style';
 
 /** Индекс внешности игрока. Прохожие идут дальше по списку. */
-export const PLAYER_LOOK = 0;
+export { PLAYER_LOOK } from './player';
+export { playerFigure, wardrobeKey, wearOf } from './wardrobe';
