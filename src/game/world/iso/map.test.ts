@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { cellAt, kindAt, levelAt, parseMap, stepAllowed } from './map';
+import { fromTiled } from '@data/world';
+import type { TiledMap } from '@data/world';
+import { cellAt, kindAt, levelAt, parseMap, standable, stepAllowed } from './map';
 import type { IsoMapDef } from '@core/types';
 
 /** Улица на уровне 1, набережная на нуле, между ними одна лестница. */
@@ -51,5 +53,44 @@ describe('карта плиток', () => {
 
   it('незнакомый символ — это ошибка карты, а не пустая плитка', () => {
     expect(() => parseMap({ legend: SHORE.legend, rows: ['#'] })).toThrow();
+  });
+});
+
+describe('карта из Tiled', () => {
+  /** Та же выгрузка, что в data/world/tiled.test.ts, только поменьше. */
+  const exported: TiledMap = {
+    orientation: 'isometric',
+    width: 3,
+    height: 2,
+    tileheight: 16,
+    tilesets: [
+      {
+        firstgid: 1,
+        tiles: [
+          { id: 0, properties: [{ name: 'kind', value: 'pavement' }] },
+          { id: 1, properties: [{ name: 'kind', value: 'road' }] },
+          { id: 2, properties: [{ name: 'kind', value: 'pavement' }, { name: 'level', value: 1 }] },
+        ],
+      },
+    ],
+    layers: [{ type: 'tilelayer', name: 'ground', width: 3, height: 2, data: [1, 2, 0, 3, 2, 1] }],
+  };
+
+  it('читается тем же разборщиком, что и рукописная', () => {
+    // Смысл импорта в этом и есть: дальше по игре разницы быть не должно.
+    const map = parseMap(fromTiled(exported).tiles);
+    expect(map.width).toBe(3);
+    expect(map.depth).toBe(2);
+    expect(map.levels).toBe(1);
+    expect(map.cells[0]).toEqual({ kind: 'pavement', level: 0 });
+    expect(map.cells[1]).toEqual({ kind: 'road', level: 0 });
+    // Дыра остаётся дырой: по ней не ходят и её не рисуют.
+    expect(map.cells[2]).toBeNull();
+  });
+
+  it('импортированная карта проходима там же, где нарисована', () => {
+    const map = parseMap(fromTiled(exported).tiles);
+    expect(standable(map, 0.5, 0.5)).toBe(true);
+    expect(standable(map, 2.5, 0.5)).toBe(false);
   });
 });
