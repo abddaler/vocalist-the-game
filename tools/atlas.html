@@ -10,22 +10,24 @@
 <style>body{margin:0;background:#5a6a7a}canvas{image-rendering:auto}</style>
 <canvas id="c"></canvas>
 <script type="module">
-import { ACTOR_SPRITE, POSES } from '/src/game/art/figure/pose.ts';
-import { POSE } from '/src/game/art/figure/pose.ts';
+import { ACTOR_SPRITE, ACT_POSES, POSES, POSE } from '/src/game/art/figure/pose.ts';
 import { paintFigure } from '/src/game/art/figure/paint.ts';
 import { EXTRA } from '/src/game/art/figure/extra.ts';
 import { LOOKS } from '/src/game/art/looks.ts';
 
-const Z = Number(new URLSearchParams(location.search).get('zoom') ?? 3);
+const Q = new URLSearchParams(location.search);
+const Z = Number(Q.get('zoom') ?? 3);
+// ?acts=1 — лист поз дела вместо ходовых: их шестнадцать на строку не влезает.
+const SHOW = Q.get('acts') ? ACT_POSES : POSES;
 const W = ACTOR_SPRITE.width, H = ACTOR_SPRITE.height, PAD = 4;
 const c = document.getElementById('c');
-c.width = (W + PAD) * POSES.length * Z;
+c.width = (W + PAD) * SHOW.length * Z;
 c.height = (H + PAD) * LOOKS.length * Z;
 const g = c.getContext('2d');
 
 LOOKS.forEach((look, i) => {
   const figure = { colors: look.colors, hair: look.hair, outfit: look.outfit, accessory: look.accessory };
-  POSES.forEach((pose, p) => {
+  SHOW.forEach((pose, p) => {
     const joints = POSE[pose];
     g.save();
     g.translate((W + PAD) * p * Z, (H + PAD) * i * Z);

@@ -60,6 +60,7 @@ export function paintFigure(brush: Brush, figure: Figure, joints: Joints): void 
   if (skirt) dressSkirt(brush, figure, joints, up);
 
   arm(brush, joints, NEAR, up, sleeve === 'long' ? cloth : skin, sleeve, cloth);
+  if (joints.mic) microphone(brush, lift(joints.hand[NEAR]!, up));
 
   // Шея и голова.
   limb(brush, lift(joints.neck, up), lift(at(joints.head.x, joints.head.y + 5), up), BUILD.neck, BUILD.neck, dim);
@@ -95,12 +96,22 @@ function arm(
 ): void {
   const from = lift(joints.shoulder[which]!, up);
   const to = lift(joints.hand[which]!, up);
-  limb(brush, from, to, BUILD.arm, BUILD.wrist, fill);
+  const bend = joints.elbow?.[which];
+  // Локоть — середина: без него плечо и кисть соединяет прямая, и
+  // поднятая рука прячется в корпусе.
+  const mid = bend ? lift(bend, up) : at(from.x + (to.x - from.x) * 0.5, from.y + (to.y - from.y) * 0.5);
+  const forearm = BUILD.arm - (BUILD.arm - BUILD.wrist) * 0.45;
+
+  limb(brush, from, mid, BUILD.arm, forearm, fill);
+  limb(brush, mid, to, forearm, BUILD.wrist, fill);
+  // Шар в локте: две капсулы встык дают на сгибе видимый угол.
+  blob(brush, mid, forearm / 2, forearm / 2, fill);
+
   if (sleeve === 'short') {
     // Рукав начинается ровно в суставе и той же ширины, что скруглённое
     // плечо: смещённая капсула вылезала из плеча отдельным серпом.
-    const elbow = at(from.x + (to.x - from.x) * 0.4, from.y + (to.y - from.y) * 0.4);
-    limb(brush, from, elbow, BUILD.arm + 1.6, BUILD.arm - 0.4, cloth);
+    const cuff = at(from.x + (mid.x - from.x) * 0.8, from.y + (mid.y - from.y) * 0.8);
+    limb(brush, from, cuff, BUILD.arm + 1.6, BUILD.arm - 0.4, cloth);
   }
   blob(brush, to, BUILD.wrist * 0.62, BUILD.wrist * 0.62, fill);
 }
@@ -217,7 +228,22 @@ function face(brush: Brush, figure: Figure, joints: Joints, up: number): void {
   const brow = tone(figure.colors.hair, 0.62);
   const eyes: Array<[number, number]> = side ? [[2.2, 0.9]] : [[-2.2, 0.9], [2.2, 0.9]];
 
-  for (const [dx, dy] of eyes) {
+  if (joints.shut) {
+    // Спящему рисуется дуга вместо глаза: закрытый глаз — это веко,
+    // а не отсутствие глаза, и пустое лицо читается сломанным.
+    for (const dx of side ? [2.2] : [-2.2, 2.2]) {
+      stroke(
+        brush,
+        at(head.x + dx - 1.2, head.y + 0.6),
+        at(head.x + dx, head.y + 1.4),
+        at(head.x + dx + 1.2, head.y + 0.6),
+        0.7,
+        tone(figure.colors.skin, 0.5),
+      );
+    }
+  }
+
+  for (const [dx, dy] of joints.shut ? [] : eyes) {
     // В профиль белка не видно: сбоку глаз читается тёмной миндалиной,
     // а белое пятно на скуле превращает лицо в маску.
     if (!side) blob(brush, at(head.x + dx, head.y + dy), 1, 1.15, '#f4f1f7');
@@ -326,4 +352,15 @@ function hairOver(brush: Brush, figure: Figure, joints: Joints, up: number): voi
     blob(brush, at(head.x, head.y - 2.2), rx + 0.8, 2.8, tone(colors.accent, 0.92));
     blob(brush, at(head.x + (side ? 4.4 : 0), head.y - 0.5), side ? 3.6 : rx - 0.6, 1.3, tone(colors.accent, 0.7));
   }
+}
+
+/**
+ * Микрофон в кисти. Головка шаром, ручка вниз: без него поющий держит
+ * руку у рта непонятно зачем.
+ */
+function microphone(brush: Brush, hand: Point): void {
+  const body = '#2b2733';
+  limb(brush, at(hand.x, hand.y), at(hand.x + 0.6, hand.y + 5.4), 2, 1.6, body);
+  blob(brush, at(hand.x - 0.4, hand.y - 1.8), 1.9, 2, '#8f8ba0');
+  blob(brush, at(hand.x - 0.6, hand.y - 2.4), 0.9, 0.9, '#c2bed0');
 }

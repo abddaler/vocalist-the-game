@@ -1,4 +1,4 @@
-import { LOOKS, lookIndex } from './looks';
+import { ACT_LOOKS, LOOKS, lookIndex } from './looks';
 
 /**
  * Персонажи рисуются векторно: пути на холсте со сглаженной кромкой и
@@ -8,6 +8,7 @@ import { LOOKS, lookIndex } from './looks';
  * красивее. Сама сборка кадров — в figure/.
  */
 export {
+  ACT_POSES,
   ACTOR_SPRITE,
   ACTOR_TEXTURE,
   POSES,
@@ -15,7 +16,7 @@ export {
   buildActorTextures,
 } from './figure';
 export type { ActorPose } from './figure';
-export { LOOKS, lookIndex };
+export { ACT_LOOKS, LOOKS, lookIndex };
 export type { Look } from './looks';
 export type { Accessory, HairStyle, OutfitStyle } from './style';
 

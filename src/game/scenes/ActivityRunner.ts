@@ -1,6 +1,6 @@
 import { getActivity } from '@data/activities';
 import type { Action } from '@core/state';
-import { ACTIVITY_MS, BUSY, TEMPO, moteOf } from '@ui/screens/ActivityScene';
+import { ACTIVITY_MS, CYCLE, moteOf } from '@ui/screens/ActivityScene';
 import type { ActivityView } from '@ui/screens/ActivityScene';
 import { PLAYER_LOOK, actorTexture } from '../art';
 import type { Mote } from '@ui/screens/ActivityScene';
@@ -54,14 +54,17 @@ export class ActivityRunner {
       mote: current.mote,
       progress: Math.min(1, current.elapsed / ACTIVITY_MS),
       elapsed: current.elapsed,
-      // На деятельном занятии ноги переступают в такт, на отдыхе — нет:
-      // спящий, марширующий на месте, выглядит хуже неподвижного.
-      actorTexture: actorTexture(
-        PLAYER_LOOK,
-        BUSY[current.mote] && current.elapsed % (TEMPO[current.mote] * 2) < TEMPO[current.mote]
-          ? 'downB'
-          : 'downA',
-      ),
+      // Кадр берётся из цикла своего дела: у пения их шесть, у сна два,
+      // и такт у каждого свой. Один общий цикл на всё и был тем самым
+      // топтанием на месте.
+      actorTexture: actorTexture(PLAYER_LOOK, frameOf(current.mote, current.elapsed)),
     };
   }
+}
+
+/** Кадр цикла по такту дела. */
+function frameOf(mote: Mote, elapsed: number): string {
+  const { frames, ms } = CYCLE[mote];
+  const step = Math.floor((elapsed / ms) * frames.length) % frames.length;
+  return frames[step] as string;
 }

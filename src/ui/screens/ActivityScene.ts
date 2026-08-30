@@ -23,6 +23,8 @@ export type Mote = 'note' | 'sleep' | 'sweat' | 'heart' | 'coin' | 'care' | 'spa
  * это оформление, и правится оно здесь же, где рисуется.
  */
 export function moteOf(activityId: string): Mote {
+  // Уроки собираются шаблоном `lesson_<навык>_<уровень>`, поэтому
+  // проверяются префиксом, а не перечислением.
   if (activityId.startsWith('lesson_')) return 'note';
   switch (activityId) {
     case 'sleep':
@@ -41,6 +43,12 @@ export function moteOf(activityId: string): Mote {
       return 'care';
     case 'shopping':
       return 'spark';
+    // Распевка, репетиция, запись — то же пение, что и урок.
+    case 'warmup':
+    case 'practice_free':
+    case 'band_rehearsal':
+    case 'record_single':
+      return 'note';
     default:
       return 'note';
   }
@@ -71,15 +79,36 @@ export const TEMPO: Readonly<Record<Mote, number>> = {
   spark: 260,
 };
 
-/** Дела, на которых персонаж работает телом, а не отдыхает. */
-export const BUSY: Readonly<Record<Mote, boolean>> = {
-  note: true,
-  sleep: false,
-  sweat: true,
-  heart: true,
-  coin: true,
-  care: false,
-  spark: true,
+/**
+ * Цикл поз по делу. Раньше на всё шли два кадра ходьбы, и урок вокала,
+ * смена в ресторане и сон отличались только значком над головой:
+ * человек в карточке одинаково переступал на месте.
+ *
+ * Пение — шесть кадров: фраза поднимается и опадает, и трёх на это не
+ * хватает. Остальным хватает двух: разговор ведут рукой, спят закрытыми
+ * глазами, работают руками вперёд.
+ */
+export interface Cycle {
+  readonly frames: readonly string[];
+  /** Сколько длится один проход цикла, мс. */
+  readonly ms: number;
+}
+
+const SING = ['singA', 'singB', 'singC', 'singD', 'singE', 'singF'] as const;
+const REST = ['restA', 'restB'] as const;
+const WORK = ['liftA', 'liftB'] as const;
+const TALK = ['talkA', 'talkB'] as const;
+
+export const CYCLE: Readonly<Record<Mote, Cycle>> = {
+  // Фраза короче полутора секунд самой сцены: цикл должен успеть
+  // пройти хотя бы раз, иначе вместо пения видно полтора кадра.
+  note: { frames: SING, ms: 700 },
+  coin: { frames: SING, ms: 820 },
+  sleep: { frames: REST, ms: 1200 },
+  care: { frames: REST, ms: 1200 },
+  sweat: { frames: WORK, ms: 420 },
+  heart: { frames: TALK, ms: 520 },
+  spark: { frames: TALK, ms: 560 },
 };
 
 export interface ActivityView {

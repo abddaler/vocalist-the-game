@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { facingFrom, lookFor } from './actorSprite';
+import { NPC_IDS } from '@core/types';
+import { crowdIn } from '@data/world';
+import { ACT_LOOKS, LOOKS, PLAYER_LOOK } from '../art';
+import { ACT_POSES, POSES } from '../art';
+import { POSE } from '../art/figure/pose';
+import { CYCLE } from '@ui/screens/ActivityScene';
+import { facingFrom, lookFor, talkLook } from './actorSprite';
 
 describe('поворот персонажа', () => {
   it('следует за преобладающей осью движения', () => {
@@ -51,5 +57,46 @@ describe('кадр анимации', () => {
   it('профиль отзеркаливается, а не дублируется отдельными кадрами', () => {
     expect(lookFor('left', 0, true).flipX).toBe(true);
     expect(lookFor('right', 0, true).flipX).toBe(false);
+  });
+});
+
+describe('позы дела', () => {
+  it('собираются игроку и каждому названному', () => {
+    expect(ACT_LOOKS.has(LOOKS[PLAYER_LOOK]!.id)).toBe(true);
+    for (const npc of NPC_IDS) expect(ACT_LOOKS.has(npc)).toBe(true);
+  });
+
+  it('у каждого, кому их обещали, есть такая внешность', () => {
+    for (const id of ACT_LOOKS) {
+      expect(LOOKS.some((look) => look.id === id)).toBe(true);
+    }
+  });
+
+  it('каждая поза цикла занятия действительно нарисована', () => {
+    for (const { frames } of Object.values(CYCLE)) {
+      for (const frame of frames) expect(POSE[frame]).toBeDefined();
+    }
+  });
+
+  it('разговор берёт только позы дела', () => {
+    for (const age of [0, 200, 300, 519, 520, 900]) {
+      expect(ACT_POSES).toContain(talkLook(age).pose);
+    }
+  });
+
+  it('ходовые и деловые позы не пересекаются', () => {
+    for (const pose of ACT_POSES) expect(POSES).not.toContain(pose);
+  });
+
+  it('говорить может только тот, кому позы собрали', () => {
+    // Толпа берётся из данных: заведи прохожего с именем — и он
+    // попросит кадр, которого для него не собирали.
+    const districts = ['hills', 'downtown', 'boulevard', 'pier'];
+    for (const district of districts) {
+      for (const member of crowdIn(district)) {
+        if (member.nameKey === undefined) continue;
+        expect(ACT_LOOKS.has(member.look)).toBe(true);
+      }
+    }
   });
 });

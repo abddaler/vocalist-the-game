@@ -3,7 +3,7 @@ import { devFlag } from '@platform/devtools';
 import { t } from '@ui/i18n';
 import { COLORS } from '@ui/theme';
 import type { Painter } from '@ui/widgets/Painter';
-import { ACTOR_SPRITE, ACTOR_TEXTURE, LOOKS, PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
+import { ACT_LOOKS, ACTOR_SPRITE, ACTOR_TEXTURE, LOOKS, PLAYER_LOOK, actorTexture, lookIndex } from '../../art';
 import { BUBBLE_CELL, BUBBLE_TEXTURE, bubbleFrame } from '../../art/bubble';
 import type { ActorPose } from '../../art';
 import type { Ambience } from '../ambience';
@@ -11,7 +11,7 @@ import { drawShadow } from '../backdrop';
 import { ISO_OVERHEAD, paintProp, propId } from './props';
 import { PROP_ANCHOR } from '../PropAtlas';
 import type { PropAtlas } from '../PropAtlas';
-import { lookFor } from '../actorSprite';
+import { lookFor, talkLook } from '../actorSprite';
 import type { CrowdActor, Mood } from '../Crowd';
 import type { Facing } from '../actorSprite';
 import type { ScreenPoint } from './project';
@@ -119,13 +119,17 @@ export function inhabitantPieces(
   };
 
   for (const actor of params.crowd) {
+    const look = lookIndex(actor.member.look);
+    // Названный, у которого висит пузырь и который стоит, — говорит.
+    // Позы разговора есть только у него: прохожему их не собирают.
+    const talking = actor.mood !== null && !actor.moving && ACT_LOOKS.has(actor.member.look);
     pieces.push({
       depth: actor.position.x + actor.position.y,
       draw: () =>
         person(
           actor.position,
-          lookIndex(actor.member.look),
-          lookFor(actor.facing, actor.walked, actor.moving),
+          look,
+          talking ? talkLook(actor.mood!.age) : lookFor(actor.facing, actor.walked, actor.moving),
           actor.member.nameKey,
           actor.mood,
         ),

@@ -1,3 +1,4 @@
+import { NPC_IDS } from '@core/types';
 import { palette } from './palettes';
 import type { ActorPalette, Colors } from './palettes';
 import type { Accessory, HairStyle, OutfitStyle } from './style';
@@ -165,6 +166,19 @@ function body(
 const INDEX = new Map(LOOKS.map((entry, index) => [entry.id, index]));
 
 /** Номер внешности по имени. На него ссылаются данные толпы. */
+/**
+ * Кому собирают позы дела: игроку и названным. Список один на всех —
+ * и сборку атласа, и выбор кадра на улице: разойдись они, человек
+ * попросил бы кадр, которого не собрали, и пропал бы из кадра.
+ *
+ * Названные совпадают с NPC по идентификатору: внешность заводится под
+ * тем же именем, что и человек в симуляции.
+ */
+export const ACT_LOOKS: ReadonlySet<string> = new Set<string>([
+  LOOKS[0]?.id ?? '',
+  ...NPC_IDS,
+]);
+
 export function lookIndex(id: string): number {
   const index = INDEX.get(id);
   if (index === undefined) throw new Error(`Неизвестная внешность: "${id}"`);

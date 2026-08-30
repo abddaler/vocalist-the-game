@@ -1,11 +1,11 @@
 import type Phaser from 'phaser';
-import { LOOKS } from '../looks';
+import { ACT_LOOKS, LOOKS } from '../looks';
 import { EXTRA } from './extra';
 import { paintFigure } from './paint';
 import type { Figure } from './paint';
-import { ACTOR_SPRITE, POSE, POSES } from './pose';
+import { ACT_POSES, ACTOR_SPRITE, POSE, POSES } from './pose';
 
-export { ACTOR_SPRITE, POSES } from './pose';
+export { ACT_POSES, ACTOR_SPRITE, POSES } from './pose';
 export type { ActorPose } from './pose';
 
 /**
@@ -30,7 +30,7 @@ const SUPERSAMPLE = 3;
 export function buildActorTextures(scene: Phaser.Scene): void {
   if (scene.textures.exists(ACTOR_TEXTURE)) return;
 
-  const columns = POSES.length;
+  const columns = POSES.length + ACT_POSES.length;
   const atlas = scene.textures.createCanvas(
     ACTOR_TEXTURE,
     columns * ACTOR_SPRITE.width,
@@ -54,7 +54,11 @@ export function buildActorTextures(scene: Phaser.Scene): void {
       accessory: look.accessory,
     };
 
-    POSES.forEach((pose, column) => {
+    // Позы дела — только игроку и названным: поют и разговаривают они,
+    // а двенадцать лишних кадров на каждого в толпе стоят четверти
+    // секунды загрузки на телефоне.
+    const poses = ACT_LOOKS.has(look.id) ? [...POSES, ...ACT_POSES] : POSES;
+    poses.forEach((pose, column) => {
       const joints = POSE[pose]!;
       brush.ctx.clearRect(0, 0, big.width, big.height);
       paintFigure(brush, figure, joints);

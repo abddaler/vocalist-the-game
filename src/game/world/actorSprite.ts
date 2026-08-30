@@ -61,3 +61,20 @@ export function lookFor(facing: Facing, walked: number, moving: boolean): ActorL
   const side = !moving ? 'sideA' : (['sideB', 'sideA', 'sideC', 'sideA'] as const)[phase]!;
   return { pose: side as ActorPose, flipX: facing === 'left', lift: moving ? lift : 0 };
 }
+
+/**
+ * Такт разговора: два кадра за это время, мс. Реплика идёт медленнее
+ * шага — человек, машущий рукой в темпе ходьбы, выглядит не говорящим,
+ * а отгоняющим осу.
+ */
+const TALK_MS = 520;
+
+/**
+ * Кадр разговора, пока над головой висит пузырь. Даётся только тем, у
+ * кого позы дела вообще собраны, — прохожему они не строятся, и он
+ * молча стоит, как стоял.
+ */
+export function talkLook(age: number): ActorLook {
+  const second = age % TALK_MS >= TALK_MS / 2;
+  return { pose: (second ? 'talkB' : 'talkA') as ActorPose, flipX: false, lift: second ? 0 : 1 };
+}
