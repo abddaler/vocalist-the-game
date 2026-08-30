@@ -2,11 +2,18 @@ import type { WorldPoint } from '@core/types';
 import type { ActorPose } from '../art';
 
 /**
- * Какой кадр показать. Направление берётся из последнего заметного
- * смещения: стоящий персонаж должен сохранять поворот, а не сбрасываться
- * лицом к игроку.
+ * Куда повёрнут человек. Стороны названы по экрану, а не по сетке: оси
+ * плитки идут по диагоналям, и шаг «вправо по сетке» — это шаг вниз и
+ * вправо по картинке.
+ *
+ * Отсюда и четыре стороны вместо анфаса, спины и профиля: в изометрии
+ * нет направления, в котором человек виден строго спереди или строго
+ * сбоку. Рисуются две, `se` и `ne`; `sw` и `nw` — их зеркала.
+ *
+ * Направление берётся из последнего заметного смещения: стоящий должен
+ * сохранять поворот, а не сбрасываться лицом к игроку.
  */
-export type Facing = 'down' | 'up' | 'left' | 'right';
+export type Facing = 'se' | 'sw' | 'ne' | 'nw';
 
 export interface ActorLook {
   readonly pose: ActorPose;
@@ -28,12 +35,35 @@ const STEP_TILES = 0.55;
 /** Порядок фаз: контакт, пронос, контакт другой ногой, пронос. */
 const PHASES = 4;
 
+/** К камере идут те стороны, у которых экранный y растёт. */
+const TOWARD: Readonly<Record<Facing, boolean>> = { se: true, sw: true, ne: false, nw: false };
+
+/** Зеркалятся те, что идут влево по экрану. */
+const MIRROR: Readonly<Record<Facing, boolean>> = { se: false, sw: true, ne: false, nw: true };
+
+/**
+ * Сторона по смещению — считается в проекции, а не в осях сетки.
+ *
+ * Сравнение осей сетки здесь не работает: клавиши двигают по осям
+ * экрана, а это диагональ сетки, где обе оси меняются поровну. Ничья
+ * доставалась одной и той же ветке, и с клавиатуры человек умел
+ * поворачиваться только в две стороны из четырёх.
+ *
+ * В проекции всё прямо: экранный x равен (x − y), экранный y равен
+ * (x + y). Вниз по экрану — к камере, влево — зеркало.
+ */
 export function facingFrom(from: WorldPoint, to: WorldPoint, previous: Facing): Facing {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   if (Math.abs(dx) < MOVE_EPSILON && Math.abs(dy) < MOVE_EPSILON) return previous;
-  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? 'right' : 'left';
-  return dy > 0 ? 'down' : 'up';
+
+  const sx = dx - dy;
+  const sy = dx + dy;
+  // Ход строго поперёк экрана показывается лицом: спина при движении
+  // вбок читается хуже, а выбор здесь всё равно произволен.
+  const toward = sy >= 0;
+  const left = Math.abs(sx) < MOVE_EPSILON ? MIRROR[previous] : sx < 0;
+  return toward ? (left ? 'sw' : 'se') : left ? 'nw' : 'ne';
 }
 
 /**
@@ -47,19 +77,13 @@ export function facingFrom(from: WorldPoint, to: WorldPoint, previous: Facing): 
 export function lookFor(facing: Facing, walked: number, moving: boolean): ActorLook {
   const phase = moving ? Math.floor(walked / STEP_TILES) % PHASES : 0;
   const passing = phase % 2 === 1;
-  const lift = passing ? 1 : 0;
+  const view = TOWARD[facing] ? 'se' : 'ne';
 
-  if (facing === 'up' || facing === 'down') {
-    const step = passing ? 'A' : 'B';
-    const pose = `${facing === 'up' ? 'up' : 'down'}${moving ? step : 'A'}` as ActorPose;
-    return { pose, flipX: false, lift: moving ? lift : 0 };
-  }
-
-  // В профиль контакты различимы: в первом впереди ближняя нога, в
-  // третьем — дальняя. Из-за этого профиль и читается ходьбой, а не
-  // ножницами.
-  const side = !moving ? 'sideA' : (['sideB', 'sideA', 'sideC', 'sideA'] as const)[phase]!;
-  return { pose: side as ActorPose, flipX: facing === 'left', lift: moving ? lift : 0 };
+  // Контакты различимы: в одном впереди дальняя нога, в другом ближняя.
+  // Из-за этого шаг и читается ходьбой, а не ножницами.
+  const step = (['B', 'A', 'C', 'A'] as const)[phase] ?? 'A';
+  const pose = `${view}${moving ? step : 'A'}` as ActorPose;
+  return { pose, flipX: MIRROR[facing], lift: moving && passing ? 1 : 0 };
 }
 
 /**

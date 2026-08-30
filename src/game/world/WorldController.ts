@@ -41,7 +41,7 @@ export class WorldController {
   /** В каком районе игрок стоит. Это оформление, поэтому не в GameState. */
   districtId: DistrictId = HOME_DISTRICT;
   position: WorldPoint = { ...getDistrict(HOME_DISTRICT).spawn };
-  facing: Facing = 'down';
+  facing: Facing = 'se';
   walked = 0;
   moving = false;
   crowd: CrowdActor[] = spawnCrowd(HOME_DISTRICT);
@@ -70,7 +70,7 @@ export class WorldController {
   reset(): void {
     this.districtId = HOME_DISTRICT;
     this.position = { ...getDistrict(HOME_DISTRICT).spawn };
-    this.facing = 'down';
+    this.facing = 'se';
     this.route = [];
     this.pendingTarget = null;
     this.crowd = spawnCrowd(HOME_DISTRICT);
@@ -199,7 +199,8 @@ export class WorldController {
       this.transition(() => {
         this.position = { ...room.spawn };
         this.route = [];
-        this.facing = 'up';
+        // Вошедший смотрит вглубь комнаты, а не в дверь, из которой вышел.
+        this.facing = 'ne';
         this.crowd = spawnCrowd(target.id);
         this.deps.enterRoom(target.id);
       });
@@ -218,7 +219,8 @@ export class WorldController {
           y: at.y + 2,
         });
         this.route = [];
-        this.facing = 'down';
+        // Вышедший отворачивается от фасада, к камере.
+        this.facing = 'se';
         this.crowd = spawnCrowd(district.id);
         this.deps.leaveRoom();
       });
@@ -247,7 +249,7 @@ export class WorldController {
       this.position = throughGate ? arrival(next, from) : { ...next.spawn };
       this.route = [];
       this.pendingTarget = null;
-      this.facing = 'down';
+      this.facing = 'se';
       this.crowd = spawnCrowd(to);
       this.deps.leaveRoom();
     });

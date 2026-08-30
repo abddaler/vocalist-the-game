@@ -53,7 +53,9 @@ export function buildPortraitTextures(scene: Phaser.Scene): void {
   const scale = zoom * SUPERSAMPLE;
   const offsetX = (PORTRAIT_SIZE / 2 - CROP.middle * zoom) * SUPERSAMPLE;
   const offsetY = -CROP.top * zoom * SUPERSAMPLE;
-  const joints = POSE.downA;
+  // Спокойная стойка в три четверти: поднятая рука разговора лезет
+  // в кадр портрета, а в три четверти лицо читается живее анфаса.
+  const joints = POSE.seA;
   if (!joints) return;
 
   LOOKS.forEach((look, index) => {

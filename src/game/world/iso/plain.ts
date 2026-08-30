@@ -162,13 +162,16 @@ export function paintPlainPerson(
   painter.fill({ x: at.x - w / 2, y: top + 3, w, h: height - 6 }, color);
   painter.fill({ x: at.x - w / 2 + 1, y: top, w: w - 2, h: height }, color);
 
+  // Стрелка идёт по диагонали плитки: стороны в изометрии диагональные,
+  // и стрелка строго вниз соврала бы про направление.
   const base = at.y - 6;
-  const tip = pose.pose.startsWith('down')
-    ? { x: at.x, y: base + 7 }
-    : pose.pose.startsWith('up')
-      ? { x: at.x, y: base - 7 }
-      : { x: at.x + (pose.flipX ? -8 : 8), y: base };
-  painter.polygon([tip, { x: at.x - 4, y: base }, { x: at.x + 4, y: base }], COLORS.borderFocus);
+  const toward = pose.pose.startsWith('se');
+  const dx = pose.flipX ? -8 : 8;
+  const tip = { x: at.x + dx, y: base + (toward ? 4 : -4) };
+  painter.polygon(
+    [tip, { x: at.x - 3, y: base - 3 }, { x: at.x + 3, y: base + 3 }],
+    COLORS.borderFocus,
+  );
 }
 
 /** Точка сетки в пикселях сцены. Общая для всех заглушек. */

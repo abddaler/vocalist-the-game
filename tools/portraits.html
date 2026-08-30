@@ -6,7 +6,7 @@
 
   Открывается на dev-сервере: /tools/portraits.html. В сборку не попадает.
 -->
-<style>body{margin:0;background:#5a6a7a}canvas{image-rendering:auto}</style>
+<style>body{margin:0;background:#5a6a7a}canvas{image-rendering:pixelated}</style>
 <canvas id="c"></canvas>
 <script type="module">
 import { PORTRAIT_SIZE } from '/src/game/art/portrait.ts';
@@ -18,28 +18,38 @@ import { LOOKS } from '/src/game/art/looks.ts';
 const Z = Number(new URLSearchParams(location.search).get('zoom') ?? 4);
 const COLUMNS = 8, PAD = 3, S = PORTRAIT_SIZE;
 const rows = Math.ceil(LOOKS.length / COLUMNS);
+// Тот же путь, что в игре: вчетверо крупнее, ужать без сглаживания в
+// клетку 32x32 и только потом растянуть.
+const SS = 4;
+const cell = Object.assign(document.createElement('canvas'), { width: S * SS, height: S * SS });
+const cg = cell.getContext('2d');
+const frame = Object.assign(document.createElement('canvas'), { width: S, height: S });
+const fg = frame.getContext('2d');
+fg.imageSmoothingEnabled = false;
+
 const c = document.getElementById('c');
 c.width = (S + PAD) * COLUMNS * Z;
 c.height = (S + PAD) * rows * Z;
 const g = c.getContext('2d');
+g.imageSmoothingEnabled = false;
 
 // Те же числа, что в portrait.ts: кадрирование по грудь.
 const CROP = { top: 2, bottom: 24, middle: 18 };
 const zoom = S / (CROP.bottom - CROP.top);
-const joints = POSE.downA;
+const joints = POSE.seA;
 
 LOOKS.forEach((look, i) => {
   const figure = { colors: look.colors, hair: look.hair, outfit: look.outfit, accessory: look.accessory };
-  g.save();
-  g.translate((S + PAD) * (i % COLUMNS) * Z, (S + PAD) * Math.floor(i / COLUMNS) * Z);
-  g.beginPath();
-  g.rect(0, 0, S * Z, S * Z);
-  g.clip();
-  g.translate((S / 2 - CROP.middle * zoom) * Z, -CROP.top * zoom * Z);
-  const brush = { ctx: g, scale: zoom * Z };
+  cg.setTransform(1, 0, 0, 1, 0, 0);
+  cg.clearRect(0, 0, cell.width, cell.height);
+  cg.setTransform(1, 0, 0, 1, (S / 2 - CROP.middle * zoom) * SS, -CROP.top * zoom * SS);
+  const brush = { ctx: cg, scale: zoom * SS };
   paintFigure(brush, figure, joints);
   EXTRA[figure.accessory]?.(brush, figure, joints, joints.lift);
-  g.restore();
+  cg.setTransform(1, 0, 0, 1, 0, 0);
+  fg.clearRect(0, 0, S, S);
+  fg.drawImage(cell, 0, 0, S, S);
+  g.drawImage(frame, (S + PAD) * (i % COLUMNS) * Z, (S + PAD) * Math.floor(i / COLUMNS) * Z, S * Z, S * Z);
 });
 document.title = 'portraits ' + LOOKS.length;
 </script>

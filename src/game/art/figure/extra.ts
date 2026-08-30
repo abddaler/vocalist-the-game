@@ -1,4 +1,4 @@
-import { BUILD } from './pose';
+import { BUILD, isTurned } from './pose';
 import type { Joints, Point } from './pose';
 import { blob, shape, stroke, tone } from './draw';
 import type { Brush } from './draw';
@@ -30,7 +30,7 @@ export const EXTRA: Readonly<Record<string, Paint>> = {
       1.5,
       color,
     );
-    const cups = joints.view === 'side' ? [1.4] : [-BUILD.headRx + 0.2, BUILD.headRx - 0.2];
+    const cups = [-BUILD.headRx + 0.2, BUILD.headRx - 0.2];
     for (const dx of cups) blob(brush, at(head.x + dx, head.y + 1.4), 1.7, 2.1, color);
   },
 
@@ -40,7 +40,7 @@ export const EXTRA: Readonly<Record<string, Paint>> = {
   earrings: (brush, figure, joints, up) => {
     const head = lift(joints.head, up);
     const color = tone(figure.colors.accent, 1);
-    const spots = joints.view === 'side' ? [-3.2] : [-BUILD.headRx + 0.5, BUILD.headRx - 0.5];
+    const spots = [-BUILD.headRx + 0.5, BUILD.headRx - 0.5];
     for (const dx of spots) blob(brush, at(head.x + dx, head.y + 3.6), 1.1, 1.3, color);
   },
 
@@ -106,7 +106,9 @@ function lenses(
 ): void {
   const head = lift(joints.head, up);
   const frame = tone(figure.colors.accent, 0.65);
-  const spots = joints.view === 'side' ? [2.6] : [-2.9, 2.9];
+  // Очки едут вместе с глазами: на повороте оправа уходит в его сторону.
+  const turn = isTurned(joints.view) ? 0.8 : 0;
+  const spots = [-2.9 + turn * 0.5, 2.9 + turn];
   brush.ctx.globalAlpha = alpha;
   for (const dx of spots) {
     blob(brush, at(head.x + dx, head.y + 0.2), 2.5, 2.2, glass);
@@ -115,7 +117,7 @@ function lenses(
   stroke(
     brush,
     at(head.x - BUILD.headRx, head.y - 0.4),
-    at(head.x, head.y + (joints.view === 'side' ? 0.6 : -0.2)),
+    at(head.x + turn, head.y - 0.2),
     at(head.x + BUILD.headRx, head.y - 0.4),
     0.9,
     frame,

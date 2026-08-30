@@ -1,6 +1,6 @@
 import type { Colors } from '../palettes';
-import { BUILD } from './pose';
-import type { Joints, Point } from './pose';
+import { BUILD, facesCamera, isTurned } from './pose';
+import type { Joints, Point, Side } from './pose';
 import { bands, blob, limb, shade, shape, stroke, tone, trunk } from './draw';
 import type { Brush, Paint } from './draw';
 
@@ -18,19 +18,30 @@ export interface Figure {
 const at = (x: number, y: number): Point => ({ x, y });
 const lift = (point: Point, by: number): Point => ({ x: point.x, y: point.y - by });
 
-/** Какая рука и нога дальше от зрителя: их пишут первыми и глуше. */
-const FAR = 0;
-const NEAR = 1;
+/**
+ * Какая рука и нога дальше от зрителя: их пишут первыми и глуше. В три
+ * четверти ближе та половина, в которую повёрнут корпус, и у взгляда от
+ * камеры это другая сторона, чем у взгляда к ней.
+ */
+const sides = (joints: Joints): { far: 0 | 1; near: 0 | 1 } =>
+  joints.near === 1 ? { far: 0, near: 1 } : { far: 1, near: 0 };
 
 /**
- * Ширины в профиль. Сбоку человек узок: тот же корпус, что и анфас,
- * превращает его в доску, повёрнутую к зрителю ребром только ногами.
+ * Ширины в три четверти. Повёрнутый корпус уже развёрнутого: тот же
+ * анфас превращает поворот в человека, у которого повёрнуты только ноги.
  */
-const SIDE_BUILD = { shoulders: 9.6, waist: 8.8, headRx: 5.5 } as const;
+const TURNED = { shoulders: 12.2, waist: 10.4, headRx: 6.2 } as const;
 
-const girth = (view: string): { shoulders: number; waist: number; headRx: number } =>
-  view === 'side'
-    ? SIDE_BUILD
+/**
+ * На сколько глаза уезжают в сторону поворота. Повернуть голову набором
+ * точек нельзя — поворот читается тем, что дальний глаз ушёл к краю
+ * черепа, а ближний остался на месте.
+ */
+const TURN_EYES = 1.1;
+
+const girth = (view: Side): { shoulders: number; waist: number; headRx: number } =>
+  isTurned(view)
+    ? TURNED
     : { shoulders: BUILD.shoulders, waist: BUILD.waist, headRx: BUILD.headRx };
 
 export function paintFigure(brush: Brush, figure: Figure, joints: Joints): void {
@@ -39,6 +50,7 @@ export function paintFigure(brush: Brush, figure: Figure, joints: Joints): void 
   const sleeve = SLEEVES[figure.outfit] ?? 'short';
   const skirt = SKIRTS.has(figure.outfit);
 
+  const { far: FAR, near: NEAR } = sides(joints);
   const skin = shade(colors.skin);
   const dim = tone(colors.skin, 0.8);
   const cloth = shade(colors.cloth);
@@ -68,7 +80,7 @@ export function paintFigure(brush: Brush, figure: Figure, joints: Joints): void 
   limb(brush, lift(joints.neck, up), lift(at(joints.head.x, joints.head.y + 5), up), BUILD.neck, BUILD.neck, dim);
   hairBehind(brush, figure, joints, up);
   blob(brush, lift(joints.head, up), size.headRx, BUILD.headRy, skin, colors.skin);
-  if (joints.view !== 'back') face(brush, figure, joints, up);
+  if (facesCamera(joints.view)) face(brush, figure, joints, up);
   hairOver(brush, figure, joints, up);
 }
 
@@ -135,7 +147,7 @@ function leg(
   limb(brush, hip, knee, BUILD.thigh, BUILD.ankle + 0.6, fill, outline.leg);
   limb(brush, knee, foot, BUILD.ankle + 0.6, BUILD.ankle, fill, outline.leg);
   // Стопа овалом, вытянутым вперёд: у ботинка есть носок.
-  const toe = joints.view === 'side' ? 1.5 : 0.35;
+  const toe = isTurned(joints.view) ? 1 : 0.35;
   blob(brush, at(foot.x + toe, foot.y + 1), BUILD.foot / 2, 1.9, shoe, outline.shoe);
 }
 
@@ -160,7 +172,7 @@ function dressTrunk(
     }
   }
 
-  if (bare && joints.view !== 'side') {
+  if (bare) {
     // Лямки: без них топ висит на груди сам по себе.
     const strap = tone(figure.colors.cloth, 1.05);
     stroke(brush, lift(at(14.4, shoulderY - 1), up), lift(at(14.8, shoulderY + 1), up), lift(at(15.2, top + 1), up), 1.5, strap);
@@ -226,18 +238,24 @@ const DETAIL: Readonly<
   },
 };
 
-/** Лицо: брови, глаза, нос, рот. В профиль видно половину. */
+/**
+ * Лицо. В три четверти глаза сдвинуты в сторону поворота, а дальний —
+ * ближе к краю черепа и уже: этим и читается поворот головы, потому что
+ * повернуть саму голову набором точек нельзя.
+ */
 function face(brush: Brush, figure: Figure, joints: Joints, up: number): void {
   const head = lift(joints.head, up);
-  const side = joints.view === 'side';
-  void BUILD;
+  const turn = isTurned(joints.view) ? TURN_EYES : 0;
   const brow = tone(figure.colors.hair, 0.62);
-  const eyes: Array<[number, number]> = side ? [[2.2, 0.9]] : [[-2.2, 0.9], [2.2, 0.9]];
+  const eyes: Array<[number, number]> = [
+    [-2.1 + turn * 0.5, 0.9],
+    [2.1 + turn, 0.9],
+  ];
 
   if (joints.shut) {
     // Спящему рисуется дуга вместо глаза: закрытый глаз — это веко,
     // а не отсутствие глаза, и пустое лицо читается сломанным.
-    for (const dx of side ? [2.2] : [-2.2, 2.2]) {
+    for (const dx of eyes.map(([dx]) => dx)) {
       stroke(
         brush,
         at(head.x + dx - 1.2, head.y + 0.6),
@@ -249,11 +267,12 @@ function face(brush: Brush, figure: Figure, joints: Joints, up: number): void {
     }
   }
 
-  for (const [dx, dy] of joints.shut ? [] : eyes) {
-    // В профиль белка не видно: сбоку глаз читается тёмной миндалиной,
-    // а белое пятно на скуле превращает лицо в маску.
-    if (!side) blob(brush, at(head.x + dx, head.y + dy), 1, 1.15, '#f4f1f7');
-    blob(brush, at(head.x + dx + (side ? 0.2 : 0), head.y + dy + 0.1), side ? 0.85 : 0.62, 0.8, '#2a2430');
+  eyes.forEach(([dx, dy], index) => {
+    if (joints.shut) return;
+    // Дальний глаз уже ближнего: на повороте он уходит за скулу.
+    const narrow = turn > 0 && index === 1 ? 0.78 : 1;
+    blob(brush, at(head.x + dx, head.y + dy), 1 * narrow, 1.15, '#f4f1f7');
+    blob(brush, at(head.x + dx, head.y + dy + 0.1), 0.62 * narrow, 0.8, '#2a2430');
     stroke(
       brush,
       at(head.x + dx - 1.5, head.y + dy - 2),
@@ -262,16 +281,17 @@ function face(brush: Brush, figure: Figure, joints: Joints, up: number): void {
       0.7,
       brow,
     );
-  }
+  });
 
   // Носа нет, рот — короткий штрих. На тридцати шести пикселях нос и
   // полный рот сливаются в пятно под глазами, которое читается бородой;
   // узнают персонажа всё равно по причёске, а не по чертам.
+  const mouth = turn * 0.8;
   stroke(
     brush,
-    at(head.x + (side ? 2 : -1.2), head.y + 5),
-    at(head.x + (side ? 2.9 : 0), head.y + 5.3),
-    at(head.x + (side ? 3.8 : 1.2), head.y + 5),
+    at(head.x - 1.2 + mouth, head.y + 5),
+    at(head.x + mouth, head.y + 5.3),
+    at(head.x + 1.2 + mouth, head.y + 5),
     0.7,
     tone(figure.colors.skin, 0.62),
   );
@@ -297,7 +317,7 @@ function hairBehind(brush: Brush, figure: Figure, joints: Joints, up: number): v
       at(head.x - rx + 0.4, head.y + drop),
       at(head.x - rx - 0.6, head.y + drop * 0.55),
     ],
-    joints.view === 'side' ? tone(figure.colors.hair, 0.88) : fill,
+    fill,
     figure.colors.hair,
   );
 }
@@ -309,8 +329,8 @@ function hairOver(brush: Brush, figure: Figure, joints: Joints, up: number): voi
 
   const head = lift(joints.head, up);
   const colors = figure.colors;
-  const back = joints.view === 'back';
-  const side = joints.view === 'side';
+  const back = !facesCamera(joints.view);
+  const turned = isTurned(joints.view);
   const rx = girth(joints.view).headRx;
   // Шапка волос кладётся прямоугольником с обрезкой по черепу, поэтому
   // тона ей нужны готовыми — по ширине самой головы.
@@ -330,7 +350,7 @@ function hairOver(brush: Brush, figure: Figure, joints: Joints, up: number): voi
   ctx.fillRect((head.x - 30) * scale, (head.y - 30) * scale, 60 * scale, (30 + drop) * scale);
   // Прядь у виска: без неё чёлка обрывается ровной линией.
   if (!back) {
-    const edge = side ? [-1] : [-1, 1];
+    const edge = turned ? [-1] : [-1, 1];
     for (const dir of edge) {
       ctx.fillRect(
         (head.x + dir * (rx - 1.9)) * scale,
@@ -348,12 +368,13 @@ function hairOver(brush: Brush, figure: Figure, joints: Joints, up: number): voi
     }
   }
   if (style === 'ponytail') {
-    const x = head.x - (side ? 7.2 : 6.4);
+    const x = head.x - (turned ? 7 : 6.4);
     shape(brush, [at(x, head.y - 3), at(x + 2.4, head.y - 2), at(x + 1.6, head.y + 8.5), at(x - 2.3, head.y + 7.5)], shade(colors.hair));
   }
   if (style === 'cap') {
     blob(brush, at(head.x, head.y - 2.2), rx + 0.8, 2.8, tone(colors.accent, 0.92));
-    blob(brush, at(head.x + (side ? 4.4 : 0), head.y - 0.5), side ? 3.6 : rx - 0.6, 1.3, tone(colors.accent, 0.7));
+    // Козырёк смотрит в сторону поворота.
+    blob(brush, at(head.x + (turned ? 2.2 : 0), head.y - 0.5), rx - 0.6, 1.3, tone(colors.accent, 0.7));
   }
 }
 

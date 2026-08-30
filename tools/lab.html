@@ -1,0 +1,78 @@
+<!doctype html><meta charset="utf-8"><title>Стенд персонажей</title>
+<!--
+  Все стороны и все кадры разом, через ту же цепочку, что и в игре:
+  сторона → поза → отражение. Гоняться за персонажем по комнате
+  скриншотами, чтобы проверить поворот, — дороже, чем один такой лист.
+
+  Открывается на dev-сервере: /tools/lab.html. В сборку не попадает.
+-->
+<style>
+  body{margin:0;background:#5a6a7a;font:12px system-ui;color:#e8e4f0}
+  canvas{image-rendering:pixelated;display:block}
+  .row{display:flex;align-items:center;gap:10px;padding:2px 8px}
+  .tag{width:120px;text-align:right;opacity:.85}
+</style>
+<div id="out"></div>
+<script type="module">
+import { ACTOR_SPRITE, POSE } from '/src/game/art/figure/pose.ts';
+import { paintFigure } from '/src/game/art/figure/paint.ts';
+import { EXTRA } from '/src/game/art/figure/extra.ts';
+import { LOOKS } from '/src/game/art/looks.ts';
+import { lookFor, idleBreath, talkLook, wornLook } from '/src/game/world/actorSprite.ts';
+
+const Q = new URLSearchParams(location.search);
+const Z = Number(Q.get('zoom') ?? 5);
+const LOOK = Number(Q.get('look') ?? 0);
+const W = ACTOR_SPRITE.width, H = ACTOR_SPRITE.height, SS = 3, PAD = 3;
+const look = LOOKS[LOOK];
+const figure = { colors: look.colors, hair: look.hair, outfit: look.outfit, accessory: look.accessory };
+
+const cell = Object.assign(document.createElement('canvas'), { width: W * SS, height: H * SS });
+const cg = cell.getContext('2d');
+const frame = Object.assign(document.createElement('canvas'), { width: W, height: H });
+const fg = frame.getContext('2d');
+fg.imageSmoothingEnabled = false;
+
+/** Один кадр по готовому виду: поза плюс отражение, как в игре. */
+function draw(g, x, view) {
+  const joints = POSE[view.pose];
+  cg.clearRect(0, 0, cell.width, cell.height);
+  const brush = { ctx: cg, scale: SS };
+  paintFigure(brush, figure, joints);
+  EXTRA[figure.accessory]?.(brush, figure, joints, joints.lift);
+  fg.clearRect(0, 0, W, H);
+  fg.drawImage(cell, 0, 0, W, H);
+  g.save();
+  if (view.flipX) { g.translate((x + W) * Z, 0); g.scale(-1, 1); } else { g.translate(x * Z, 0); }
+  g.drawImage(frame, 0, -view.lift * Z, W * Z, H * Z);
+  g.restore();
+}
+
+function row(tag, views) {
+  const wrap = document.createElement('div');
+  wrap.className = 'row';
+  const label = document.createElement('div');
+  label.className = 'tag';
+  label.textContent = tag;
+  const c = Object.assign(document.createElement('canvas'), {
+    width: (W + PAD) * views.length * Z,
+    height: H * Z,
+  });
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  views.forEach((view, i) => draw(g, (W + PAD) * i, view));
+  wrap.append(label, c);
+  document.getElementById('out').append(wrap);
+}
+
+const PHASE = 0.55;
+for (const facing of ['se', 'sw', 'ne', 'nw']) {
+  row(`${facing} стоя`, [idleBreath(lookFor(facing, 0, false), 0), idleBreath(lookFor(facing, 0, false), 400)]);
+  row(`${facing} шаг`, [0, 1, 2, 3].map((n) => lookFor(facing, n * PHASE + PHASE / 2, true)));
+}
+row('разговор', [0, 300].map(talkLook));
+row('севший голос', [0, 400].map(wornLook));
+row('пение', ['singA', 'singB', 'singC', 'singD', 'singE', 'singF'].map((pose) => ({ pose, flipX: false, lift: 0 })));
+row('сон и работа', ['restA', 'restB', 'liftA', 'liftB'].map((pose) => ({ pose, flipX: false, lift: 0 })));
+document.title = 'lab ' + look.id;
+</script>

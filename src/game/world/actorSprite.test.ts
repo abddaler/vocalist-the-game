@@ -7,57 +7,87 @@ import { POSE } from '../art/figure/pose';
 import { CYCLE } from '@ui/screens/ActivityScene';
 import { BALANCE } from '@data/balance';
 import { facingFrom, idleBreath, lookFor, talkLook, wornLook } from './actorSprite';
+import type { Facing } from './actorSprite';
 
 describe('поворот персонажа', () => {
   it('следует за преобладающей осью движения', () => {
-    expect(facingFrom({ x: 0, y: 0 }, { x: 5, y: 1 }, 'down')).toBe('right');
-    expect(facingFrom({ x: 0, y: 0 }, { x: -5, y: 1 }, 'down')).toBe('left');
-    expect(facingFrom({ x: 0, y: 0 }, { x: 1, y: 5 }, 'up')).toBe('down');
-    expect(facingFrom({ x: 0, y: 0 }, { x: 1, y: -5 }, 'down')).toBe('up');
+    // Ось x уходит вниз-вправо по экрану, ось y — вниз-влево: это
+    // прямо следует из проекции, где экранный x равен (x − y).
+    expect(facingFrom({ x: 0, y: 0 }, { x: 5, y: 1 }, 'se')).toBe('se');
+    expect(facingFrom({ x: 0, y: 0 }, { x: -5, y: 1 }, 'se')).toBe('nw');
+    expect(facingFrom({ x: 0, y: 0 }, { x: 1, y: 5 }, 'ne')).toBe('sw');
+    expect(facingFrom({ x: 0, y: 0 }, { x: 1, y: -5 }, 'se')).toBe('ne');
+  });
+
+  it('ход по экранным осям различает все четыре стороны', () => {
+    // Клавиши двигают по экрану, а это диагональ сетки: обе оси меняются
+    // поровну. Сравнение осей сетки отдавало ничью одной ветке, и с
+    // клавиатуры человек поворачивался только в две стороны из четырёх.
+    const key = (ax: number, ay: number, was: Facing = 'se'): Facing =>
+      facingFrom({ x: 0, y: 0 }, { x: ax, y: ay }, was);
+    // Вправо и влево по экрану — вбок, показывается лицом.
+    expect(key(0.5, -0.5)).toBe('se');
+    expect(key(-0.5, 0.5)).toBe('sw');
+    // Вверх и вниз по экрану сторону не задают: она остаётся прежней.
+    expect(key(0.5, 0.5, 'se')).toBe('se');
+    expect(key(0.5, 0.5, 'sw')).toBe('sw');
+    expect(key(-0.5, -0.5, 'se')).toBe('ne');
+    expect(key(-0.5, -0.5, 'sw')).toBe('nw');
   });
 
   it('стоящий сохраняет поворот, а не разворачивается к зрителю', () => {
-    expect(facingFrom({ x: 3, y: 3 }, { x: 3, y: 3 }, 'left')).toBe('left');
-    expect(facingFrom({ x: 3, y: 3 }, { x: 3.01, y: 3 }, 'up')).toBe('up');
+    expect(facingFrom({ x: 3, y: 3 }, { x: 3, y: 3 }, 'nw')).toBe('nw');
+    expect(facingFrom({ x: 3, y: 3 }, { x: 3.01, y: 3 }, 'ne')).toBe('ne');
   });
 });
 
 describe('кадр анимации', () => {
   /** Шаг меряется в плитках, и одна фаза — заметно меньше плитки. */
   const PHASE = 0.55;
-  const walk = (facing: 'down' | 'left', phases: number[]): string[] =>
+  const walk = (facing: Facing, phases: number[]): string[] =>
     phases.map((n) => lookFor(facing, n * PHASE + PHASE / 2, true).pose);
 
   it('в покое всегда первый кадр', () => {
-    expect(lookFor('down', 999, false).pose).toBe('downA');
-    expect(lookFor('down', 999, false).lift).toBe(0);
+    expect(lookFor('se', 999, false).pose).toBe('seA');
+    expect(lookFor('se', 999, false).lift).toBe(0);
   });
 
   it('шаг укладывается в плитку, а не в семь', () => {
     // На семи плитках кадр менялся раз в две с половиной секунды.
-    expect(lookFor('down', 0, true).pose).not.toBe(lookFor('down', 1, true).pose);
+    expect(lookFor('se', 0, true).pose).not.toBe(lookFor('se', 1, true).pose);
   });
 
-  it('анфас кадры чередуются: касание и пронос', () => {
-    expect(walk('down', [0, 1, 2, 3, 4])).toEqual([
-      'downB', 'downA', 'downB', 'downA', 'downB',
-    ]);
+  it('вперёд выносится то одна нога, то другая', () => {
+    expect(walk('se', [0, 1, 2, 3, 4])).toEqual(['seB', 'seA', 'seC', 'seA', 'seB']);
   });
 
-  it('в профиль вперёд выносится то одна нога, то другая', () => {
-    expect(walk('left', [0, 1, 2, 3, 4])).toEqual([
-      'sideB', 'sideA', 'sideC', 'sideA', 'sideB',
-    ]);
+  it('спиной к камере идёт свой набор кадров', () => {
+    expect(walk('ne', [0, 1, 2, 3, 4])).toEqual(['neB', 'neA', 'neC', 'neA', 'neB']);
   });
 
   it('на проносе корпус выше, чем в момент касания', () => {
-    expect(lookFor('down', PHASE / 2, true).lift).toBe(0);
-    expect(lookFor('down', PHASE * 1.5, true).lift).toBe(1);
+    expect(lookFor('se', PHASE / 2, true).lift).toBe(0);
+    expect(lookFor('se', PHASE * 1.5, true).lift).toBe(1);
   });
 
-  it('профиль отзеркаливается, а не дублируется отдельными кадрами', () => {
-    expect(lookFor('left', 0, true).flipX).toBe(true);
-    expect(lookFor('right', 0, true).flipX).toBe(false);
+  it('левые стороны — зеркала правых, а не отдельные кадры', () => {
+    // Половина кадров не рисуется вовсе: в изометрии юго-запад — это
+    // юго-восток наизнанку.
+    expect(lookFor('sw', 0, true).pose).toBe(lookFor('se', 0, true).pose);
+    expect(lookFor('sw', 0, true).flipX).toBe(true);
+    expect(lookFor('se', 0, true).flipX).toBe(false);
+    expect(lookFor('nw', 0, true).pose).toBe(lookFor('ne', 0, true).pose);
+    expect(lookFor('nw', 0, true).flipX).toBe(true);
+    expect(lookFor('ne', 0, true).flipX).toBe(false);
+  });
+
+  it('к камере и от камеры — разные ракурсы', () => {
+    for (const toward of ['se', 'sw'] as const) {
+      expect(POSE[lookFor(toward, 0, false).pose]!.view).toBe('quarter');
+    }
+    for (const away of ['ne', 'nw'] as const) {
+      expect(POSE[lookFor(away, 0, false).pose]!.view).toBe('quarterBack');
+    }
   });
 });
 
@@ -103,7 +133,7 @@ describe('позы дела', () => {
 });
 
 describe('стоящий и севший голос', () => {
-  const stand = lookFor('down', 0, false);
+  const stand = lookFor('se', 0, false);
 
   it('стоящий дышит: корпус поднимается и опускается', () => {
     const lifts = new Set([0, 280, 560, 840].map((clock) => idleBreath(stand, clock).lift));

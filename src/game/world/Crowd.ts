@@ -60,7 +60,7 @@ export function spawnCrowd(locationId: string): CrowdActor[] {
     next: member.path.length > 1 ? 1 : 0,
     // Разводим паузы, иначе вся локация шагает в ногу.
     wait: (index * 370) % 1500,
-    facing: 'down',
+    facing: 'se',
     walked: 0,
     moving: false,
     mood: null,
