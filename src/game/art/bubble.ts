@@ -156,8 +156,7 @@ export function buildBubbleTextures(scene: Phaser.Scene): void {
   );
   if (!atlas) return;
   const target = atlas.getContext();
-  target.imageSmoothingEnabled = true;
-  target.imageSmoothingQuality = 'high';
+  target.imageSmoothingEnabled = false;
 
   const big = document.createElement('canvas');
   big.width = BUBBLE_CELL.width * SUPERSAMPLE;
@@ -172,6 +171,5 @@ export function buildBubbleTextures(scene: Phaser.Scene): void {
   });
 
   atlas.refresh();
-  // Значки собраны со сглаживанием, поэтому тянутся линейно.
-  atlas.setFilter(1);
+  atlas.setFilter(0);
 }

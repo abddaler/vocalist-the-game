@@ -54,8 +54,9 @@ export function repaintActor(scene: Phaser.Scene, index: number, figure: Figure)
   if (!target) return;
 
   const { canvas, brush } = easel();
-  target.imageSmoothingEnabled = true;
-  target.imageSmoothingQuality = 'high';
+  // Сжатие без сглаживания: пиксель кадра берёт один пиксель холста,
+  // и кромка выходит ступенькой, а не размытой каймой.
+  target.imageSmoothingEnabled = false;
 
   const poses = [...POSES, ...ACT_POSES];
   poses.forEach((pose, column) => {
@@ -74,7 +75,7 @@ export function repaintActor(scene: Phaser.Scene, index: number, figure: Figure)
   });
 
   atlas.refresh();
-  atlas.setFilter(1);
+  atlas.setFilter(0);
 }
 
 export function buildActorTextures(scene: Phaser.Scene): void {
@@ -90,8 +91,9 @@ export function buildActorTextures(scene: Phaser.Scene): void {
   const target = atlas.getContext();
 
   const { canvas: big, brush } = easel();
-  target.imageSmoothingEnabled = true;
-  target.imageSmoothingQuality = 'high';
+  // Сжатие без сглаживания: пиксель кадра берёт один пиксель холста,
+  // и кромка выходит ступенькой, а не размытой каймой.
+  target.imageSmoothingEnabled = false;
 
   LOOKS.forEach((look, index) => {
     const figure: Figure = {
@@ -130,7 +132,6 @@ export function buildActorTextures(scene: Phaser.Scene): void {
   });
 
   atlas.refresh();
-  // Кадры фигур сглажены при сборке, поэтому их нельзя тянуть по
-  // соседнему пикселю: линейная фильтрация сохраняет мягкую кромку.
-  atlas.setFilter(1);
+  // Кадры пиксельные: линейная фильтрация размазала бы их обратно.
+  atlas.setFilter(0);
 }

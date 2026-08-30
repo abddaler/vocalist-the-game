@@ -7,7 +7,7 @@
   Открывается на dev-сервере: /tools/atlas.html. В сборку не попадает —
   входная точка у неё одна, index.html.
 -->
-<style>body{margin:0;background:#5a6a7a}canvas{image-rendering:auto}</style>
+<style>body{margin:0;background:#5a6a7a}canvas{image-rendering:pixelated}</style>
 <canvas id="c"></canvas>
 <script type="module">
 import { ACTOR_SPRITE, ACT_POSES, POSES, POSE } from '/src/game/art/figure/pose.ts';
@@ -20,21 +20,38 @@ const Z = Number(Q.get('zoom') ?? 3);
 // ?acts=1 — лист поз дела вместо ходовых: их шестнадцать на строку не влезает.
 const SHOW = Q.get('acts') ? ACT_POSES : POSES;
 const W = ACTOR_SPRITE.width, H = ACTOR_SPRITE.height, PAD = 4;
+// Тот же путь, что в игре: рисуем втрое крупнее, ужимаем без
+// сглаживания в кадр 36x62 и только потом растягиваем. Рисовать сразу
+// в увеличенном масштабе — значит смотреть не на то, что увидит игрок.
+const SS = 3;
+const cell = document.createElement('canvas');
+cell.width = W * SS;
+cell.height = H * SS;
+const cg = cell.getContext('2d');
+
+const frame = document.createElement('canvas');
+frame.width = W;
+frame.height = H;
+const fg = frame.getContext('2d');
+fg.imageSmoothingEnabled = false;
+
 const c = document.getElementById('c');
 c.width = (W + PAD) * SHOW.length * Z;
 c.height = (H + PAD) * LOOKS.length * Z;
 const g = c.getContext('2d');
+g.imageSmoothingEnabled = false;
 
 LOOKS.forEach((look, i) => {
   const figure = { colors: look.colors, hair: look.hair, outfit: look.outfit, accessory: look.accessory };
   SHOW.forEach((pose, p) => {
     const joints = POSE[pose];
-    g.save();
-    g.translate((W + PAD) * p * Z, (H + PAD) * i * Z);
-    const brush = { ctx: g, scale: Z };
+    cg.clearRect(0, 0, cell.width, cell.height);
+    const brush = { ctx: cg, scale: SS };
     paintFigure(brush, figure, joints);
     EXTRA[figure.accessory]?.(brush, figure, joints, joints.lift);
-    g.restore();
+    fg.clearRect(0, 0, W, H);
+    fg.drawImage(cell, 0, 0, W, H);
+    g.drawImage(frame, (W + PAD) * p * Z, (H + PAD) * i * Z, W * Z, H * Z);
   });
 });
 document.title = 'atlas ' + LOOKS.length;

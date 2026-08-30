@@ -41,8 +41,7 @@ export function buildPortraitTextures(scene: Phaser.Scene): void {
   );
   if (!atlas) return;
   const target = atlas.getContext();
-  target.imageSmoothingEnabled = true;
-  target.imageSmoothingQuality = 'high';
+  target.imageSmoothingEnabled = false;
 
   const big = document.createElement('canvas');
   big.width = PORTRAIT_SIZE * SUPERSAMPLE;
@@ -76,5 +75,5 @@ export function buildPortraitTextures(scene: Phaser.Scene): void {
   });
 
   atlas.refresh();
-  atlas.setFilter(1);
+  atlas.setFilter(0);
 }

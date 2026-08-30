@@ -46,26 +46,28 @@ export function paintFigure(brush: Brush, figure: Figure, joints: Joints): void 
   const shoes = tone(colors.shoes, 1);
 
   // Дальняя нога и рука — приглушённые: так читается, что они за корпусом.
-  leg(brush, joints, FAR, up, skirt ? tone(colors.skin, 0.72) : tone(colors.legs, 0.74), tone(colors.shoes, 0.75));
-  if (sleeve !== 'long') arm(brush, joints, FAR, up, tone(colors.skin, 0.74), sleeve, tone(colors.cloth, 0.74));
-  else arm(brush, joints, FAR, up, tone(colors.cloth, 0.74), sleeve, tone(colors.cloth, 0.74));
+  const far = { leg: skirt ? colors.skin : colors.legs, shoe: colors.shoes };
+  const near = { skin: colors.skin, cloth: colors.cloth };
+  leg(brush, joints, FAR, up, skirt ? tone(colors.skin, 0.72) : tone(colors.legs, 0.74), tone(colors.shoes, 0.75), far);
+  if (sleeve !== 'long') arm(brush, joints, FAR, up, tone(colors.skin, 0.74), sleeve, tone(colors.cloth, 0.74), near);
+  else arm(brush, joints, FAR, up, tone(colors.cloth, 0.74), sleeve, tone(colors.cloth, 0.74), near);
 
-  leg(brush, joints, NEAR, up, skirt ? skin : trousers, shoes);
+  leg(brush, joints, NEAR, up, skirt ? skin : trousers, shoes, far);
 
   // Корпус: сперва кожа, потом одежда поверх — так вырез и лямки
   // остаются кожей, а не дырой.
   const size = girth(joints.view);
-  trunk(brush, lift(at(18, joints.shoulder[0]!.y), up), lift(joints.hip, up), size.shoulders, size.waist, skin);
+  trunk(brush, lift(at(18, joints.shoulder[0]!.y), up), lift(joints.hip, up), size.shoulders, size.waist, skin, colors.skin);
   dressTrunk(brush, figure, joints, up, cloth);
   if (skirt) dressSkirt(brush, figure, joints, up);
 
-  arm(brush, joints, NEAR, up, sleeve === 'long' ? cloth : skin, sleeve, cloth);
+  arm(brush, joints, NEAR, up, sleeve === 'long' ? cloth : skin, sleeve, cloth, near);
   if (joints.mic) microphone(brush, lift(joints.hand[NEAR]!, up));
 
   // Шея и голова.
   limb(brush, lift(joints.neck, up), lift(at(joints.head.x, joints.head.y + 5), up), BUILD.neck, BUILD.neck, dim);
   hairBehind(brush, figure, joints, up);
-  blob(brush, lift(joints.head, up), size.headRx, BUILD.headRy, skin);
+  blob(brush, lift(joints.head, up), size.headRx, BUILD.headRy, skin, colors.skin);
   if (joints.view !== 'back') face(brush, figure, joints, up);
   hairOver(brush, figure, joints, up);
 }
@@ -93,6 +95,7 @@ function arm(
   fill: string | CanvasGradient,
   sleeve: 'bare' | 'short' | 'long',
   cloth: string | CanvasGradient,
+  outline: { skin: string; cloth: string },
 ): void {
   const from = lift(joints.shoulder[which]!, up);
   const to = lift(joints.hand[which]!, up);
@@ -102,8 +105,9 @@ function arm(
   const mid = bend ? lift(bend, up) : at(from.x + (to.x - from.x) * 0.5, from.y + (to.y - from.y) * 0.5);
   const forearm = BUILD.arm - (BUILD.arm - BUILD.wrist) * 0.45;
 
-  limb(brush, from, mid, BUILD.arm, forearm, fill);
-  limb(brush, mid, to, forearm, BUILD.wrist, fill);
+  const bare = sleeve === 'long' ? outline.cloth : outline.skin;
+  limb(brush, from, mid, BUILD.arm, forearm, fill, bare);
+  limb(brush, mid, to, forearm, BUILD.wrist, fill, bare);
   // Шар в локте: две капсулы встык дают на сгибе видимый угол.
   blob(brush, mid, forearm / 2, forearm / 2, fill);
 
@@ -111,7 +115,7 @@ function arm(
     // Рукав начинается ровно в суставе и той же ширины, что скруглённое
     // плечо: смещённая капсула вылезала из плеча отдельным серпом.
     const cuff = at(from.x + (mid.x - from.x) * 0.8, from.y + (mid.y - from.y) * 0.8);
-    limb(brush, from, cuff, BUILD.arm + 1.6, BUILD.arm - 0.4, cloth);
+    limb(brush, from, cuff, BUILD.arm + 1.6, BUILD.arm - 0.4, cloth, outline.cloth);
   }
   blob(brush, to, BUILD.wrist * 0.62, BUILD.wrist * 0.62, fill);
 }
@@ -123,15 +127,16 @@ function leg(
   up: number,
   fill: string | CanvasGradient,
   shoe: string,
+  outline: { leg: string; shoe: string },
 ): void {
   const hip = lift(at(joints.hip.x + (which === 0 ? -2.9 : 2.9), joints.hip.y - 1), up);
   const knee = lift(joints.knee[which]!, up);
   const foot = lift(joints.foot[which]!, up);
-  limb(brush, hip, knee, BUILD.thigh, BUILD.ankle + 0.6, fill);
-  limb(brush, knee, foot, BUILD.ankle + 0.6, BUILD.ankle, fill);
+  limb(brush, hip, knee, BUILD.thigh, BUILD.ankle + 0.6, fill, outline.leg);
+  limb(brush, knee, foot, BUILD.ankle + 0.6, BUILD.ankle, fill, outline.leg);
   // Стопа овалом, вытянутым вперёд: у ботинка есть носок.
   const toe = joints.view === 'side' ? 1.5 : 0.35;
-  blob(brush, at(foot.x + toe, foot.y + 1), BUILD.foot / 2, 1.9, shoe);
+  blob(brush, at(foot.x + toe, foot.y + 1), BUILD.foot / 2, 1.9, shoe, outline.shoe);
 }
 
 function dressTrunk(
@@ -146,7 +151,7 @@ function dressTrunk(
   const bare = SLEEVES[figure.outfit] === 'bare';
   const top = bare ? shoulderY + 2.5 : shoulderY - 2.2;
   const wide = bare ? size.shoulders - 3 : size.shoulders;
-  trunk(brush, lift(at(18, top), up), lift(at(joints.hip.x, joints.hip.y + 1.5), up), wide, size.waist - 0.5, cloth);
+  trunk(brush, lift(at(18, top), up), lift(at(joints.hip.x, joints.hip.y + 1.5), up), wide, size.waist - 0.5, cloth, figure.colors.cloth);
   if (!bare) {
     // Дельта плеча — часть корпуса, а не рукав: без неё стык плеча и
     // руки читается прямым углом.
@@ -176,6 +181,7 @@ function dressSkirt(brush: Brush, figure: Figure, joints: Joints, up: number): v
       lift(at(18 - BUILD.waist / 2 - 4, y + 8), up),
     ],
     fill,
+    figure.colors.legs,
   );
 }
 
@@ -258,22 +264,16 @@ function face(brush: Brush, figure: Figure, joints: Joints, up: number): void {
     );
   }
 
-  const nose = tone(figure.colors.skin, 0.8);
+  // Носа нет, рот — короткий штрих. На тридцати шести пикселях нос и
+  // полный рот сливаются в пятно под глазами, которое читается бородой;
+  // узнают персонажа всё равно по причёске, а не по чертам.
   stroke(
     brush,
-    at(head.x + (side ? 3.6 : 0.2), head.y + 2.4),
-    at(head.x + (side ? 4.4 : 0.6), head.y + 3.2),
-    at(head.x + (side ? 3.4 : 0.2), head.y + 3.8),
-    0.8,
-    nose,
-  );
-  stroke(
-    brush,
-    at(head.x + (side ? 1.4 : -1.5), head.y + 5.2),
-    at(head.x + (side ? 2.8 : 0), head.y + 5.9),
-    at(head.x + (side ? 3.8 : 1.5), head.y + 5.2),
-    0.85,
-    tone(figure.colors.skin, 0.55),
+    at(head.x + (side ? 2 : -1.2), head.y + 5),
+    at(head.x + (side ? 2.9 : 0), head.y + 5.3),
+    at(head.x + (side ? 3.8 : 1.2), head.y + 5),
+    0.7,
+    tone(figure.colors.skin, 0.62),
   );
 }
 
@@ -298,6 +298,7 @@ function hairBehind(brush: Brush, figure: Figure, joints: Joints, up: number): v
       at(head.x - rx - 0.6, head.y + drop * 0.55),
     ],
     joints.view === 'side' ? tone(figure.colors.hair, 0.88) : fill,
+    figure.colors.hair,
   );
 }
 

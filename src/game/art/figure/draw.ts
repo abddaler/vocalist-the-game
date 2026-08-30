@@ -1,18 +1,40 @@
 import type { Point } from './pose';
 
 /**
- * Кисти для фигуры. Всё рисуется путями на обычном холсте: у пути есть
- * сглаженный край и градиент, а у строки из символов — только пиксель
- * и его цвет. Отсюда и мягкая форма вместо лесенки.
+ * Кисти для фигуры. Форма задаётся путями — так поза строится из десятка
+ * чисел, а не из сорока восьми строк по пикселю, — но выглядеть должна
+ * пиксельной: три плоских тона на материал, тёмная обводка в пиксель и
+ * жёсткая кромка.
  *
- * Холст берётся втрое крупнее кадра и потом ужимается: сглаживание тогда
- * считается по трём пикселям на один, и кромка выходит ровной, а не
- * размытой.
+ * Плавная растяжка цвета и мягкий край — то, чем векторный рисунок себя
+ * и выдаёт. Заливка поэтому разбита на три полосы с резкими границами,
+ * а холст ужимается без сглаживания: кромка получается ступенькой, как
+ * ей и положено.
  */
 export interface Brush {
   readonly ctx: CanvasRenderingContext2D;
   /** Во сколько раз холст крупнее кадра. */
   readonly scale: number;
+}
+
+/**
+ * Ширина обводки в пикселях кадра. Обводка не чёрная, а затемнённая
+ * версия своего же цвета: чёрный контур на такой палитре читается
+ * флеш-игрой, а тёмный оттенок соседа даёт тёплый вид.
+ */
+const EDGE = 1.6;
+
+/** Насколько обводка темнее того, что обводит. */
+const EDGE_TONE = 0.38;
+
+/** Обвести уже построенный путь тоном материала. */
+function edge(brush: Brush, color: string | undefined): void {
+  if (!color) return;
+  const { ctx, scale } = brush;
+  ctx.lineWidth = EDGE * scale;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = tone(color, EDGE_TONE);
+  ctx.stroke();
 }
 
 /** Осветление и затемнение цвета: тени и блики выводятся, а не задаются. */
@@ -23,26 +45,46 @@ export function tone(hex: string, factor: number): string {
   return `rgb(${channel(16)},${channel(8)},${channel(0)})`;
 }
 
+/** Доли ширины, на которых блик переходит в базу, а база в тень. */
+const BANDS = [0.34, 0.68] as const;
+
+/** Множители трёх тонов: блик, база, тень. */
+const TONES = [1.16, 1, 0.7] as const;
+
 /**
- * Заливка с боковым светом: слева светлее, справа темнее. В изометрии
- * свет падает слева сверху, и фигура держит объём тем же, чем его держит
- * коробка, — разницей между гранями.
+ * Заливка тремя плоскими тонами: блик слева, база, тень справа. Свет
+ * падает слева сверху, одинаково для всех.
+ *
+ * Границы полос резкие — стоп повторяется дважды. Плавная растяжка на
+ * тридцати шести пикселях даёт грязь из десятков оттенков, а три тона
+ * держат объём тем же, чем его держит коробка: разницей между гранями.
  */
 export function lit(brush: Brush, color: string, left: number, right: number): CanvasGradient {
   const gradient = brush.ctx.createLinearGradient(left * brush.scale, 0, right * brush.scale, 0);
-  gradient.addColorStop(0, tone(color, 1.14));
-  gradient.addColorStop(0.45, color);
-  gradient.addColorStop(1, tone(color, 0.72));
+  gradient.addColorStop(0, tone(color, TONES[0]));
+  gradient.addColorStop(BANDS[0], tone(color, TONES[0]));
+  gradient.addColorStop(BANDS[0], tone(color, TONES[1]));
+  gradient.addColorStop(BANDS[1], tone(color, TONES[1]));
+  gradient.addColorStop(BANDS[1], tone(color, TONES[2]));
+  gradient.addColorStop(1, tone(color, TONES[2]));
   return gradient;
 }
 
 /** Овал: голова, кисть, стопа. */
-export function blob(brush: Brush, at: Point, rx: number, ry: number, fill: string | CanvasGradient): void {
+export function blob(
+  brush: Brush,
+  at: Point,
+  rx: number,
+  ry: number,
+  fill: string | CanvasGradient,
+  outline?: string,
+): void {
   const { ctx, scale } = brush;
   ctx.beginPath();
   ctx.ellipse(at.x * scale, at.y * scale, rx * scale, ry * scale, 0, 0, Math.PI * 2);
   ctx.fillStyle = fill;
   ctx.fill();
+  edge(brush, outline);
 }
 
 /**
@@ -56,6 +98,7 @@ export function limb(
   wide: number,
   thin: number,
   fill: string | CanvasGradient,
+  outline?: string,
 ): void {
   const { ctx, scale } = brush;
   const dx = to.x - from.x;
@@ -77,6 +120,7 @@ export function limb(
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
+  edge(brush, outline);
 }
 
 /**
@@ -90,6 +134,7 @@ export function trunk(
   wide: number,
   narrow: number,
   fill: string | CanvasGradient,
+  outline?: string,
 ): void {
   const { ctx, scale } = brush;
   const s = (v: number): number => v * scale;
@@ -105,6 +150,7 @@ export function trunk(
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
+  edge(brush, outline);
 }
 
 /** Мазок по дуге: прядь волос, бровь, складка одежды. */
@@ -127,7 +173,12 @@ export function stroke(
 }
 
 /** Замкнутый контур по точкам: причёска, юбка, пола пиджака. */
-export function shape(brush: Brush, points: readonly Point[], fill: string | CanvasGradient): void {
+export function shape(
+  brush: Brush,
+  points: readonly Point[],
+  fill: string | CanvasGradient,
+  outline?: string,
+): void {
   const { ctx, scale } = brush;
   if (points.length < 3) return;
   ctx.beginPath();
@@ -144,4 +195,5 @@ export function shape(brush: Brush, points: readonly Point[], fill: string | Can
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
+  edge(brush, outline);
 }
