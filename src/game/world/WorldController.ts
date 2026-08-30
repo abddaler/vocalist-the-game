@@ -10,7 +10,7 @@ import {
 import type { InputController } from '@platform/input';
 import { spawnCrowd, updateCrowd } from './Crowd';
 import type { CrowdActor } from './Crowd';
-import { facingFrom } from './actorSprite';
+import { facingCamera, facingFrom } from './actorSprite';
 import type { Facing } from './actorSprite';
 import { blockedIn, districtScene, doorOf, roomScene } from './iso/scene';
 import type { IsoScene } from './iso/scene';
@@ -21,6 +21,13 @@ import { screenToWorld } from './iso/view';
 
 /** Сколько миллисекунд длится половина затемнения при смене локации. */
 const FADE_MS = 190;
+
+/**
+ * Через сколько стоящий поворачивается к зрителю, мс. Не сразу: разворот
+ * в тот же миг, как отпустили клавишу, читается сбоем, а не человеком,
+ * который остановился и огляделся.
+ */
+const TURN_MS = 900;
 
 export interface WorldDeps {
   readonly getState: () => GameState;
@@ -44,6 +51,8 @@ export class WorldController {
   facing: Facing = 'se';
   walked = 0;
   moving = false;
+  /** Сколько человек стоит на месте, мс: по этому он разворачивается. */
+  private still = 0;
   crowd: CrowdActor[] = spawnCrowd(HOME_DISTRICT);
 
   /**
@@ -158,9 +167,16 @@ export class WorldController {
 
     this.moving = this.position !== before;
     if (this.moving) {
+      this.still = 0;
       this.facing = facingFrom(before, this.position, this.facing);
       this.walked += Math.hypot(this.position.x - before.x, this.position.y - before.y);
+      return;
     }
+
+    // Постоял — повернулся к зрителю. Пришедший «сверху» иначе стоит
+    // затылком до самого следующего шага.
+    this.still += delta;
+    if (this.still >= TURN_MS) this.facing = facingCamera(this.facing);
   }
 
   /** Тап по пустому месту — приказ идти туда. */

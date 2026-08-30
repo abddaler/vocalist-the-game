@@ -64,6 +64,45 @@ function shift(hex: string, factor: number): string {
   return `#${((channel(16) << 16) | (channel(8) << 8) | channel(0)).toString(16).padStart(6, '0')}`;
 }
 
+/**
+ * Поворот тона по кругу, в градусах. Так из одной внешности получается
+ * другой человек: меняется цвет, а не рисунок, и лишних кадров это не
+ * стоит — только строки в атласе.
+ */
+export function hue(hex: string, degrees: number): string {
+  const value = parseInt(hex.slice(1), 16);
+  const r = ((value >> 16) & 0xff) / 255;
+  const g = ((value >> 8) & 0xff) / 255;
+  const b = (value & 0xff) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const light = (max + min) / 2;
+  const span = max - min;
+  // Серое остаётся серым: у него нет тона, и поворачивать нечего.
+  if (span < 0.02) return hex;
+
+  const sat = span / (1 - Math.abs(2 * light - 1));
+  let tone: number;
+  if (max === r) tone = ((g - b) / span) % 6;
+  else if (max === g) tone = (b - r) / span + 2;
+  else tone = (r - g) / span + 4;
+  tone = (((tone * 60 + degrees) % 360) + 360) % 360;
+
+  const c = (1 - Math.abs(2 * light - 1)) * sat;
+  const x = c * (1 - Math.abs(((tone / 60) % 2) - 1));
+  const m = light - c / 2;
+  const sixth = Math.floor(tone / 60) % 6;
+  const rgb: readonly [number, number, number] =
+    sixth === 0 ? [c, x, 0]
+    : sixth === 1 ? [x, c, 0]
+    : sixth === 2 ? [0, c, x]
+    : sixth === 3 ? [0, x, c]
+    : sixth === 4 ? [x, 0, c]
+    : [c, 0, x];
+  const byte = (v: number): number => Math.max(0, Math.min(255, Math.round((v + m) * 255)));
+  return `#${((byte(rgb[0]) << 16) | (byte(rgb[1]) << 8) | byte(rgb[2])).toString(16).padStart(6, '0')}`;
+}
+
 export function palette(colors: Colors): ActorPalette {
   return {
     0: EMPTY,

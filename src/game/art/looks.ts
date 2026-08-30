@@ -1,5 +1,5 @@
 import { NPC_IDS } from '@core/types';
-import { palette } from './palettes';
+import { hue, palette } from './palettes';
 import type { ActorPalette, Colors } from './palettes';
 import type { Accessory, HairStyle, OutfitStyle } from './style';
 
@@ -36,7 +36,7 @@ const SKIN = {
   deep: '#7d5334',
 } as const;
 
-export const LOOKS: readonly Look[] = [
+const CAST: readonly Look[] = [
   // — игрок —
   look(
     'player',
@@ -160,6 +160,49 @@ export const LOOKS: readonly Look[] = [
   look('staff_apron', body(SKIN.tan, '#3a2a20', '#d8d4c8', '#ffffff', '#4a4a56', '#2a2c34', '#c95f4a'), 'short', 'tee', 'necklace'),
   look('staff_coach', body(SKIN.olive, '#221c1a', '#e85f5f', '#ffb0b0', '#2c2f3c', '#20222a', '#ffd34d'), 'cap', 'track'),
 ];
+
+/**
+ * Перекрашенные прохожие. Двенадцати внешностей на шестьдесят семь мест
+ * не хватает: самая частая попадается восемь раз, и в толпе из пятнадцати
+ * человек одно лицо встречается дважды — это видно сразу и разрушает
+ * ровно то, ради чего толпа и нужна.
+ *
+ * Перекраска сдвигает тон одежды, штанов и волос по кругу. Кожа и обувь
+ * остаются: сдвиг кожи по кругу даёт зелёных людей, а обувь и так тёмная.
+ * Сдвиг детерминированный, от имени внешности, — толпа обязана
+ * повторяться от прогона к прогону.
+ */
+const TINTS = [118, 214] as const;
+
+const tinted = (look: Look, turn: number, step: number): Look => ({
+  ...look,
+  id: `${look.id}~${step}`,
+  colors: {
+    ...look.colors,
+    hair: hue(look.colors.hair, turn * 0.4),
+    cloth: hue(look.colors.cloth, turn),
+    trim: hue(look.colors.trim, turn),
+    legs: hue(look.colors.legs, turn * 0.6),
+    accent: hue(look.colors.accent, turn),
+  },
+});
+
+const isPasser = (look: Look): boolean => look.id.startsWith('passer_');
+
+export const LOOKS: readonly Look[] = [
+  ...CAST,
+  ...TINTS.flatMap((turn, step) => CAST.filter(isPasser).map((look) => tinted(look, turn, step + 1))),
+];
+
+/** Сколько перекрасок есть у каждого прохожего. */
+export const TINT_COUNT = TINTS.length;
+
+/**
+ * Имя перекраски. Ноль — исходная внешность, дальше по кругу тонов.
+ */
+export function tintedLook(id: string, step: number): string {
+  return step === 0 || !id.startsWith('passer_') ? id : `${id}~${step}`;
+}
 
 /** Короткая запись палитры прохожего: у них нет ничего, кроме цветов. */
 function body(

@@ -6,7 +6,7 @@ import { ACT_POSES, POSES } from '../art';
 import { POSE } from '../art/figure/pose';
 import { CYCLE } from '@ui/screens/ActivityScene';
 import { BALANCE } from '@data/balance';
-import { facingFrom, idleBreath, lookFor, talkLook, wornLook } from './actorSprite';
+import { facingCamera, facingFrom, idleBreath, lookFor, talkLook, wornLook } from './actorSprite';
 import type { Facing } from './actorSprite';
 
 describe('поворот персонажа', () => {
@@ -202,5 +202,26 @@ describe('вся цепочка поворота', () => {
       frame(0, -1, 'se'),
     ]);
     expect(seen.size).toBe(4);
+  });
+});
+
+describe('разворот к зрителю', () => {
+  it('спина становится лицом, а сторона остаётся своей', () => {
+    // Улица идёт по диагонали, и две стороны из четырёх — спина. Постояв
+    // спиной, человек поворачивается, но не перескакивает налево.
+    expect(facingCamera('ne')).toBe('se');
+    expect(facingCamera('nw')).toBe('sw');
+  });
+
+  it('стоящий лицом не вертится', () => {
+    expect(facingCamera('se')).toBe('se');
+    expect(facingCamera('sw')).toBe('sw');
+  });
+
+  it('после разворота видно лицо', () => {
+    for (const facing of ['se', 'sw', 'ne', 'nw'] as const) {
+      const pose = lookFor(facingCamera(facing), 0, false).pose;
+      expect(POSE[pose]!.view).toBe('quarter');
+    }
   });
 });

@@ -124,7 +124,7 @@ export function inhabitantPieces(
   };
 
   for (const actor of params.crowd) {
-    const look = lookIndex(actor.member.look);
+    const look = lookIndex(actor.look);
     // Названный, у которого висит пузырь и который стоит, — говорит.
     // Позы разговора есть только у него: прохожему их не собирают.
     const talking = actor.mood !== null && !actor.moving && ACT_LOOKS.has(actor.member.look);

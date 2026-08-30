@@ -1,6 +1,7 @@
 import { crowdIn } from '@data/world';
 import type { CrowdMember } from '@data/world';
 import { Rng } from '@core/rng';
+import { TINT_COUNT, tintedLook } from '../art/looks';
 import type { WorldPoint } from '@core/types';
 import { facingFrom } from './actorSprite';
 import type { Facing } from './actorSprite';
@@ -18,6 +19,12 @@ export interface CrowdActor {
   /** Сколько ещё стоять на месте, мс. */
   wait: number;
   facing: Facing;
+  /**
+   * Внешность этого прохожего: имя исходной или её перекраски. Двенадцати
+   * на шестьдесят семь мест не хватает, и одно лицо попадалось в кадре
+   * дважды.
+   */
+  readonly look: string;
   walked: number;
   moving: boolean;
   /** Пузырь над головой или его отсутствие. */
@@ -54,7 +61,9 @@ const BUBBLE = {
 } as const;
 
 export function spawnCrowd(locationId: string): CrowdActor[] {
-  return crowdIn(locationId).map((member, index) => ({
+  return crowdIn(locationId).map((member, index) => {
+    const rng = new Rng(`${locationId}:crowd:${index}`);
+    return {
     member,
     position: { ...(member.path[0] as WorldPoint) },
     next: member.path.length > 1 ? 1 : 0,
@@ -67,8 +76,12 @@ export function spawnCrowd(locationId: string): CrowdActor[] {
     // Первый пузырь не сразу: иначе вся улица вспыхивает пузырями
     // в момент входа.
     moodIn: BUBBLE.gapMin + ((index * 1730) % BUBBLE.gapMax),
-    rng: new Rng(`${locationId}:crowd:${index}`),
-  }));
+    // Перекраска выбирается тем же ГПСЧ, что и паузы: одна и та же
+    // улица обязана выглядеть одинаково от прогона к прогону.
+    look: tintedLook(member.look, rng.int(0, TINT_COUNT)),
+    rng,
+    };
+  });
 }
 
 export function updateCrowd(actors: readonly CrowdActor[], deltaMs: number): void {

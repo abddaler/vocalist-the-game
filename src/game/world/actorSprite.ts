@@ -41,6 +41,22 @@ const TOWARD: Readonly<Record<Facing, boolean>> = { se: true, sw: true, ne: fals
 /** Зеркалятся те, что идут влево по экрану. */
 const MIRROR: Readonly<Record<Facing, boolean>> = { se: false, sw: true, ne: false, nw: true };
 
+/** Та же сторона, но лицом к камере. */
+const FRONT: Readonly<Record<Facing, Facing>> = { se: 'se', sw: 'sw', ne: 'se', nw: 'sw' };
+
+/**
+ * Развернуть стоящего к зрителю.
+ *
+ * Улица идёт по диагонали, поэтому две стороны из четырёх — спина: идя
+ * «вверх», человек показывает затылок всю дорогу, и остановившись
+ * продолжает стоять спиной. Это верно по геометрии и невыносимо на
+ * практике — постояв, он поворачивается к камере, как и живой человек,
+ * который перестал идти.
+ */
+export function facingCamera(facing: Facing): Facing {
+  return FRONT[facing];
+}
+
 /**
  * Сторона по смещению — считается в проекции, а не в осях сетки.
  *
